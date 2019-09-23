@@ -36,4 +36,16 @@
     </fileSet>
   </fileSets>
 
+  <dependencySets>
+    <dependencySet>
+      <outputDirectory>lib</outputDirectory>
+      <useProjectArtifact>false</useProjectArtifact>
+      <unpack>false</unpack>
+      <scope>runtime</scope>
+      <excludes>
+        <exclude>net.tirasa.connid:connector-framework</exclude>
+        <exclude>net.tirasa.connid:connector-framework-internal</exclude>
+      </excludes>
+    </dependencySet>
+  </dependencySets>
 </assembly>
