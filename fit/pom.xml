@@ -1,0 +1,412 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright © 2019 ConnId (connid-dev@googlegroups.com)
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>net.tirasa.connid.bundles</groupId>
+    <artifactId>okta</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+  </parent>
+    
+  <groupId>net.tirasa.connid.bundles</groupId>
+  <artifactId>fit</artifactId>
+  
+  <name>Bundles Okta: Fit</name>
+
+  <packaging>war</packaging>
+  
+  <properties>
+    <bundles.directory>${project.build.directory}/bundles</bundles.directory>
+  </properties>
+  
+  <dependencies>
+    <dependency>
+      <groupId>net.tirasa.connid.bundles</groupId>
+      <artifactId>server</artifactId>
+      <version>${project.version}</version>
+      <type>jar</type>
+    </dependency>     
+    <dependency>
+      <groupId>net.tirasa.connid.bundles</groupId>
+      <artifactId>net.tirasa.connid.bundles.okta</artifactId>
+      <version>${project.version}</version>
+      <type>jar</type>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.okta.sdk</groupId>
+      <artifactId>okta-sdk-api</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.okta.sdk</groupId>
+      <artifactId>okta-sdk-httpclient</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>net.tirasa.connid</groupId>
+      <artifactId>connector-test-common</artifactId>
+      <scope>test</scope>
+    </dependency>
+    
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <version>1.7.28</version>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>jcl-over-slf4j</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>commons-logging</groupId>
+      <artifactId>commons-logging</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+  
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-war-plugin</artifactId>
+        <inherited>true</inherited>
+        <configuration>
+          <webResources>
+            <resource>
+              <directory>src/main/webapp</directory>
+              <includes>
+                <include>WEB-INF/web.xml</include>
+              </includes>
+              <filtering>true</filtering>
+            </resource>
+            <!--
+                 HACK: Include legal files explicity, otherwise they will end up in the wrong path
+                       or in another jar file in the war.
+            -->
+            <resource>
+              <directory>${project.build.outputDirectory}</directory>
+              <includes>
+                <include>META-INF/DEPENDENCIES*</include>
+              </includes>
+            </resource>
+            <resource>
+              <directory>${basedir}/..</directory>
+              <targetPath>META-INF</targetPath>
+              <includes>
+                <include>LICENSE</include>
+                <include>NOTICE</include>
+              </includes>
+            </resource>
+          </webResources>
+          <packagingExcludes>WEB-INF/classes/META-INF/LICENSE*,WEB-INF/classes/META-INF/NOTICE*,WEB-INF/classes/META-INF/DEPENDENCIES*</packagingExcludes>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <inherited>true</inherited>
+        <configuration>
+          <skipTests>true</skipTests>
+        </configuration>
+      </plugin>
+      
+      <!-- Test Plugins -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-resources-plugin</artifactId>
+        <inherited>true</inherited>
+        <executions>
+          <execution>
+            <id>set-bundles</id>
+            <phase>pre-integration-test</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${bundles.directory}</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${basedir}/target</directory>
+                  <includes>
+                    <include>*.jar</include>
+                  </includes>
+                  <excludes>
+                    <exclude>*-javadoc.jar</exclude>
+                    <exclude>*-sources.jar</exclude>
+                  </excludes>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <inherited>false</inherited>
+        <configuration>
+          <redirectTestOutputToFile>true</redirectTestOutputToFile>
+          <encoding>utf-8</encoding>
+        </configuration>
+        <executions>
+          <execution>
+            <id>integration-test-mock</id>
+            <phase>integration-test</phase>
+            <goals>
+              <goal>integration-test</goal>
+            </goals>
+            <configuration>
+              <argLine>-Djavax.net.ssl.trustStore=${basedir}/src/test/resources/keystore -Djavax.net.ssl.trustStorePassword=password</argLine>
+              <includes>
+                <include>**/*Tests.java</include>
+              </includes>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.codehaus.cargo</groupId>
+        <artifactId>cargo-maven2-plugin</artifactId>
+        <inherited>false</inherited>
+        <configuration>
+          <container>
+            <systemProperties>
+              <java.security.egd>file:/dev/./urandom</java.security.egd>
+              <java.util.secureRandomSeed>true</java.util.secureRandomSeed>
+            </systemProperties>
+          </container>
+          <configuration>
+            <type>standalone</type>
+            <properties>
+              <cargo.jvmargs>-XX:+CMSClassUnloadingEnabled -XX:+UseConcMarkSweepGC -Xmx1024m -Xms512m</cargo.jvmargs>
+              
+              <cargo.servlet.port>8443</cargo.servlet.port>
+              <cargo.protocol>https</cargo.protocol>
+              <cargo.tomcat.connector.keystoreFile>${basedir}/src/test/resources/keystore</cargo.tomcat.connector.keystoreFile>
+              <cargo.tomcat.connector.keystorePass>password</cargo.tomcat.connector.keystorePass>
+              <cargo.tomcat.connector.keyAlias>tomcat</cargo.tomcat.connector.keyAlias>
+              <cargo.tomcat.connector.clientAuth>false</cargo.tomcat.connector.clientAuth>
+              <cargo.tomcat.connector.sslProtocol>TLS</cargo.tomcat.connector.sslProtocol>
+              <cargo.tomcat.httpSecure>true</cargo.tomcat.httpSecure>              
+            </properties>
+          </configuration>
+          <deployables>
+            <deployable>
+              <location>${project.build.directory}/${project.build.finalName}</location>
+              <properties>
+                <context>fit</context>
+              </properties>
+            </deployable>
+          </deployables>
+        </configuration>
+        <executions>
+          <execution>
+            <id>start-container</id>
+            <phase>pre-integration-test</phase>
+            <goals>
+              <goal>start</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>stop-container</id>
+            <phase>no</phase>
+            <goals>
+              <goal></goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+     
+    </plugins>
+
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+      </resource>
+      <resource>
+        <directory>..</directory>
+        <targetPath>META-INF</targetPath>
+        <includes>
+          <include>LICENSE</include>
+          <include>NOTICE</include>
+        </includes>
+      </resource>
+    </resources>
+
+    <testResources>
+      <testResource>
+        <directory>src/test/resources</directory>
+        <filtering>true</filtering>
+      </testResource>
+    </testResources>
+  </build>
+      
+  <profiles>
+    <profile>
+      <id>it</id>
+
+      <build>
+        <defaultGoal>clean package integration-test</defaultGoal>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.cargo</groupId>
+            <artifactId>cargo-maven2-plugin</artifactId>
+            <inherited>false</inherited>
+            <executions>
+              <execution>
+                <id>start-container</id>
+                <phase>none</phase>
+              </execution>
+              <execution>
+                <id>stop-container</id>
+                <phase>none</phase>
+              </execution>
+            </executions>
+          </plugin>
+          
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <inherited>false</inherited>
+            <configuration>
+              <skipTests>true</skipTests>
+            </configuration>
+            <executions>
+              <execution>
+                <id>integration-test-mock</id>
+                <phase>none</phase>
+              </execution>
+            </executions>
+          </plugin>
+          
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-resources-plugin</artifactId>
+            <inherited>true</inherited>
+            <executions>
+              <execution>
+                <id>copy-okta-properties</id>
+                <phase>test-compile</phase>
+                <goals>
+                  <goal>copy-resources</goal>
+                </goals>
+                <configuration>
+                  <outputDirectory>${basedir}/target/test-classes/</outputDirectory>
+                  <resources>
+                    <resource>
+                      <directory>${basedir}/src/test/resources/it</directory>
+                      <includes>
+                        <include>okta.properties</include>
+                      </includes>
+                    </resource>
+                  </resources>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <inherited>true</inherited>
+            <configuration>
+              <skipTests>false</skipTests>
+              <skip>true</skip>
+            </configuration>
+            <executions>
+              <execution>
+                <id>integration-test-okta</id>
+                <phase>integration-test</phase>
+                <goals>
+                  <goal>test</goal>
+                </goals>
+                <configuration>
+                  <skip>false</skip>
+                  <argLine></argLine>
+                  <includes>
+                    <include>**/*Tests.java</include>
+                  </includes>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+        
+        <testResources>
+          <testResource>
+            <directory>src/test/resources/it</directory>
+            <filtering>true</filtering>
+            <includes>
+              <include>okta.properties</include>
+            </includes>
+          </testResource>
+        </testResources>
+      </build>
+    </profile>
+    
+    <profile>
+      <id>debug</id>
+      <properties>
+        <it.skipTests>true</it.skipTests>
+      </properties>
+      <build>
+        <defaultGoal>clean package cargo:run</defaultGoal>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <inherited>true</inherited>
+            <configuration>
+              <skipTests>${it.skipTests}</skipTests>
+              <argLine>-Djavax.net.ssl.trustStore=${basedir}/src/test/resources/keystore -Djavax.net.ssl.trustStorePassword=password</argLine>
+            </configuration>
+          </plugin>
+          <plugin>
+            <groupId>org.codehaus.cargo</groupId>
+            <artifactId>cargo-maven2-plugin</artifactId>
+            <inherited>true</inherited>
+            <configuration>
+              <configuration>
+                <properties>
+                  <cargo.jvmargs>
+                    -Xdebug
+                    -Xrunjdwp:transport=dt_socket,address=8000,server=y,suspend=n
+                    -noverify -XX:+CMSClassUnloadingEnabled
+                    -XX:+UseConcMarkSweepGC -Xmx1024m -Xms512m
+                  </cargo.jvmargs>
+                </properties>
+              </configuration>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+
+  </profiles>
+  
+</project>

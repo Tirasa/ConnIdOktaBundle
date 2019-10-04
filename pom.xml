@@ -27,12 +27,12 @@
   </parent>
     
   <groupId>net.tirasa.connid.bundles</groupId>
-  <artifactId>net.tirasa.connid.bundles.okta</artifactId>
+  <artifactId>okta</artifactId>
   <version>1.0.0-SNAPSHOT</version>        
 
   <name>ConnId Bundles: Okta</name>
   
-  <packaging>jar</packaging>
+  <packaging>pom</packaging>
   
   <url>http://connid.tirasa.net</url>
   <inceptionYear>2019</inceptionYear>
@@ -78,71 +78,210 @@
   <properties>
     <connid.version>1.4.5.1</connid.version>
     <okta.version>1.6.0-SNAPSHOT</okta.version>
+    <junit.version>5.0-SNAPSHOT</junit.version>
+    
+    <apache.commons.beanutils>1.9.3</apache.commons.beanutils>
+    <swagger-codegen.plugin.version>3.0.11</swagger-codegen.plugin.version>
+    <javax.servlet.version>3.1.0</javax.servlet.version>
+    <spring.version>5.1.9.RELEASE</spring.version>
+    <jackson.version>2.10.0.pr2</jackson.version>
+    <javax.validation.version>2.0.1.Final</javax.validation.version>
+    <apache.cxf.version>3.3.2</apache.cxf.version>
+    <swagger-annotations.version>2.0.8</swagger-annotations.version>
+    <apache.commons-lang3.version>3.9</apache.commons-lang3.version>
+    <commons-beanutils.version>1.9.3</commons-beanutils.version>
+    
+    <log.directory>${project.build.directory}/log</log.directory>
+    
+    <cargo.servlet.port>8443</cargo.servlet.port>
+    <cargo.tomcat.ajp.port>9889</cargo.tomcat.ajp.port>
+    <cargo.rmi.port>9805</cargo.rmi.port>
+    <cargo.log>${log.directory}/cargo.log</cargo.log>
+    <cargo.output>${log.directory}/cargo-output.log</cargo.output>
+
+    <tomcat.version>9.0.26</tomcat.version>
     
     <java.version>1.8</java.version>
+    <rootpom.basedir>${basedir}</rootpom.basedir>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 
-  <dependencies>
-    <dependency>
-      <groupId>net.tirasa.connid</groupId>
-      <artifactId>connector-framework</artifactId>
-      <version>${connid.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>net.tirasa.connid</groupId>
-      <artifactId>connector-framework-internal</artifactId>
-      <version>${connid.version}</version>
-    </dependency>
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>net.tirasa.connid</groupId>
+        <artifactId>connector-framework</artifactId>
+        <version>${connid.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>net.tirasa.connid</groupId>
+        <artifactId>connector-framework-internal</artifactId>
+        <version>${connid.version}</version>
+      </dependency>
     
-    <!-- Okta sdk -->
-    <dependency>
-      <groupId>com.okta.sdk</groupId>
-      <artifactId>okta-sdk-api</artifactId>
-      <version>${okta.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.okta.sdk</groupId>
-      <artifactId>okta-sdk-impl</artifactId>
-      <version>${okta.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.okta.sdk</groupId>
-      <artifactId>okta-sdk-httpclient</artifactId>
-      <version>${okta.version}</version>
-    </dependency>
+      <!-- Okta sdk -->
+      <dependency>
+        <groupId>com.okta.sdk</groupId>
+        <artifactId>okta-sdk-api</artifactId>
+        <version>${okta.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.okta.sdk</groupId>
+        <artifactId>okta-sdk-impl</artifactId>
+        <version>${okta.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.okta.sdk</groupId>
+        <artifactId>okta-sdk-httpclient</artifactId>
+        <version>${okta.version}</version>
+      </dependency>
         
-    <!-- TEST -->        
-    <dependency>
-      <groupId>net.tirasa.connid</groupId>
-      <artifactId>connector-test-common</artifactId>
-      <version>${connid.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <scope>test</scope>
-    </dependency>
-  </dependencies>
+      <dependency> 
+        <groupId>javax.servlet</groupId> 
+        <artifactId>javax.servlet-api</artifactId>
+        <version>${javax.servlet.version}</version>
+        <scope>provided</scope>
+      </dependency>
+    
+      <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-web</artifactId>
+        <version>${spring.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-context</artifactId>
+        <version>${spring.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-databind</artifactId>
+        <version>${jackson.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.jaxrs</groupId>
+        <artifactId>jackson-jaxrs-json-provider</artifactId>
+        <version>${jackson.version}</version>
+      </dependency>
+    
+      <dependency>
+        <groupId>javax.validation</groupId>
+        <artifactId>validation-api</artifactId>
+        <version>${javax.validation.version}</version>
+      </dependency>
+    
+      <dependency>
+        <groupId>org.apache.cxf</groupId>
+        <artifactId>cxf-rt-frontend-jaxrs</artifactId>
+        <version>${apache.cxf.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.cxf</groupId>
+        <artifactId>cxf-rt-rs-service-description</artifactId>
+        <version>${apache.cxf.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>io.swagger.core.v3</groupId>
+        <artifactId>swagger-annotations</artifactId>
+        <version>${swagger-annotations.version}</version>
+      </dependency>
+    
+      <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-lang3</artifactId>
+        <version>${apache.commons-lang3.version}</version>
+      </dependency>
+    
+      <dependency>
+        <groupId>commons-beanutils</groupId>
+        <artifactId>commons-beanutils</artifactId>
+        <version>${commons-beanutils.version}</version>
+      </dependency>  
+        
+      <!-- TEST -->        
+      <dependency>
+        <groupId>net.tirasa.connid</groupId>
+        <artifactId>connector-test-common</artifactId>
+        <version>${connid.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <version>${junit.version}</version>
+        <scope>test</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>  
     
   <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.8.1</version> 
-        <inherited>false</inherited>
-        <configuration>
-          <source>${java.version}</source>
-          <target>${java.version}</target>
-          <useIncrementalCompilation>false</useIncrementalCompilation>
-          <showWarnings>true</showWarnings>
-          <showDeprecation>true</showDeprecation>
-          <compilerArgument>-Xlint:unchecked</compilerArgument>
-        </configuration>
-      </plugin>
-
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>3.8.1</version> 
+          <configuration>
+            <source>${java.version}</source>
+            <target>${java.version}</target>
+            <useIncrementalCompilation>false</useIncrementalCompilation>
+            <showWarnings>true</showWarnings>
+            <showDeprecation>true</showDeprecation>
+            <compilerArgument>-Xlint:unchecked</compilerArgument>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>2.22.2</version>
+          <configuration>
+            <redirectTestOutputToFile>true</redirectTestOutputToFile>
+          </configuration>
+        </plugin>
+        
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-war-plugin</artifactId>
+          <version>3.2.2</version>
+        </plugin>
+        
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-failsafe-plugin</artifactId>
+          <version>2.19.1</version>
+          <executions>
+            <execution>
+              <goals>
+                <goal>integration-test</goal>
+                <goal>verify</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.cargo</groupId>
+          <artifactId>cargo-maven2-plugin</artifactId>
+          <version>1.7.7</version>
+          <configuration>
+            <container>
+              <containerId>tomcat9x</containerId>
+              <zipUrlInstaller>
+                <url>http://central.maven.org/maven2/org/apache/tomcat/tomcat/${tomcat.version}/tomcat-${tomcat.version}.zip</url>
+                <downloadDir>${settings.localRepository}/org/codehaus/cargo/cargo-container-archives</downloadDir>
+                <extractDir>${project.build.directory}/cargo/extract</extractDir>
+              </zipUrlInstaller>
+              <timeout>300000</timeout>
+              <log>${cargo.log}</log>
+              <output>${cargo.output}</output>    
+            </container>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+    
+    <plugins>      
       <plugin>
         <groupId>com.mycila</groupId>
         <artifactId>license-maven-plugin</artifactId>
@@ -156,7 +295,6 @@
           </execution>
         </executions>
       </plugin>
-
 
       <plugin>
         <groupId>org.apache.rat</groupId>
@@ -204,16 +342,6 @@
 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <inherited>true</inherited>
-        <configuration>
-          <skip>true</skip>
-        </configuration>
-      </plugin>
-
-      <!-- Put NOTICE and LICENSE files in all artifacts and javadocs -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-resources-plugin</artifactId>
         <version>3.0.1</version>
         <executions>
@@ -227,7 +355,7 @@
               <outputDirectory>${project.build.directory}/classes/META-INF</outputDirectory>
               <resources>
                 <resource>
-                  <directory>.</directory>
+                  <directory>${rootpom.basedir}</directory>
                   <includes>
                     <include>LICENSE</include>
                     <include>NOTICE</include>
@@ -246,7 +374,7 @@
               <outputDirectory>${project.build.directory}/apidocs/META-INF</outputDirectory>
               <resources>
                 <resource>
-                  <directory>.</directory>
+                  <directory>${rootpom.basedir}</directory>
                   <includes>
                     <include>LICENSE</include>
                     <include>NOTICE</include>
@@ -254,35 +382,6 @@
                 </resource>
               </resources>
             </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-assembly-plugin</artifactId>
-        <inherited>true</inherited>
-        <configuration>
-          <appendAssemblyId>true</appendAssemblyId>
-          <descriptors>
-            <descriptor>src/assemble/connector.xml</descriptor>
-          </descriptors>
-          <archive>
-            <index>true</index>
-            <manifestEntries>
-              <ConnectorBundle-FrameworkVersion>${connid.version}</ConnectorBundle-FrameworkVersion>
-              <ConnectorBundle-Name>${project.artifactId}</ConnectorBundle-Name>
-              <ConnectorBundle-Version>${project.version}</ConnectorBundle-Version>
-            </manifestEntries>
-          </archive>
-        </configuration>                
-        <executions>
-          <execution>
-            <id>make-assembly</id>
-            <phase>package</phase>
-            <goals>
-              <goal>single</goal>
-            </goals>
           </execution>
         </executions>
       </plugin>
@@ -303,38 +402,9 @@
     </resources>
   </build>
   
-  <profiles>
-    <profile>
-      <id>it</id>
-
-      <build>
-        <defaultGoal>clean verify</defaultGoal>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-surefire-plugin</artifactId>
-            <inherited>true</inherited>
-            <configuration>
-              <skip>true</skip>
-            </configuration>
-            <executions>
-              <execution>
-                <id>test-phase-execution</id>
-                <phase>test</phase>
-                <goals>
-                  <goal>test</goal>
-                </goals>
-                <configuration>
-                  <skip>false</skip>
-                  <includes>
-                    <include>**/*Tests.java</include>
-                  </includes>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-  </profiles>
+  <modules>
+    <module>server</module>
+    <module>connector</module>
+    <module>fit</module>
+  </modules>
 </project>
