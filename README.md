@@ -31,7 +31,7 @@ The Okta bundle is part of the [ConnId](http://connid.tirasa.net) project.
 
 ```XML
 <dependency>
-  <groupId>net.tirasa.connid.bundles</groupId>
+  <groupId>net.tirasa.connid.bundles.okta</groupId>
   <artifactId>net.tirasa.connid.bundles.okta</artifactId>
   <version>${connid.okta.version}</version>
 </dependency>
