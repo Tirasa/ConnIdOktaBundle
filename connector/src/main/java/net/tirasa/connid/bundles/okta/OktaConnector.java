@@ -501,13 +501,7 @@ public class OktaConnector implements Connector,
             final ObjectClass objectClass,
             final OperationOptions options) {
 
-        return new FilterTranslator<Filter>() {
-
-            @Override
-            public List<Filter> translate(final Filter filter) {
-                return Collections.singletonList(filter);
-            }
-        };
+        return filter -> Collections.singletonList(filter);
     }
 
     @Override
@@ -601,8 +595,7 @@ public class OktaConnector implements Connector,
                 try {
                     if (pagesSize != -1) {
                         String nextPage = StringUtil.isBlank(cookie) ? APP_API_URL + "?limit=" + pagesSize : cookie;
-                        applicationList = client.getDataStore().getResource(nextPage, DefaultApplicationList.class
-                        );
+                        applicationList = client.getDataStore().getResource(nextPage, DefaultApplicationList.class);
                         nextPage = ((AbstractCollectionResource) applicationList).hasProperty("nextPage")
                                 && ((AbstractCollectionResource) applicationList).getProperty("nextPage") != null
                                 ? ((AbstractCollectionResource) applicationList).getProperty("nextPage").toString()

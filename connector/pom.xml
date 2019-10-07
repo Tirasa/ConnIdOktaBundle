@@ -21,15 +21,15 @@
   <modelVersion>4.0.0</modelVersion>
   
   <parent>
-    <groupId>net.tirasa.connid.bundles</groupId>
+    <groupId>net.tirasa.connid.bundles.okta</groupId>
     <artifactId>okta</artifactId>
     <version>1.0.0-SNAPSHOT</version>
   </parent>
     
-  <groupId>net.tirasa.connid.bundles</groupId>
+  <groupId>net.tirasa.connid.bundles.okta</groupId>
   <artifactId>net.tirasa.connid.bundles.okta</artifactId>
       
-  <name>Bundles Okta: Connector</name>
+  <name>Bundles: Okta: Connector</name>
   
   <packaging>jar</packaging>
 

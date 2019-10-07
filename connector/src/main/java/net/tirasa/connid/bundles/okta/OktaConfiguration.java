@@ -16,7 +16,6 @@
 package net.tirasa.connid.bundles.okta;
 
 import org.identityconnectors.common.StringUtil;
-import org.identityconnectors.common.logging.Log;
 import org.identityconnectors.framework.spi.AbstractConfiguration;
 import org.identityconnectors.framework.spi.ConfigurationProperty;
 
@@ -25,8 +24,6 @@ import org.identityconnectors.framework.spi.ConfigurationProperty;
  * parameters to initialize the Okta Connector.
  */
 public class OktaConfiguration extends AbstractConfiguration {
-
-    private static final Log LOG = Log.getLog(OktaConfiguration.class);
 
     private String domain;
 
@@ -115,5 +112,4 @@ public class OktaConfiguration extends AbstractConfiguration {
             throw new IllegalArgumentException("OktaApiToken cannot be null or empty.");
         }
     }
-
 }

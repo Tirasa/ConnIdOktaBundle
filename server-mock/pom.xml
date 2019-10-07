@@ -19,15 +19,15 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>net.tirasa.connid.bundles</groupId>
+    <groupId>net.tirasa.connid.bundles.okta</groupId>
     <artifactId>okta</artifactId>
     <version>1.0.0-SNAPSHOT</version>
   </parent>
   
-  <groupId>net.tirasa.connid.bundles</groupId>
-  <artifactId>server</artifactId>
+  <groupId>net.tirasa.connid.bundles.okta</groupId>
+  <artifactId>okta-server-mock</artifactId>
   
-  <name>Bundles Okta: Api Server Mock</name>
+  <name>Bundles: Okta: Api Server Mock</name>
   
   <packaging>jar</packaging>
   
@@ -92,7 +92,6 @@
       <plugin>
         <groupId>io.swagger.codegen.v3</groupId>
         <artifactId>swagger-codegen-maven-plugin</artifactId>
-        <version>${swagger-codegen.plugin.version}</version>
         <executions>
           <execution>
             <goals>
