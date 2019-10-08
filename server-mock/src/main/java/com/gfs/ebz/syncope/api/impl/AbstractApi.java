@@ -22,12 +22,16 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.UriInfo;
 import org.apache.commons.lang3.tuple.Pair;
+import org.springframework.stereotype.Component;
 
-public final class ApiUtils {
+@Component
+public abstract class AbstractApi<T extends Object> {
 
-    private ApiUtils() {
-    }
+    @Context
+    protected UriInfo uriInfo;
 
     protected static final long DEFAULT_LIMIT = 200;
 
@@ -35,14 +39,15 @@ public final class ApiUtils {
 
     protected static final List<Application> APPLICATION_REPOSITORY = new ArrayList<>();
 
+    protected static final List<Pair<String, String>> APPLICATION_USER_REPOSITORY = new ArrayList<>();
+
     protected static final List<Group> GROUP_REPOSITORY = new ArrayList<>();
+
+    protected static final List<Pair<String, String>> GROUP_USER_REPOSITORY = new ArrayList<>();
 
     protected static final List<User> USER_REPOSITORY = new ArrayList<>();
 
     protected static final Map<String, List<String>> USER_PASSWORD_REPOSITORY = new HashMap<>();
 
-    protected static final List<Pair<String, String>> APPLICATION_USER_REPOSITORY = new ArrayList<>();
-
-    protected static final List<Pair<String, String>> GROUP_USER_REPOSITORY = new ArrayList<>();
-
+    protected abstract String getNextPage(final Integer limit, final int after, final List<T> repository);
 }

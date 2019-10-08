@@ -33,18 +33,18 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
-public class GroupImpl implements GroupApi {
+public class GroupImpl extends AbstractApi<Group> implements GroupApi {
 
     @Override
     public Response activateRule(final String ruleId) {
-        throw new UnsupportedOperationException(ApiUtils.ERROR_MESSAGE);
+        throw new UnsupportedOperationException(ERROR_MESSAGE);
     }
 
     @Override
     public Response addUserToGroup(final String groupId, final String userId) {
-        if (ApiUtils.GROUP_REPOSITORY.stream().anyMatch(group -> StringUtils.equals(groupId, group.getId()))
-                && ApiUtils.USER_REPOSITORY.stream().anyMatch(user -> StringUtils.equals(userId, user.getId()))) {
-            ApiUtils.GROUP_USER_REPOSITORY.add(new ImmutablePair<>(groupId, userId));
+        if (GROUP_REPOSITORY.stream().anyMatch(group -> StringUtils.equals(groupId, group.getId()))
+                && USER_REPOSITORY.stream().anyMatch(user -> StringUtils.equals(userId, user.getId()))) {
+            GROUP_USER_REPOSITORY.add(new ImmutablePair<>(groupId, userId));
             return Response.ok().build();
         } else {
             return Response.status(Response.Status.BAD_REQUEST).build();
@@ -58,34 +58,34 @@ public class GroupImpl implements GroupApi {
         body.setLastMembershipUpdated(Date.from(Instant.now()));
         body.setLastUpdated(Date.from(Instant.now()));
         body.setType(body.getType() == null ? "OKTA_GROUP" : null);
-        ApiUtils.GROUP_REPOSITORY.add(body);
+        GROUP_REPOSITORY.add(body);
         return Response.status(Response.Status.CREATED).entity(body).build();
     }
 
     @Override
     public Response createRule(final GroupRule body) {
-        throw new UnsupportedOperationException(ApiUtils.ERROR_MESSAGE);
+        throw new UnsupportedOperationException(ERROR_MESSAGE);
     }
 
     @Override
     public Response deactivateRule(final String ruleId) {
-        throw new UnsupportedOperationException(ApiUtils.ERROR_MESSAGE);
+        throw new UnsupportedOperationException(ERROR_MESSAGE);
     }
 
     @Override
     public Response deleteGroup(final String groupId) {
-        return ApiUtils.GROUP_REPOSITORY.removeIf(group -> StringUtils.equals(groupId, group.getId())) ? Response.
+        return GROUP_REPOSITORY.removeIf(group -> StringUtils.equals(groupId, group.getId())) ? Response.
                 noContent().build() : Response.status(Response.Status.NOT_FOUND).build();
     }
 
     @Override
     public Response deleteRule(final String ruleId, final Boolean removeUsers) {
-        throw new UnsupportedOperationException(ApiUtils.ERROR_MESSAGE);
+        throw new UnsupportedOperationException(ERROR_MESSAGE);
     }
 
     @Override
     public Response getGroup(final String groupId, final String expand) {
-        Optional<Group> found = ApiUtils.GROUP_REPOSITORY.stream()
+        Optional<Group> found = GROUP_REPOSITORY.stream()
                 .filter(group -> StringUtils.equals(groupId, group.getId()))
                 .findAny();
         if (found.isPresent()) {
@@ -97,7 +97,7 @@ public class GroupImpl implements GroupApi {
 
     @Override
     public Response getRule(final String ruleId, final String expand) {
-        throw new UnsupportedOperationException(ApiUtils.ERROR_MESSAGE);
+        throw new UnsupportedOperationException(ERROR_MESSAGE);
     }
 
     @Override
@@ -106,15 +106,15 @@ public class GroupImpl implements GroupApi {
             final String after,
             final Integer limit,
             final String managedBy) {
-        List<Pair<String, String>> foundGroupUsers = ApiUtils.GROUP_USER_REPOSITORY.stream().
+        List<Pair<String, String>> foundGroupUsers = GROUP_USER_REPOSITORY.stream().
                 filter(pair -> StringUtils.equals(groupId, pair.getLeft())).
                 collect(Collectors.toList());
         List<User> users = new ArrayList<>();
-        foundGroupUsers.forEach(pair -> users.addAll(ApiUtils.USER_REPOSITORY.stream().
+        foundGroupUsers.forEach(pair -> users.addAll(USER_REPOSITORY.stream().
                 filter(user -> StringUtils.equals(user.getId(), pair.getRight())).
                 collect(Collectors.toList())));
         return Response.ok().entity(users.stream().
-                limit(limit == null ? ApiUtils.DEFAULT_LIMIT : limit.longValue()).
+                limit(limit == null ? DEFAULT_LIMIT : limit.longValue()).
                 collect(Collectors.toList())).build();
     }
 
@@ -131,49 +131,49 @@ public class GroupImpl implements GroupApi {
         }
 
         if (after != null) {
-            Optional<Group> found = ApiUtils.GROUP_REPOSITORY.stream()
+            Optional<Group> found = GROUP_REPOSITORY.stream()
                     .filter(group -> StringUtils.equals(after, group.getId()))
                     .findAny();
             if (found.isPresent()) {
-                int lastIndexOf = ApiUtils.GROUP_REPOSITORY.lastIndexOf(found.get());
-                return Response.ok().entity(ApiUtils.GROUP_REPOSITORY.stream().
+                int lastIndexOf = GROUP_REPOSITORY.lastIndexOf(found.get());
+                return Response.ok().entity(GROUP_REPOSITORY.stream().
                         skip(lastIndexOf).
-                        limit(limit == null ? ApiUtils.DEFAULT_LIMIT : limit.longValue()).
+                        limit(limit == null ? DEFAULT_LIMIT : limit.longValue()).
                         filter(q == null ? group -> true : group -> group.getProfile().getName().contains(q)).
-                        collect(Collectors.toList())).header("link", getNextPage(limit, lastIndexOf)).
+                        collect(Collectors.toList())).header("link", getNextPage(limit, lastIndexOf, GROUP_REPOSITORY)).
                         build();
             }
         }
-        return Response.ok().entity(ApiUtils.GROUP_REPOSITORY.stream().
-                limit(limit == null ? ApiUtils.DEFAULT_LIMIT : limit.longValue()).
+        return Response.ok().entity(GROUP_REPOSITORY.stream().
+                limit(limit == null ? DEFAULT_LIMIT : limit.longValue()).
                 filter(q == null ? group -> true : group -> group.getProfile().getName().contains(q)).
-                collect(Collectors.toList())).header("link", getNextPage(limit, 0)).
+                collect(Collectors.toList())).header("link", getNextPage(limit, 0, GROUP_REPOSITORY)).
                 build();
     }
 
     @Override
     public Response listRules(final Integer limit, final String after, final String expand) {
-        throw new UnsupportedOperationException(ApiUtils.ERROR_MESSAGE);
+        throw new UnsupportedOperationException(ERROR_MESSAGE);
     }
 
     @Override
     public Response removeGroupUser(final String groupId, final String userId) {
-        return ApiUtils.GROUP_USER_REPOSITORY.removeIf(pair -> StringUtils.equals(pair.getLeft(), groupId)
+        return GROUP_USER_REPOSITORY.removeIf(pair -> StringUtils.equals(pair.getLeft(), groupId)
                 && StringUtils.equals(pair.getRight(), userId)) ? Response.noContent().build() : Response.status(
                 Response.Status.NOT_FOUND).build();
     }
 
     @Override
     public Response updateGroup(final Group body, final String groupId) {
-        Optional<Group> found = ApiUtils.GROUP_REPOSITORY.stream()
+        Optional<Group> found = GROUP_REPOSITORY.stream()
                 .filter(group -> StringUtils.equals(groupId, group.getId()))
                 .findAny();
         if (found.isPresent()) {
             body.setId(found.get().getId());
             body.setCreated(found.get().getCreated());
             body.setLastMembershipUpdated(found.get().getLastMembershipUpdated());
-            ApiUtils.GROUP_REPOSITORY.remove(found.get());
-            ApiUtils.GROUP_REPOSITORY.add(body);
+            GROUP_REPOSITORY.remove(found.get());
+            GROUP_REPOSITORY.add(body);
             body.setLastUpdated(Date.from(Instant.now()));
             return Response.ok().entity(body).build();
         } else {
@@ -183,13 +183,13 @@ public class GroupImpl implements GroupApi {
 
     @Override
     public Response updateRule(final GroupRule body, final String ruleId) {
-        throw new UnsupportedOperationException(ApiUtils.ERROR_MESSAGE);
+        throw new UnsupportedOperationException(ERROR_MESSAGE);
     }
 
     private List<Group> searchGroup(final String filter) {
         String[] split = filter.split(" ");
 
-        return ApiUtils.GROUP_REPOSITORY.stream().
+        return GROUP_REPOSITORY.stream().
                 filter(group -> {
                     try {
                         return StringUtils.equals(StringUtils.remove(split[2], "\""),
@@ -200,13 +200,13 @@ public class GroupImpl implements GroupApi {
                 }).collect(Collectors.toList());
     }
 
-    public String getNextPage(final Integer limit, final int after) {
-        if (limit != null && limit + after < ApiUtils.GROUP_REPOSITORY.size()) {
-            return "<https://localhost:8443/fit/api/v1/groups?after=" + ApiUtils.GROUP_REPOSITORY.get(limit + after).getId()
-                    + "&limit=" + limit + ">; rel=\"next\"";
+    @Override
+    String getNextPage(Integer limit, int after, List<Group> repository) {
+        if (limit != null && limit + after < repository.size()) {
+            return "<" + uriInfo.getBaseUri().toString() + "api/v1/groups?after="
+                    + repository.get(limit + after).getId() + "&limit=" + limit + ">; rel=\"next\"";
         } else {
             return null;
         }
     }
-
 }

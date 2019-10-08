@@ -36,11 +36,11 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
-public class UserImpl implements UserApi {
+public class UserImpl extends AbstractApi<User> implements UserApi {
 
     @Override
     public Response activateUser(final String userId, final Boolean sendEmail) {
-        Optional<User> found = ApiUtils.USER_REPOSITORY.stream()
+        Optional<User> found = USER_REPOSITORY.stream()
                 .filter(user -> StringUtils.equals(userId, user.getId()))
                 .findAny();
         if (found.isPresent() && found.get().getStatus() != UserStatus.ACTIVE) {
@@ -56,12 +56,12 @@ public class UserImpl implements UserApi {
 
     @Override
     public Response addGroupTargetToRole(final String userId, final String roleId, final String groupId) {
-        throw new UnsupportedOperationException(ApiUtils.ERROR_MESSAGE);
+        throw new UnsupportedOperationException(ERROR_MESSAGE);
     }
 
     @Override
     public Response addRoleToUser(final Role role, final String userId) {
-        throw new UnsupportedOperationException(ApiUtils.ERROR_MESSAGE);
+        throw new UnsupportedOperationException(ERROR_MESSAGE);
     }
 
     @Override
@@ -69,18 +69,18 @@ public class UserImpl implements UserApi {
             final ChangePasswordRequest changePasswordRequest,
             final String userId,
             final Boolean strict) {
-        Optional<User> found = ApiUtils.USER_REPOSITORY.stream()
+        Optional<User> found = USER_REPOSITORY.stream()
                 .filter(user -> StringUtils.equals(userId, user.getId()))
                 .findAny();
         if (found.isPresent() && (found.get().getStatus().equals(UserStatus.ACTIVE)
                 || found.get().getStatus().equals(UserStatus.PASSWORD_EXPIRED)
                 || found.get().getStatus().equals(UserStatus.STAGED)
                 || found.get().getStatus().equals(UserStatus.RECOVERY))
-                && changePasswordRequest.getOldPassword().getValue().equals(ApiUtils.USER_PASSWORD_REPOSITORY.get(userId).get(
-                        ApiUtils.USER_PASSWORD_REPOSITORY.get(userId).size() - 1))
-                && !ApiUtils.USER_PASSWORD_REPOSITORY.get(userId).contains(changePasswordRequest.
+                && changePasswordRequest.getOldPassword().getValue().equals(USER_PASSWORD_REPOSITORY.
+                        get(userId).get(USER_PASSWORD_REPOSITORY.get(userId).size() - 1))
+                && !USER_PASSWORD_REPOSITORY.get(userId).contains(changePasswordRequest.
                         getNewPassword().getValue())) {
-            ApiUtils.USER_PASSWORD_REPOSITORY.get(userId).add(changePasswordRequest.getNewPassword().getValue());
+            USER_PASSWORD_REPOSITORY.get(userId).add(changePasswordRequest.getNewPassword().getValue());
             found.get().setLastUpdated(Date.from(Instant.now()));
             found.get().setPasswordChanged(Date.from(Instant.now()));
             return Response.ok().entity(found.get().getCredentials()).build();
@@ -91,7 +91,7 @@ public class UserImpl implements UserApi {
 
     @Override
     public Response changeRecoveryQuestion(final UserCredentials userCredentials, final String userId) {
-        throw new UnsupportedOperationException(ApiUtils.ERROR_MESSAGE);
+        throw new UnsupportedOperationException(ERROR_MESSAGE);
     }
 
     @Override
@@ -126,10 +126,10 @@ public class UserImpl implements UserApi {
                 List<String> passwords = new ArrayList<>();
                 passwords.add(body.getCredentials().getPassword().getValue());
                 body.getCredentials().setPassword(null);
-                ApiUtils.USER_PASSWORD_REPOSITORY.put(body.getId(), passwords);
+                USER_PASSWORD_REPOSITORY.put(body.getId(), passwords);
             }
 
-            ApiUtils.USER_REPOSITORY.add(body);
+            USER_REPOSITORY.add(body);
             return Response.status(Response.Status.CREATED).entity(body).build();
         } else {
             return updateUser(body, body.getId(), false);
@@ -138,14 +138,14 @@ public class UserImpl implements UserApi {
 
     @Override
     public Response deactivateOrDeleteUser(final String userId, final Boolean sendEmail) {
-        Optional<User> found = ApiUtils.USER_REPOSITORY.stream()
+        Optional<User> found = USER_REPOSITORY.stream()
                 .filter(user -> StringUtils.equals(userId, user.getId()))
                 .findAny();
         if (!found.isPresent()) {
             return Response.status(Response.Status.NOT_FOUND).build();
         } else if (found.get().getStatus() == UserStatus.DEPROVISIONED) {
-            ApiUtils.USER_REPOSITORY.remove(found.get());
-            ApiUtils.USER_PASSWORD_REPOSITORY.remove(userId);
+            USER_REPOSITORY.remove(found.get());
+            USER_PASSWORD_REPOSITORY.remove(userId);
             return Response.noContent().build();
         } else {
             found.get().setStatus(UserStatus.DEPROVISIONED);
@@ -157,7 +157,7 @@ public class UserImpl implements UserApi {
 
     @Override
     public Response deactivateUser(final String userId, final Boolean sendEmail) {
-        Optional<User> found = ApiUtils.USER_REPOSITORY.stream()
+        Optional<User> found = USER_REPOSITORY.stream()
                 .filter(user -> StringUtils.equals(userId, user.getId()))
                 .findAny();
         if (found.isPresent() && found.get().getStatus() != UserStatus.DEPROVISIONED) {
@@ -172,12 +172,12 @@ public class UserImpl implements UserApi {
 
     @Override
     public Response endAllUserSessions(final String userId, final Boolean oauthTokens) {
-        throw new UnsupportedOperationException(ApiUtils.ERROR_MESSAGE);
+        throw new UnsupportedOperationException(ERROR_MESSAGE);
     }
 
     @Override
     public Response expirePassword(final String userId, final Boolean tempPassword) {
-        throw new UnsupportedOperationException(ApiUtils.ERROR_MESSAGE);
+        throw new UnsupportedOperationException(ERROR_MESSAGE);
     }
 
     @Override
@@ -185,12 +185,12 @@ public class UserImpl implements UserApi {
             final String userId,
             final UserCredentials userCredentials,
             final Boolean sendEmail) {
-        throw new UnsupportedOperationException(ApiUtils.ERROR_MESSAGE);
+        throw new UnsupportedOperationException(ERROR_MESSAGE);
     }
 
     @Override
     public Response getUser(final String userId) {
-        Optional<User> found = ApiUtils.USER_REPOSITORY.stream()
+        Optional<User> found = USER_REPOSITORY.stream()
                 .filter(user -> StringUtils.equals(userId, user.getId())
                 || StringUtils.equals(userId, user.getProfile().getLogin()))
                 .findAny();
@@ -203,12 +203,12 @@ public class UserImpl implements UserApi {
 
     @Override
     public Response listAppLinks(final String userId, final Boolean showAll) {
-        throw new UnsupportedOperationException(ApiUtils.ERROR_MESSAGE);
+        throw new UnsupportedOperationException(ERROR_MESSAGE);
     }
 
     @Override
     public Response listAssignedRoles(final String userId, final String expand) {
-        throw new UnsupportedOperationException(ApiUtils.ERROR_MESSAGE);
+        throw new UnsupportedOperationException(ERROR_MESSAGE);
     }
 
     @Override
@@ -217,20 +217,20 @@ public class UserImpl implements UserApi {
             final String roleId,
             final String after,
             final Integer limit) {
-        throw new UnsupportedOperationException(ApiUtils.ERROR_MESSAGE);
+        throw new UnsupportedOperationException(ERROR_MESSAGE);
     }
 
     @Override
     public Response listUserGroups(final String userId, final String after, final Integer limit) {
-        List<Pair<String, String>> foundUserGroups = ApiUtils.GROUP_USER_REPOSITORY.stream().
+        List<Pair<String, String>> foundUserGroups = GROUP_USER_REPOSITORY.stream().
                 filter(pair -> StringUtils.equals(userId, pair.getRight())).
                 collect(Collectors.toList());
         List<Group> groups = new ArrayList<>();
-        foundUserGroups.forEach(pair -> groups.addAll(ApiUtils.GROUP_REPOSITORY.stream().
+        foundUserGroups.forEach(pair -> groups.addAll(GROUP_REPOSITORY.stream().
                 filter(group -> StringUtils.equals(group.getId(), pair.getLeft())).
                 collect(Collectors.toList())));
         return Response.ok().entity(groups.stream().
-                limit(limit == null ? ApiUtils.DEFAULT_LIMIT : limit.longValue()).
+                limit(limit == null ? DEFAULT_LIMIT : limit.longValue()).
                 collect(Collectors.toList())).build();
     }
 
@@ -245,71 +245,72 @@ public class UserImpl implements UserApi {
             final String expand) {
 
         if (filter != null) {
-            return Response.ok().entity(searchUsers(ApiUtils.USER_REPOSITORY, filter)).build();
+            return Response.ok().entity(searchUsers(USER_REPOSITORY, filter)).build();
         }
 
         if (after != null) {
-            Optional<User> found = ApiUtils.USER_REPOSITORY.stream()
+            Optional<User> found = USER_REPOSITORY.stream()
                     .filter(group -> StringUtils.equals(after, group.getId()))
                     .findAny();
             if (found.isPresent()) {
-                int lastIndexOf = ApiUtils.USER_REPOSITORY.lastIndexOf(found.get());
-                return Response.ok().entity(ApiUtils.USER_REPOSITORY.stream().
+                int lastIndexOf = USER_REPOSITORY.lastIndexOf(found.get());
+                return Response.ok().entity(USER_REPOSITORY.stream().
                         skip(lastIndexOf).
-                        limit(limit == null ? ApiUtils.DEFAULT_LIMIT : limit.longValue()).
+                        limit(limit == null ? DEFAULT_LIMIT : limit.longValue()).
                         filter(q == null ? user -> true : user -> user.getProfile().getFirstName().contains(q)
                         || user.getProfile().getLastName().contains(q)
                         || user.getProfile().getEmail().contains(q)).
-                        collect(Collectors.toList())).header("link", getNextPage(limit, lastIndexOf)).
+                        collect(Collectors.toList())).header("link", getNextPage(limit, lastIndexOf, USER_REPOSITORY)).
                         build();
             }
         }
-        return Response.ok().entity(ApiUtils.USER_REPOSITORY.stream().
-                limit(limit == null ? ApiUtils.DEFAULT_LIMIT : limit.longValue()).
+        return Response.ok().entity(USER_REPOSITORY.stream().
+                limit(limit == null ? DEFAULT_LIMIT : limit.longValue()).
                 filter(q == null ? user -> true : user -> user.getProfile().getFirstName().contains(q)
                 || user.getProfile().getLastName().contains(q)
                 || user.getProfile().getEmail().contains(q)).
-                collect(Collectors.toList())).header("link", getNextPage(limit, 0)).build();
+                collect(Collectors.toList())).header("link", getNextPage(limit, 0, USER_REPOSITORY)).
+                build();
     }
 
     @Override
     public Response removeGroupTargetFromRole(final String userId, final String roleId, final String groupId) {
-        throw new UnsupportedOperationException(ApiUtils.ERROR_MESSAGE);
+        throw new UnsupportedOperationException(ERROR_MESSAGE);
     }
 
     @Override
     public Response removeRoleFromUser(final String userId, final String roleId) {
-        throw new UnsupportedOperationException(ApiUtils.ERROR_MESSAGE);
+        throw new UnsupportedOperationException(ERROR_MESSAGE);
     }
 
     @Override
     public Response resetAllFactors(final String userId) {
-        throw new UnsupportedOperationException(ApiUtils.ERROR_MESSAGE);
+        throw new UnsupportedOperationException(ERROR_MESSAGE);
     }
 
     @Override
     public Response resetPassword(final String userId, final String provider, final Boolean sendEmail) {
-        throw new UnsupportedOperationException(ApiUtils.ERROR_MESSAGE);
+        throw new UnsupportedOperationException(ERROR_MESSAGE);
     }
 
     @Override
     public Response suspendUser(final String userId) {
-        throw new UnsupportedOperationException(ApiUtils.ERROR_MESSAGE);
+        throw new UnsupportedOperationException(ERROR_MESSAGE);
     }
 
     @Override
     public Response unlockUser(final String userId) {
-        throw new UnsupportedOperationException(ApiUtils.ERROR_MESSAGE);
+        throw new UnsupportedOperationException(ERROR_MESSAGE);
     }
 
     @Override
     public Response unsuspendUser(final String userId) {
-        throw new UnsupportedOperationException(ApiUtils.ERROR_MESSAGE);
+        throw new UnsupportedOperationException(ERROR_MESSAGE);
     }
 
     @Override
     public Response updateUser(final User user, final String userId, final Boolean strict) {
-        Optional<User> found = ApiUtils.USER_REPOSITORY.stream()
+        Optional<User> found = USER_REPOSITORY.stream()
                 .filter(u -> StringUtils.equals(userId, u.getId()))
                 .findAny();
         if (found.isPresent()) {
@@ -320,12 +321,12 @@ public class UserImpl implements UserApi {
             user.setStatusChanged(found.get().getStatusChanged());
 
             if (user.getCredentials() != null && user.getCredentials().getPassword() != null) {
-                if (user.getCredentials().getPassword().getValue() != null && !ApiUtils.USER_PASSWORD_REPOSITORY.
+                if (user.getCredentials().getPassword().getValue() != null && !USER_PASSWORD_REPOSITORY.
                         get(userId).contains(user.getCredentials().getPassword().getValue())) {
-                    ApiUtils.USER_PASSWORD_REPOSITORY.get(userId).add(user.getCredentials().getPassword().getValue());
-                } else if (user.getCredentials().getPassword().getHash() != null && !ApiUtils.USER_PASSWORD_REPOSITORY.
+                    USER_PASSWORD_REPOSITORY.get(userId).add(user.getCredentials().getPassword().getValue());
+                } else if (user.getCredentials().getPassword().getHash() != null && !USER_PASSWORD_REPOSITORY.
                         get(userId).contains(user.getCredentials().getPassword().getHash().getValue())) {
-                    ApiUtils.USER_PASSWORD_REPOSITORY.get(userId).add(user.getCredentials().getPassword().
+                    USER_PASSWORD_REPOSITORY.get(userId).add(user.getCredentials().getPassword().
                             getHash().getValue());
                 } else {
                     return Response.status(Response.Status.CONFLICT).build();
@@ -333,8 +334,8 @@ public class UserImpl implements UserApi {
                 user.getCredentials().setPassword(null);
             }
 
-            ApiUtils.USER_REPOSITORY.remove(found.get());
-            ApiUtils.USER_REPOSITORY.add(user);
+            USER_REPOSITORY.remove(found.get());
+            USER_REPOSITORY.add(user);
             user.setLastUpdated(Date.from(Instant.now()));
             return Response.ok().entity(user).build();
         } else {
@@ -357,9 +358,10 @@ public class UserImpl implements UserApi {
                 collect(Collectors.toList());
     }
 
-    public String getNextPage(final Integer limit, final int after) {
-        if (limit != null && limit + after < ApiUtils.USER_REPOSITORY.size()) {
-            return "<https://localhost:8443/fit/api/v1/users?after=" + ApiUtils.USER_REPOSITORY.get(limit + after).getId()
+    @Override
+    String getNextPage(Integer limit, int after, List<User> repository) {
+        if (limit != null && limit + after < repository.size()) {
+            return "<" + uriInfo.getBaseUri().toString() + "api/v1/users?after=" + repository.get(limit + after).getId()
                     + "&limit=" + limit + ">; rel=\"next\"";
         } else {
             return null;
