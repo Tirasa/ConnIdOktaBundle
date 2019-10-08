@@ -25,9 +25,7 @@ import java.util.Map;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.UriInfo;
 import org.apache.commons.lang3.tuple.Pair;
-import org.springframework.stereotype.Component;
 
-@Component
 public abstract class AbstractApi<T extends Object> {
 
     @Context

@@ -201,7 +201,7 @@ public class GroupImpl extends AbstractApi<Group> implements GroupApi {
     }
 
     @Override
-    String getNextPage(Integer limit, int after, List<Group> repository) {
+    protected String getNextPage(Integer limit, int after, List<Group> repository) {
         if (limit != null && limit + after < repository.size()) {
             return "<" + uriInfo.getBaseUri().toString() + "api/v1/groups?after="
                     + repository.get(limit + after).getId() + "&limit=" + limit + ">; rel=\"next\"";

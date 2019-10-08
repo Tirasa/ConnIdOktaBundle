@@ -359,7 +359,7 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
     }
 
     @Override
-    String getNextPage(Integer limit, int after, List<User> repository) {
+    protected String getNextPage(Integer limit, int after, List<User> repository) {
         if (limit != null && limit + after < repository.size()) {
             return "<" + uriInfo.getBaseUri().toString() + "api/v1/users?after=" + repository.get(limit + after).getId()
                     + "&limit=" + limit + ">; rel=\"next\"";
