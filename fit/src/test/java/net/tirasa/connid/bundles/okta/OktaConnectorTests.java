@@ -23,10 +23,11 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import com.okta.sdk.resource.group.Group;
+import com.okta.sdk.resource.group.GroupBuilder;
+import com.okta.sdk.resource.group.GroupList;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 
 import java.util.List;
@@ -103,7 +104,7 @@ public class OktaConnectorTests extends AbstractConnectorTests {
         impl.getResultsHandlerConfiguration().setFilteredResultsHandlerInValidationMode(true);
         return factory.newInstance(impl);
     }
-   
+
     @Test
     public void schema() {
         Schema schema = newFacade().schema();
@@ -277,9 +278,20 @@ public class OktaConnectorTests extends AbstractConnectorTests {
             assertNotNull(groupUpdate.getId());
             GROUPS.add(groupUpdate.getId());
 
+            //Add default group everyone
+            GroupList groups = conn.getClient().listGroups("Everyone", null, null);
+            Group group;
+            if (groups.iterator().hasNext()) {
+                group = groups.single();
+            } else {
+                group = GroupBuilder.instance()
+                        .setName("Everyone")
+                        .setDescription("Everyone").buildAndCreate(conn.getClient());
+            }
+
             // UPDATE USER
             userAttrs.remove(password);
-            userAttrs.add(AttributeBuilder.build(ObjectClass.GROUP_NAME, groupUpdate.getId()));
+            userAttrs.add(AttributeBuilder.build(ObjectClass.GROUP_NAME, groupUpdate.getId(), group.getId()));
 
             Uid updated = connector.update(ObjectClass.ACCOUNT, created, userAttrs, operationOption);
             assertNotNull(updated);
@@ -332,9 +344,21 @@ public class OktaConnectorTests extends AbstractConnectorTests {
             assertEquals(handler.getObjects().get(0).getUid().getUidValue(), created.getUidValue());
             LOG.info("Created User with id {0} on Okta", handler.getObjects().get(0).getUid());
 
+            //Add default group everyone
+            GroupList groups = conn.getClient().listGroups("Everyone", null, null);
+            Group group;
+            if (groups.iterator().hasNext()) {
+                group = groups.single();
+            } else {
+                group = GroupBuilder.instance()
+                        .setName("Everyone")
+                        .setDescription("Everyone").buildAndCreate(conn.getClient());
+            }
+
             // UPDATE USER
             userAttrs.remove(password);
-            userAttrs.add(AttributeBuilder.build(ObjectClass.GROUP_NAME, Collections.emptyList()));
+            userAttrs.add(
+                    AttributeBuilder.build(ObjectClass.GROUP_NAME, group.getId()));
 
             Uid updated = connector.update(ObjectClass.ACCOUNT, created, userAttrs, operationOption);
             assertNotNull(updated);
@@ -411,8 +435,8 @@ public class OktaConnectorTests extends AbstractConnectorTests {
 
     @AfterClass
     public static void cleanTestData() {
-//        USERS.stream().forEach(item -> cleanUserTestData(conn.getClient(), item));
-//        GROUPS.stream().forEach(item -> cleanGroupTestData(conn.getClient(), item));
-//        APPLICATIONS.stream().forEach(item -> cleanGroupTestData(conn.getClient(), item));
+        USERS.stream().forEach(item -> cleanUserTestData(conn.getClient(), item));
+        GROUPS.stream().forEach(item -> cleanGroupTestData(conn.getClient(), item));
+        APPLICATIONS.stream().forEach(item -> cleanApplicationTestData(conn.getClient(), item));
     }
 }

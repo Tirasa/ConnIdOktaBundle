@@ -19,23 +19,24 @@ import com.okta.sdk.client.Client;
 import com.okta.sdk.resource.ExtensibleResource;
 import com.okta.sdk.resource.application.Application;
 import com.okta.sdk.resource.application.ApplicationList;
+import com.okta.sdk.resource.group.Group;
 import com.okta.sdk.resource.user.User;
 import com.okta.sdk.resource.user.UserProfile;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import net.tirasa.connid.bundles.okta.OktaConnector;
 import org.identityconnectors.common.StringUtil;
 import org.identityconnectors.common.logging.Log;
 import org.identityconnectors.framework.common.objects.Attribute;
 import org.identityconnectors.framework.common.objects.AttributeBuilder;
-import org.identityconnectors.framework.common.objects.AttributeInfo;
+import org.identityconnectors.framework.common.objects.Name;
 import org.identityconnectors.framework.common.objects.ObjectClass;
 import org.identityconnectors.framework.common.objects.ObjectClassInfo;
 import org.identityconnectors.framework.common.objects.OperationalAttributes;
 import org.identityconnectors.framework.common.objects.Schema;
+import org.identityconnectors.framework.common.objects.Uid;
 
 public final class OktaAttribute {
 
@@ -111,8 +112,12 @@ public final class OktaAttribute {
         Set<Attribute> attributes = new HashSet<>();
         ObjectClassInfo objectClassInfo = schema.findObjectClassInfo(ObjectClass.ACCOUNT_NAME);
         UserProfile userProfile = user.getProfile();
-        for (String attributeToGetName : attributesToGet) {
-            if (OperationalAttributes.ENABLE_NAME.equals(attributeToGetName) || STATUS.equals(attributeToGetName)) {
+        attributesToGet.stream().forEach(attributeToGetName -> {
+            if (Name.NAME.equals(attributeToGetName)
+                    || Uid.NAME.equals(attributeToGetName)
+                    || OktaAttribute.ID.equals(attributeToGetName)) {
+                attributes.add(AttributeBuilder.build(attributeToGetName, user.getId()));
+            } else if (OperationalAttributes.ENABLE_NAME.equals(attributeToGetName) || STATUS.equals(attributeToGetName)) {
                 attributes.add(buildAttribute(user.getStatus().toString(), attributeToGetName, String.class).build());
             } else if (ObjectClass.GROUP_NAME.equals(attributeToGetName)) {
                 Set<String> assignedApplications = new HashSet<>();
@@ -120,9 +125,9 @@ public final class OktaAttribute {
                     ApplicationList applicationList = client.getDataStore().http()
                             .addQueryParameter(OktaConnector.FILTER, "user.id eq \"" + user.getId() + "\"")
                             .get(OktaConnector.APP_API_URL, ApplicationList.class);
-                    for (Application appItem : applicationList) {
-                        assignedApplications.add(appItem.getId());
-                    }
+                    applicationList.stream().forEach(item -> {
+                        assignedApplications.add(item.getId());
+                    });
                     attributes.add(buildAttribute(assignedApplications, attributeToGetName, List.class).build());
                 } catch (Exception ex) {
                     LOG.error(ex, "Could not list applications for User {0}", user.getId());
@@ -131,15 +136,15 @@ public final class OktaAttribute {
                 attributes.add(
                         buildAttribute(user.getLastUpdated().toString(), attributeToGetName, String.class).build());
             } else {
-                Optional<AttributeInfo> attributeInfo = objectClassInfo.getAttributeInfo().stream().
-                        filter(attr -> attr.getName().equals(attributeToGetName)).findFirst();
-                if (attributeInfo.isPresent()) {
-                    Class<?> type = attributeInfo.get().getType();
-                    attributes.add(
-                            buildAttribute(userProfile.get(attributeToGetName), attributeToGetName, type).build());
-                }
+                objectClassInfo.getAttributeInfo().stream().
+                        filter(attr -> attr.getName().equals(attributeToGetName)).findFirst().ifPresent(
+                        attributeInfo -> {
+                            attributes.add(
+                                    buildAttribute(userProfile.get(
+                                            attributeToGetName), attributeToGetName, attributeInfo.getType()).build());
+                        });
             }
-        }
+        });
         return attributes;
     }
 
@@ -151,25 +156,31 @@ public final class OktaAttribute {
             final String objName) {
         Set<Attribute> attributes = new HashSet<>();
         ObjectClassInfo objectClassInfo = schema.findObjectClassInfo(objName);
-        for (String attributeToGetName : attributesToGet) {
-            AttributeBuilder attributeBuilder = new AttributeBuilder();
-            if (resource instanceof Application && (OperationalAttributes.ENABLE_NAME.equals(attributeToGetName)
-                    || STATUS.equals(attributeToGetName))) {
+        attributesToGet.stream().forEach(attributeToGetName -> {
+            if (Name.NAME.equals(attributeToGetName)
+                    || Uid.NAME.equals(attributeToGetName)
+                    || OktaAttribute.ID.equals(attributeToGetName)) {
+                attributes.add(AttributeBuilder.build(attributeToGetName, resource.getString(ID)));
+            } else if (OperationalAttributes.ENABLE_NAME.equals(attributeToGetName)
+                    || STATUS.equals(attributeToGetName)) {
+                AttributeBuilder attributeBuilder = new AttributeBuilder();
                 attributeBuilder.setName(attributeToGetName);
                 if (resource instanceof Application) {
-                    attributeBuilder.addValue(((Application) resource).getStatus());
+                    attributeBuilder.addValue(((Application) resource).getStatus().equals(Application.StatusEnum.ACTIVE));
                 }
+                attributes.add(attributeBuilder.build());
             } else {
-                Optional<AttributeInfo> attributeInfo = objectClassInfo.getAttributeInfo().stream().
-                        filter(attr -> attr.getName().equals(attributeToGetName)).findFirst();
-                if (attributeInfo.isPresent()) {
-                    Class<?> type = attributeInfo.get().getType();
-                    attributeBuilder = buildAttribute(
-                            resource.get(attributeToGetName), attributeToGetName, type);
-                }
+                objectClassInfo.getAttributeInfo().stream().
+                        filter(attr -> attr.getName().equals(attributeToGetName)).findFirst().ifPresent(
+                        attributeInfo -> {
+                            attributes.add(
+                                    buildAttribute(resource instanceof Group
+                                            ? ((Group) resource).getProfile().getString(attributeToGetName)
+                                            : resource.getString(attributeToGetName),
+                                            attributeToGetName, attributeInfo.getType()).build());
+                        });
             }
-            attributes.add(attributeBuilder.build());
-        }
+        });
         return attributes;
     }
 

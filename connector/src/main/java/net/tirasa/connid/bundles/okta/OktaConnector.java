@@ -35,12 +35,15 @@ import com.okta.sdk.resource.user.UserList;
 import com.okta.sdk.resource.user.UserStatus;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import net.tirasa.connid.bundles.okta.schema.OktaSchema;
 import net.tirasa.connid.bundles.okta.utils.OktaAttribute;
 import net.tirasa.connid.bundles.okta.utils.OktaUtils;
@@ -56,6 +59,7 @@ import org.identityconnectors.framework.common.objects.AttributeUtil;
 import org.identityconnectors.framework.common.objects.AttributesAccessor;
 import org.identityconnectors.framework.common.objects.ConnectorObject;
 import org.identityconnectors.framework.common.objects.ConnectorObjectBuilder;
+import org.identityconnectors.framework.common.objects.Name;
 import org.identityconnectors.framework.common.objects.ObjectClass;
 import org.identityconnectors.framework.common.objects.ObjectClassInfo;
 import org.identityconnectors.framework.common.objects.ObjectClassUtil;
@@ -186,13 +190,13 @@ public class OktaConnector implements Connector,
         final AttributesAccessor accessor = new AttributesAccessor(createAttributes);
 
         if (ObjectClass.ACCOUNT.equals(objectClass)) {
-            User user = null;
+            User result = null;
             String passwordHashAlgorithm = this.configuration.getPasswordHashAlgorithm();
             Attribute status = accessor.find(OperationalAttributes.ENABLE_NAME);
             Attribute email = accessor.find("email");
-
-            final UserBuilder userBuilder = UserBuilder.instance();
             try {
+                final UserBuilder userBuilder = UserBuilder.instance();
+
                 if (status == null
                         || status.getValue() == null
                         || status.getValue().isEmpty()) {
@@ -230,21 +234,17 @@ public class OktaConnector implements Connector,
                 }
 
                 buildProfile(userBuilder, accessor, objectClass);
-                user = userBuilder.buildAndCreate(client);
+                result = userBuilder.buildAndCreate(client);
+
+                //Assign User to Groups
+                User user = result;
+                Optional.ofNullable(accessor.findList(ObjectClass.GROUP_NAME)).map(Collection::stream)
+                        .orElseGet(Stream::empty).map(Object::toString).forEach(item -> user.addToGroup(item));
 
             } catch (Exception e) {
                 OktaUtils.wrapGeneralError("Could not create User : " + AttributeUtil.getAsStringValue(email), e);
             }
-
-            //Assign User to Groups
-            List<Object> groups = accessor.findList(ObjectClass.GROUP_NAME);
-            if (!CollectionUtil.isEmpty(groups)) {
-                for (Object grp : groups) {
-                    user.addToGroup(grp.toString());
-                }
-            }
-
-            return new Uid(user.getId());
+            return new Uid(result != null ? result.getId() : null);
         } else {
             LOG.warn("Create of type {0} is not supported", objectClass.getObjectClassValue());
             throw new UnsupportedOperationException("Create of type"
@@ -310,38 +310,46 @@ public class OktaConnector implements Connector,
                 OktaUtils.wrapGeneralError("Could not update User " + uid.getUidValue() + " from attributes ", e);
             }
 
-            // groups
-            Set<String> assignedGroups = new HashSet<>();
-            try {
-                for (Group group : user.listGroups()) {
-                    assignedGroups.add(group.getId());
-                }
-            } catch (Exception ex) {
-                LOG.error(ex, "Could not list groups for User {0}", uid.getUidValue());
-            }
+            if (accessor.findList(ObjectClass.GROUP_NAME) != null) {
+                try {
+                    //Assign User to Groups
+                    final List<Object> groupsToAssign =
+                            CollectionUtil.nullAsEmpty(accessor.findList(ObjectClass.GROUP_NAME));
 
-            List<Object> groupsToAssign = CollectionUtil.nullAsEmpty(accessor.findList(ObjectClass.GROUP_NAME));
-            for (Object grp : groupsToAssign) {
-                if (!assignedGroups.contains(grp.toString())) {
-                    try {
-                        user.addToGroup(grp.toString());
-                        LOG.ok("User added to Group: {0} after update", grp);
-                    } catch (Exception e) {
-                        LOG.error(e, "Could not add User {0} to Group {1} ", returnUid.getUidValue(), grp);
-                    }
-                }
-            }
-            for (String grp : assignedGroups) {
-                if (!groupsToAssign.contains(grp)) {
-                    try {
-                        client.getGroup(grp).removeUser(returnUid.getUidValue());
-                        LOG.ok("User removed from group: {0} after update", grp);
-                    } catch (Exception e) {
-                        LOG.error(e, "Could not remove Group {0} from User {1} ", grp, returnUid.getUidValue());
-                    }
-                }
-            }
+                    final Set<String> assignedGroups = Optional.ofNullable(user.listGroups())
+                            .map(GroupList::stream).orElseGet(Stream::empty).map(Group::getId).collect(Collectors.
+                            toSet());
 
+                    CollectionUtil.nullAsEmpty(groupsToAssign).stream().forEach(grp -> {
+                        if (!assignedGroups.contains(grp.toString())) {
+                            try {
+                                user.addToGroup(grp.toString());
+                                LOG.ok("User added to Group: {0} after update", grp);
+                            } catch (Exception ex) {
+                                LOG.error(ex, "Could not add User {0} to Group {1} ", uid.getUidValue(), grp);
+                                OktaUtils.handleGeneralError("Could not add User to Group ", ex);
+                            }
+                        }
+
+                    });
+
+                    CollectionUtil.nullAsEmpty(assignedGroups).stream().forEach(grp -> {
+
+                        if (!groupsToAssign.contains(grp)) {
+                            try {
+                                client.getGroup(grp).removeUser(uid.getUidValue());
+                                LOG.ok("User removed from group: {0} after update", grp);
+                            } catch (Exception ex) {
+                                LOG.error(ex, "Could not remove Group {0} from User {1} ", grp, uid.getUidValue());
+                                OktaUtils.handleGeneralError("Could not add User to Group ", ex);
+                            }
+                        }
+                    });
+                } catch (Exception ex) {
+                    LOG.error(ex, "Could not list groups for User {0}", uid.getUidValue());
+                    OktaUtils.handleGeneralError("Could not list groups for User", ex);
+                }
+            }
             return returnUid;
         } else {
             LOG.warn("Update of type {0} is not supported", objectClass.getObjectClassValue());
@@ -538,12 +546,11 @@ public class OktaConnector implements Connector,
                 try {
                     if (pagesSize != -1) {
                         String nextPage = StringUtil.isBlank(cookie) ? USER_API_URL + "?limit=" + pagesSize : cookie;
-                        userList = client.getDataStore().getResource(nextPage, DefaultUserList.class
-                        );
+                        userList = client.getDataStore().getResource(nextPage, DefaultUserList.class);
                         nextPage = ((AbstractCollectionResource) userList).hasProperty("nextPage")
                                 && ((AbstractCollectionResource) userList).getProperty("nextPage") != null
                                 ? ((AbstractCollectionResource) userList).getProperty("nextPage").toString() : null;
-                        cookie = ((AbstractCollectionResource) userList).size() > pagesSize ? nextPage : null;
+                        cookie = userList.getCurrentPage().getItems().size() >= pagesSize ? nextPage : null;
                     } else {
                         userList = ((DefaultUserList) client.listUsers());
                     }
@@ -600,7 +607,7 @@ public class OktaConnector implements Connector,
                                 && ((AbstractCollectionResource) applicationList).getProperty("nextPage") != null
                                 ? ((AbstractCollectionResource) applicationList).getProperty("nextPage").toString()
                                 : null;
-                        cookie = ((AbstractCollectionResource) applicationList).size() > pagesSize ? nextPage : null;
+                        cookie = applicationList.getCurrentPage().getItems().size() >= pagesSize ? nextPage : null;
                     } else {
                         applicationList = ((DefaultApplicationList) client.listApplications());
                     }
@@ -656,7 +663,7 @@ public class OktaConnector implements Connector,
                                 && ((AbstractCollectionResource) groupList).getProperty("nextPage") != null
                                 ? ((AbstractCollectionResource) groupList).getProperty("nextPage").toString()
                                 : null;
-                        cookie = ((AbstractCollectionResource) groupList).size() > pagesSize ? nextPage : null;
+                        cookie = groupList.getCurrentPage().getItems().size() >= pagesSize ? nextPage : null;
                     } else {
                         groupList = ((DefaultGroupList) client.listGroups());
                     }
@@ -766,42 +773,56 @@ public class OktaConnector implements Connector,
             final AttributesAccessor accessor,
             final ObjectClass objectClass) {
 
+        ObjectClassInfo objectClassInfo = schema.getSchema().findObjectClassInfo(objectClass.getObjectClassValue());
         accessor.listAttributeNames().stream().forEach(attrName -> {
-            ObjectClassInfo objectClassInfo = schema.getSchema().findObjectClassInfo(objectClass.getObjectClassValue());
-
             if (!OperationalAttributes.ENABLE_NAME.equals(attrName)
+                    && !OktaAttribute.ID.equals(attrName)
+                    && !Name.NAME.equals(attrName)
                     && !OktaAttribute.STATUS.equals(attrName) && !OperationalAttributes.PASSWORD_NAME.equals(attrName)) {
 
-                Optional<AttributeInfo> attributeInfo =
-                        objectClassInfo.getAttributeInfo().stream().filter(
-                                attr -> attr.getName().equals(attrName)).findFirst();
+                objectClassInfo.getAttributeInfo().stream().filter(
+                        attr -> attr.getName().equals(attrName)).findFirst().ifPresent(attributeInfo -> {
 
-                if (attributeInfo.isPresent()) {
-                    if (OktaAttribute.BASIC_PROFILE_ATTRIBUTES.contains(attributeInfo.get().getName())) {
-                        switch (attributeInfo.get().getName()) {
-                            case OktaAttribute.FIRSTNAME:
-                                userBuilder.setFirstName(AttributeUtil.getStringValue(accessor.find(attrName)));
-                                break;
-                            case OktaAttribute.LASTNAME:
-                                userBuilder.setLastName(AttributeUtil.getStringValue(accessor.find(attrName)));
-                                break;
-                            case OktaAttribute.EMAIL:
-                                userBuilder.setEmail(AttributeUtil.getStringValue(accessor.find(attrName)));
-                                break;
-                            case OktaAttribute.LOGIN:
-                                userBuilder.setLogin(AttributeUtil.getStringValue(accessor.find(attrName)));
-                                break;
-                            case OktaAttribute.MOBILEPHONE:
-                                userBuilder.setMobilePhone(AttributeUtil.getStringValue(accessor.find(attrName)));
-                                break;
-                            case OktaAttribute.SECOND_EMAIL:
-                                userBuilder.setSecondEmail(AttributeUtil.getStringValue(accessor.find(attrName)));
-                                break;
-                        }
-                    } else {
-                        userBuilder.putProfileProperty(attrName, accessor.find(attrName).getValue());
-                    }
-                }
+                            if (OktaAttribute.BASIC_PROFILE_ATTRIBUTES.contains(attributeInfo.getName())) {
+                                switch (attributeInfo.getName()) {
+                                    case OktaAttribute.FIRSTNAME:
+                                        userBuilder.setFirstName(AttributeUtil.getStringValue(accessor.find(attrName)));
+                                        break;
+                                    case OktaAttribute.LASTNAME:
+                                        userBuilder.setLastName(AttributeUtil.getStringValue(accessor.find(attrName)));
+                                        break;
+                                    case OktaAttribute.EMAIL:
+                                        userBuilder.setEmail(AttributeUtil.getStringValue(accessor.find(attrName)));
+                                        break;
+                                    case OktaAttribute.LOGIN:
+                                        userBuilder.setLogin(AttributeUtil.getStringValue(accessor.find(attrName)));
+                                        break;
+                                    case OktaAttribute.MOBILEPHONE:
+                                        userBuilder.setMobilePhone(
+                                                AttributeUtil.getStringValue(accessor.find(
+                                                        attrName)));
+                                        break;
+                                    case OktaAttribute.SECOND_EMAIL:
+                                        userBuilder.setSecondEmail(
+                                                AttributeUtil.getStringValue(accessor.find(attrName)));
+                                        break;
+                                }
+                            } else {
+                                if (Boolean.class.isInstance(attributeInfo.getType())) {
+                                    userBuilder.putProfileProperty(attrName,
+                                            AttributeUtil.getBooleanValue(accessor.find(attrName)));
+                                } else if (Integer.class.isInstance(attributeInfo.getType())) {
+                                    userBuilder.putProfileProperty(attrName,
+                                            AttributeUtil.getIntegerValue(accessor.find(attrName)));
+                                } else if (String.class.isInstance(attributeInfo.getType())) {
+                                    userBuilder.putProfileProperty(attrName,
+                                            AttributeUtil.getStringValue(accessor.find(attrName)));
+                                } else {
+                                    userBuilder.putProfileProperty(attrName,
+                                            AttributeUtil.getSingleValue(accessor.find(attrName)));
+                                }
+                            }
+                        });
             }
         });
     }
@@ -811,42 +832,54 @@ public class OktaConnector implements Connector,
         replaceAttributes.stream().forEach(attribute -> {
 
             if (!OperationalAttributes.ENABLE_NAME.equals(attribute.getName())
+                    && !Name.NAME.equals(attribute.getName())
+                    && !OktaAttribute.ID.equals(attribute.getName())
                     && !OktaAttribute.STATUS.equals(attribute.getName())
                     && !OperationalAttributes.PASSWORD_NAME.equals(attribute.getName())) {
 
-                Optional<AttributeInfo> attributeInfo =
-                        objectClassInfo.getAttributeInfo().stream().filter(
-                                attr -> attr.getName().equals(attribute.getName())).findFirst();
+                objectClassInfo.getAttributeInfo().stream().filter(
+                        attr -> attr.getName().equals(attribute.getName())).findFirst().ifPresent(attributeInfo -> {
 
-                if (attributeInfo.isPresent() && attribute.getValue() != null
-                        && !attribute.getValue().isEmpty()) {
-                    Class<?> type = attributeInfo.get().getType();
-                    if (OktaAttribute.BASIC_PROFILE_ATTRIBUTES.contains(attribute.getName())) {
-                        switch (attributeInfo.get().getName()) {
-                            case OktaAttribute.FIRSTNAME:
-                                user.getProfile().setFirstName(AttributeUtil.getStringValue(attribute));
-                                break;
-                            case OktaAttribute.LASTNAME:
-                                user.getProfile().setLastName(AttributeUtil.getStringValue(attribute));
-                                break;
-                            case OktaAttribute.EMAIL:
-                                user.getProfile().setEmail(AttributeUtil.getStringValue(attribute));
-                                break;
-                            case OktaAttribute.LOGIN:
-                                user.getProfile().setLogin(AttributeUtil.getStringValue(attribute));
-                                break;
-                            case OktaAttribute.MOBILEPHONE:
-                                user.getProfile().setMobilePhone(AttributeUtil.getStringValue(attribute));
-                                break;
-                            case OktaAttribute.SECOND_EMAIL:
-                                user.getProfile().setSecondEmail(AttributeUtil.getStringValue(attribute));
-                                break;
-                        }
-                    } else {
-                        user.getProfile().put(attribute.getName(), AttributeUtil.getStringValue(attribute));
-                    }
-
-                }
+                            if (attribute.getValue() != null && !attribute.getValue().isEmpty()) {
+                                if (OktaAttribute.BASIC_PROFILE_ATTRIBUTES.contains(attribute.getName())) {
+                                    switch (attributeInfo.getName()) {
+                                        case OktaAttribute.FIRSTNAME:
+                                            user.getProfile().setFirstName(AttributeUtil.getStringValue(attribute));
+                                            break;
+                                        case OktaAttribute.LASTNAME:
+                                            user.getProfile().setLastName(AttributeUtil.getStringValue(attribute));
+                                            break;
+                                        case OktaAttribute.EMAIL:
+                                            user.getProfile().setEmail(AttributeUtil.getStringValue(attribute));
+                                            break;
+                                        case OktaAttribute.LOGIN:
+                                            user.getProfile().setLogin(AttributeUtil.getStringValue(attribute));
+                                            break;
+                                        case OktaAttribute.MOBILEPHONE:
+                                            user.getProfile().setMobilePhone(AttributeUtil.getStringValue(attribute));
+                                            break;
+                                        case OktaAttribute.SECOND_EMAIL:
+                                            user.getProfile().setSecondEmail(AttributeUtil.getStringValue(attribute));
+                                            break;
+                                    }
+                                } else {
+                                    if (Boolean.class.isInstance(attributeInfo.getType())) {
+                                        user.getProfile().put(attribute.getName(),
+                                                AttributeUtil.getBooleanValue(attribute));
+                                    } else if (Integer.class.isInstance(attributeInfo.getType())) {
+                                        user.getProfile().put(attribute.getName(),
+                                                AttributeUtil.getIntegerValue(attribute));
+                                    } else if (String.class
+                                            .isInstance(attributeInfo.getType())) {
+                                        user.getProfile().put(attribute.getName(),
+                                                AttributeUtil.getStringValue(attribute));
+                                    } else {
+                                        user.getProfile().put(attribute.getName(),
+                                                AttributeUtil.getSingleValue(attribute));
+                                    }
+                                }
+                            }
+                        });
             }
         });
     }

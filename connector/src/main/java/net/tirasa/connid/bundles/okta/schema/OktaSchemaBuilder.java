@@ -122,15 +122,14 @@ class OktaSchemaBuilder {
                         final Set<AttributeInfo.Flags> flags = EnumSet.noneOf(Flags.class);
                         final AttributeInfoBuilder attributeInfo = new AttributeInfoBuilder();
                         attributeInfo.setRequired(requiredAttrs != null && requiredAttrs.contains(schemaDef.getKey()));
-                        attributeInfos.add(attributeInfo.build(
-                                schemaDef.getKey(),
+                        attributeInfos.add(AttributeInfoBuilder.build(schemaDef.getKey(),
                                 OktaAttribute.getType(((Map<String, String>) schemaDef.getValue()).get(TYPE))));
                     });
         });
 
         final AttributeInfoBuilder attributeInfo = new AttributeInfoBuilder();
         attributeInfo.setRequired(true);
-        attributeInfos.add(attributeInfo.build("id", String.class));
+        attributeInfos.add(AttributeInfoBuilder.build(OktaAttribute.ID, String.class));
         return attributeInfos;
     }
 

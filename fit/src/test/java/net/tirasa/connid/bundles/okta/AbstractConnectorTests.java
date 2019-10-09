@@ -171,7 +171,7 @@ public abstract class AbstractConnectorTests {
         groupTest = createGroup(conn.getClient());
         assertNotNull(groupTest);
         GROUPS.add(groupTest.getId());
-
+        
         Application app = createApplication(conn.getClient());
         assertNotNull(app);
         APPLICATIONS.add(app.getId());

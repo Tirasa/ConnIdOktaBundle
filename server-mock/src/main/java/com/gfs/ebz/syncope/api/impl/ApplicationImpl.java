@@ -15,6 +15,8 @@
  */
 package com.gfs.ebz.syncope.api.impl;
 
+import static com.gfs.ebz.syncope.api.impl.AbstractApi.USER_REPOSITORY;
+
 import io.swagger.api.ApplicationApi;
 import io.swagger.model.AppUser;
 import io.swagger.model.Application;
@@ -83,7 +85,14 @@ public class ApplicationImpl extends AbstractApi<Application> implements Applica
 
     @Override
     public Response deactivateApplication(final String appId) {
-        throw new UnsupportedOperationException(ERROR_MESSAGE);
+        APPLICATION_REPOSITORY.stream()
+                .filter(app -> StringUtils.equals(appId, app.getId()))
+                .findFirst().map(item -> {
+                    item.setStatus(Application.StatusEnum.INACTIVE);
+                    item.setLastUpdated(Date.from(Instant.now()));
+                    return Response.ok().entity(item).build();
+                });
+        return Response.status(Response.Status.NOT_FOUND).build();
     }
 
     @Override
@@ -134,7 +143,8 @@ public class ApplicationImpl extends AbstractApi<Application> implements Applica
                 findFirst();
         if (found.isPresent()) {
             UserImpl userImpl = new UserImpl();
-            return Response.ok().entity(userImpl.getUser(found.get().getRight()).readEntity(User.class)).build();
+            return Response.ok().entity(userImpl.getUser(found.get().getRight()).readEntity(User.class
+            )).build();
         } else {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
