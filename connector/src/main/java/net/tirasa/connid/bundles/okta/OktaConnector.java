@@ -54,7 +54,6 @@ import org.identityconnectors.common.security.GuardedString;
 import org.identityconnectors.common.security.SecurityUtil;
 import org.identityconnectors.framework.common.exceptions.InvalidAttributeValueException;
 import org.identityconnectors.framework.common.objects.Attribute;
-import org.identityconnectors.framework.common.objects.AttributeInfo;
 import org.identityconnectors.framework.common.objects.AttributeUtil;
 import org.identityconnectors.framework.common.objects.AttributesAccessor;
 import org.identityconnectors.framework.common.objects.ConnectorObject;
@@ -268,27 +267,6 @@ public class OktaConnector implements Connector,
         if (ObjectClass.ACCOUNT.equals(objectClass)) {
             Uid returnUid = uid;
             User user = client.getUser(uid.getUidValue());
-            Attribute status = accessor.find(OperationalAttributes.ENABLE_NAME);
-            if (status == null
-                    || status.getValue() == null
-                    || status.getValue().isEmpty()) {
-                LOG.warn("{0} attribute value not correct, can't handle User  status update",
-                        OperationalAttributes.ENABLE_NAME);
-            } else {
-                if (Boolean.parseBoolean(status.getValue().get(0).toString())) {
-                    if (user.getStatus().equals(UserStatus.DEPROVISIONED)) {
-                        user.activate(Boolean.FALSE);
-                    } else {
-                        OktaUtils.handleGeneralError("user cannot be activate");
-                    }
-                } else {
-                    if (!user.getStatus().equals(UserStatus.DEPROVISIONED)) {
-                        user.deactivate();
-                    } else {
-                        OktaUtils.handleGeneralError("user cannot be deactivated");
-                    }
-                }
-            }
 
             try {
                 GuardedString password = accessor.getPassword();
@@ -303,8 +281,28 @@ public class OktaConnector implements Connector,
                         OktaUtils.wrapGeneralError("Could not update password for User " + uid.getUidValue(), e);
                     }
                 }
+                
                 updateUserAttributes(user, replaceAttributes);
                 User updatedUser = user.update(true);
+
+                Attribute status = accessor.find(OperationalAttributes.ENABLE_NAME);
+                if (status == null
+                        || status.getValue() == null
+                        || status.getValue().isEmpty()) {
+                    LOG.warn("{0} attribute value not correct, can't handle User status update",
+                            OperationalAttributes.ENABLE_NAME);
+                } else {
+                    if (Boolean.parseBoolean(status.getValue().get(0).toString())) {
+                            updatedUser.activate(Boolean.FALSE);
+                    } else {
+                        if (!updatedUser.getStatus().equals(UserStatus.DEPROVISIONED)) {
+                            updatedUser.deactivate();
+                        } else {
+                            OktaUtils.handleGeneralError("User cannot be deactivated");
+                        }
+                    }
+                }
+
                 returnUid = new Uid(updatedUser.getId());
             } catch (Exception e) {
                 OktaUtils.wrapGeneralError("Could not update User " + uid.getUidValue() + " from attributes ", e);

@@ -20,12 +20,15 @@ import com.okta.sdk.resource.ExtensibleResource;
 import com.okta.sdk.resource.application.Application;
 import com.okta.sdk.resource.application.ApplicationList;
 import com.okta.sdk.resource.group.Group;
+import com.okta.sdk.resource.group.GroupList;
 import com.okta.sdk.resource.user.User;
 import com.okta.sdk.resource.user.UserProfile;
+import com.okta.sdk.resource.user.UserStatus;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import net.tirasa.connid.bundles.okta.OktaConnector;
 import org.identityconnectors.common.StringUtil;
 import org.identityconnectors.common.logging.Log;
@@ -117,20 +120,18 @@ public final class OktaAttribute {
                     || Uid.NAME.equals(attributeToGetName)
                     || OktaAttribute.ID.equals(attributeToGetName)) {
                 attributes.add(AttributeBuilder.build(attributeToGetName, user.getId()));
-            } else if (OperationalAttributes.ENABLE_NAME.equals(attributeToGetName) || STATUS.equals(attributeToGetName)) {
+            } else if (STATUS.equals(attributeToGetName)) {
                 attributes.add(buildAttribute(user.getStatus().toString(), attributeToGetName, String.class).build());
+            } else if (OperationalAttributes.ENABLE_NAME.equals(attributeToGetName)) {
+                attributes.add(buildAttribute(user.getStatus().equals(
+                        UserStatus.ACTIVE), attributeToGetName, Boolean.class).build());
             } else if (ObjectClass.GROUP_NAME.equals(attributeToGetName)) {
-                Set<String> assignedApplications = new HashSet<>();
                 try {
-                    ApplicationList applicationList = client.getDataStore().http()
-                            .addQueryParameter(OktaConnector.FILTER, "user.id eq \"" + user.getId() + "\"")
-                            .get(OktaConnector.APP_API_URL, ApplicationList.class);
-                    applicationList.stream().forEach(item -> {
-                        assignedApplications.add(item.getId());
-                    });
-                    attributes.add(buildAttribute(assignedApplications, attributeToGetName, List.class).build());
+                    Set<String> assignedGroups =
+                            user.listGroups().stream().map(item -> item.getId()).collect(Collectors.toSet());
+                    attributes.add(buildAttribute(assignedGroups, attributeToGetName, List.class).build());
                 } catch (Exception ex) {
-                    LOG.error(ex, "Could not list applications for User {0}", user.getId());
+                    LOG.error(ex, "Could not list groups for User {0}", user.getId());
                 }
             } else if (OktaAttribute.LASTUPDATE.equals(attributeToGetName)) {
                 attributes.add(
@@ -161,12 +162,29 @@ public final class OktaAttribute {
                     || Uid.NAME.equals(attributeToGetName)
                     || OktaAttribute.ID.equals(attributeToGetName)) {
                 attributes.add(AttributeBuilder.build(attributeToGetName, resource.getString(ID)));
+            } else if (STATUS.equals(attributeToGetName)) {
+                AttributeBuilder attributeBuilder = new AttributeBuilder();
+                attributeBuilder.setName(attributeToGetName);
+                if (resource instanceof Application) {
+                    attributeBuilder.
+                            addValue(((Application) resource).getStatus());
+                }
+                attributes.add(attributeBuilder.build());
+            } else if (OperationalAttributes.ENABLE_NAME.equals(attributeToGetName)) {
+                AttributeBuilder attributeBuilder = new AttributeBuilder();
+                attributeBuilder.setName(attributeToGetName);
+                if (resource instanceof Application) {
+                    attributeBuilder.
+                            addValue(((Application) resource).getStatus().equals(Application.StatusEnum.ACTIVE));
+                }
+                attributes.add(attributeBuilder.build());
             } else if (OperationalAttributes.ENABLE_NAME.equals(attributeToGetName)
                     || STATUS.equals(attributeToGetName)) {
                 AttributeBuilder attributeBuilder = new AttributeBuilder();
                 attributeBuilder.setName(attributeToGetName);
                 if (resource instanceof Application) {
-                    attributeBuilder.addValue(((Application) resource).getStatus().equals(Application.StatusEnum.ACTIVE));
+                    attributeBuilder.
+                            addValue(((Application) resource).getStatus().equals(Application.StatusEnum.ACTIVE));
                 }
                 attributes.add(attributeBuilder.build());
             } else {

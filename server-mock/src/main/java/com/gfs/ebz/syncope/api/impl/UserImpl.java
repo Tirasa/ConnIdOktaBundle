@@ -157,17 +157,15 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
 
     @Override
     public Response deactivateUser(final String userId, final Boolean sendEmail) {
-        Optional<User> found = USER_REPOSITORY.stream()
-                .filter(user -> StringUtils.equals(userId, user.getId()))
-                .findAny();
-        if (found.isPresent() && found.get().getStatus() != UserStatus.DEPROVISIONED) {
-            found.get().setStatus(UserStatus.DEPROVISIONED);
-            found.get().setLastUpdated(Date.from(Instant.now()));
-            found.get().setStatusChanged(Date.from(Instant.now()));
-            return Response.ok().entity(found.get()).build();
-        } else {
-            return Response.status(Response.Status.NOT_FOUND).build();
-        }
+        return USER_REPOSITORY.stream()
+                .filter(user -> StringUtils.equals(userId, user.getId()) && user.getStatus() != UserStatus.DEPROVISIONED).
+                map(user -> {
+                    user.setStatus(UserStatus.DEPROVISIONED);
+                    user.setLastUpdated(Date.from(Instant.now()));
+                    user.setStatusChanged(Date.from(Instant.now()));
+                    return Response.ok().entity(user).build();
+                }).findFirst().
+                orElse(Response.status(Response.Status.NOT_FOUND).build());
     }
 
     @Override
