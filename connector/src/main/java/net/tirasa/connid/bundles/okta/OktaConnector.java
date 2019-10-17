@@ -237,7 +237,7 @@ public class OktaConnector implements Connector,
 
                 //Assign User to Groups
                 User user = result;
-                Optional.ofNullable(accessor.findList(ObjectClass.GROUP_NAME)).map(Collection::stream)
+                Optional.ofNullable(accessor.findList(OktaAttribute.OKTA_GROUPS)).map(Collection::stream)
                         .orElseGet(Stream::empty).map(Object::toString).forEach(item -> user.addToGroup(item));
 
             } catch (Exception e) {
@@ -308,11 +308,11 @@ public class OktaConnector implements Connector,
                 OktaUtils.wrapGeneralError("Could not update User " + uid.getUidValue() + " from attributes ", e);
             }
 
-            if (accessor.findList(ObjectClass.GROUP_NAME) != null) {
+            if (accessor.findList(OktaAttribute.OKTA_GROUPS) != null) {
                 try {
                     //Assign User to Groups
                     final List<Object> groupsToAssign =
-                            CollectionUtil.nullAsEmpty(accessor.findList(ObjectClass.GROUP_NAME));
+                            CollectionUtil.nullAsEmpty(accessor.findList(OktaAttribute.OKTA_GROUPS));
 
                     final Set<String> assignedGroups = Optional.ofNullable(user.listGroups())
                             .map(GroupList::stream).orElseGet(Stream::empty).map(Group::getId).collect(Collectors.

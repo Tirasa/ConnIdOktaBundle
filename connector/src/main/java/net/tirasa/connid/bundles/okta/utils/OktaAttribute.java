@@ -18,9 +18,7 @@ package net.tirasa.connid.bundles.okta.utils;
 import com.okta.sdk.client.Client;
 import com.okta.sdk.resource.ExtensibleResource;
 import com.okta.sdk.resource.application.Application;
-import com.okta.sdk.resource.application.ApplicationList;
 import com.okta.sdk.resource.group.Group;
-import com.okta.sdk.resource.group.GroupList;
 import com.okta.sdk.resource.user.User;
 import com.okta.sdk.resource.user.UserProfile;
 import com.okta.sdk.resource.user.UserStatus;
@@ -29,7 +27,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-import net.tirasa.connid.bundles.okta.OktaConnector;
 import org.identityconnectors.common.StringUtil;
 import org.identityconnectors.common.logging.Log;
 import org.identityconnectors.framework.common.objects.Attribute;
@@ -62,6 +59,8 @@ public final class OktaAttribute {
     public static final String FIRSTNAME = "firstName";
 
     public static final String MOBILEPHONE = "mobilePhone";
+
+    public static final String OKTA_GROUPS = "oktaGroups";
 
     public static final String NAME = "name";
 
@@ -125,11 +124,11 @@ public final class OktaAttribute {
             } else if (OperationalAttributes.ENABLE_NAME.equals(attributeToGetName)) {
                 attributes.add(buildAttribute(user.getStatus().equals(
                         UserStatus.ACTIVE), attributeToGetName, Boolean.class).build());
-            } else if (ObjectClass.GROUP_NAME.equals(attributeToGetName)) {
+            } else if (OKTA_GROUPS.equals(attributeToGetName)) {
                 try {
-                    Set<String> assignedGroups =
-                            user.listGroups().stream().map(item -> item.getId()).collect(Collectors.toSet());
-                    attributes.add(buildAttribute(assignedGroups, attributeToGetName, List.class).build());
+                    List<String> assignedGroups =
+                            user.listGroups().stream().map(item -> item.getId()).collect(Collectors.toList());
+                    attributes.add(buildAttribute(assignedGroups, attributeToGetName, Set.class).build());
                 } catch (Exception ex) {
                     LOG.error(ex, "Could not list groups for User {0}", user.getId());
                 }
@@ -202,10 +201,18 @@ public final class OktaAttribute {
         return attributes;
     }
 
+    
+    
     public static AttributeBuilder buildAttribute(final Object value,
             final String name,
             final Class<?> clazz) {
-        AttributeBuilder attributeBuilder = new AttributeBuilder();
+        return buildAttribute(value, name, clazz, new AttributeBuilder());
+    }
+    
+    public static AttributeBuilder buildAttribute(final Object value,
+            final String name,
+            final Class<?> clazz,
+            final AttributeBuilder attributeBuilder) {
         if (value != null) {
             if (clazz == boolean.class || clazz == Boolean.class) {
                 attributeBuilder.addValue(Boolean.class.cast(value));
@@ -213,7 +220,7 @@ public final class OktaAttribute {
                 ArrayList<?> list = new ArrayList<>((List<?>) value);
                 if (list.size() > 1) {
                     for (Object elem : list) {
-                        buildAttribute(elem, name, clazz);
+                        buildAttribute(elem, name, clazz, attributeBuilder);
                     }
                 } else if (!list.isEmpty()) {
                     attributeBuilder.addValue(list.get(0).toString());

@@ -242,7 +242,7 @@ public class OktaConnectorTests extends AbstractConnectorTests {
         OperationOptions operationOption =
                 new OperationOptionsBuilder().setAttributesToGet(OktaAttribute.EMAIL,
                         OktaAttribute.MOBILEPHONE,
-                        ObjectClass.GROUP_NAME).build();
+                        OktaAttribute.OKTA_GROUPS).build();
         try {
             Group groupCreate = createGroup(conn.getClient());
             assertNotNull(groupCreate.getId());
@@ -256,7 +256,7 @@ public class OktaConnectorTests extends AbstractConnectorTests {
             userAttrs.add(AttributeBuilder.build(OktaAttribute.FIRSTNAME, "Test"));
             userAttrs.add(AttributeBuilder.build(OktaAttribute.LASTNAME, "Test"));
             userAttrs.add(password);
-            userAttrs.add(AttributeBuilder.build(ObjectClass.GROUP_NAME, groupCreate.getId()));
+            userAttrs.add(AttributeBuilder.build(OktaAttribute.OKTA_GROUPS, groupCreate.getId()));
 
             Uid created = connector.create(ObjectClass.ACCOUNT, userAttrs, operationOption);
             assertNotNull(created);
@@ -291,7 +291,7 @@ public class OktaConnectorTests extends AbstractConnectorTests {
 
             // UPDATE USER
             userAttrs.remove(password);
-            userAttrs.add(AttributeBuilder.build(ObjectClass.GROUP_NAME, groupUpdate.getId(), group.getId()));
+            userAttrs.add(AttributeBuilder.build(OktaAttribute.OKTA_GROUPS, groupUpdate.getId(), group.getId()));
 
             Uid updated = connector.update(ObjectClass.ACCOUNT, created, userAttrs, operationOption);
             assertNotNull(updated);
@@ -325,7 +325,7 @@ public class OktaConnectorTests extends AbstractConnectorTests {
             userAttrs.add(AttributeBuilder.build(OktaAttribute.FIRSTNAME, "Test"));
             userAttrs.add(AttributeBuilder.build(OktaAttribute.LASTNAME, "Test"));
             userAttrs.add(password);
-            userAttrs.add(AttributeBuilder.build(ObjectClass.GROUP_NAME, groupOne.getId(), groupTwo.getId()));
+            userAttrs.add(AttributeBuilder.build(OktaAttribute.OKTA_GROUPS, groupOne.getId(), groupTwo.getId()));
 
             Uid created = connector.create(ObjectClass.ACCOUNT, userAttrs, operationOption);
             assertNotNull(created);
@@ -358,7 +358,7 @@ public class OktaConnectorTests extends AbstractConnectorTests {
             // UPDATE USER
             userAttrs.remove(password);
             userAttrs.add(
-                    AttributeBuilder.build(ObjectClass.GROUP_NAME, group.getId()));
+                    AttributeBuilder.build(OktaAttribute.OKTA_GROUPS, group.getId()));
 
             Uid updated = connector.update(ObjectClass.ACCOUNT, created, userAttrs, operationOption);
             assertNotNull(updated);
