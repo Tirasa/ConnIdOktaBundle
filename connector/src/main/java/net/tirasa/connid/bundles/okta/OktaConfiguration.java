@@ -29,13 +29,7 @@ public class OktaConfiguration extends AbstractConfiguration {
 
     private String oktaApiToken;
 
-    private String passwordHashAlgorithm;
-
     private boolean importHashedPassword;
-
-    private String salt;
-
-    private String saltOrder;
 
     @ConfigurationProperty(order = 1, displayMessageKey = "domain.display",
             groupMessageKey = "basic.group", helpMessageKey = "domain.help", required = true,
@@ -59,18 +53,7 @@ public class OktaConfiguration extends AbstractConfiguration {
         this.oktaApiToken = oktaApiToken;
     }
 
-    @ConfigurationProperty(order = 3, displayMessageKey = "passwordHashAlgorithm.display",
-            groupMessageKey = "basic.group", helpMessageKey = "passwordHashAlgorithm.help", required = false,
-            confidential = false)
-    public String getPasswordHashAlgorithm() {
-        return passwordHashAlgorithm;
-    }
-
-    public void setPasswordHashAlgorithm(final String passwordHashAlgorithm) {
-        this.passwordHashAlgorithm = passwordHashAlgorithm;
-    }
-
-    @ConfigurationProperty(order = 4, displayMessageKey = "importHashedPassword.display",
+    @ConfigurationProperty(order = 3, displayMessageKey = "importHashedPassword.display",
             groupMessageKey = "basic.group", helpMessageKey = "importHashedPassword.help", required = false,
             confidential = false)
     public boolean isImportHashedPassword() {
@@ -79,28 +62,6 @@ public class OktaConfiguration extends AbstractConfiguration {
 
     public void setImportHashedPassword(final boolean importHashedPassword) {
         this.importHashedPassword = importHashedPassword;
-    }
-
-    @ConfigurationProperty(order = 5, displayMessageKey = "salt.display",
-            groupMessageKey = "basic.group", helpMessageKey = "salt.help", required = false,
-            confidential = true)
-    public String getSalt() {
-        return salt;
-    }
-
-    public void setSalt(final String salt) {
-        this.salt = salt;
-    }
-
-    @ConfigurationProperty(order = 6, displayMessageKey = "saltOrder.display",
-            groupMessageKey = "basic.group", helpMessageKey = "saltOrder.help", required = false,
-            confidential = false)
-    public String getSaltOrder() {
-        return saltOrder;
-    }
-
-    public void setSaltOrder(final String saltOrder) {
-        this.saltOrder = saltOrder;
     }
 
     @Override

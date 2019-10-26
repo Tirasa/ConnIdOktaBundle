@@ -111,25 +111,57 @@ public class OktaConnector implements Connector,
 
     public static final String GROUP_API_URL = "/api/v1/groups";
 
-    public static final String SHA_1 = "SHA-1";
-
-    public static final String SHA_256 = "SHA-256";
-
-    public static final String SHA_512 = "SHA-512";
-
-    public static final String BCRYPT = "BCRYPT";
-
     public static final String LIMIT = "50";
 
     public static final String USER = "USER";
 
     public static final String FILTER = "filter";
 
+    public static final String CIPHER_ALGORITHM = "cipherAlgorithm";
+
+    public static final String SALT = "salt";
+
+    public static final String SALT_ORDER = "saltOrder";
+
+    public static final String WORK_FACTOR = "workFactor";
+
     private OktaConfiguration configuration;
 
     private Client client;
 
     private OktaSchema schema;
+
+    public static enum CipherAlgorithm {
+
+        SHA("SHA-1"),
+        SHA1("SHA-1"),
+        SHA256("SHA-256"),
+        SHA512("SHA-512"),
+        SSHA("S-SHA-1"),
+        SSHA1("S-SHA-1"),
+        SSHA256("S-SHA-256"),
+        SSHA512("S-SHA-512"),
+        BCRYPT("BCRYPT");
+
+        private final String algorithm;
+
+        CipherAlgorithm(final String algorithm) {
+            this.algorithm = algorithm;
+        }
+
+        public String getAlgorithm() {
+            return algorithm;
+        }
+
+        public static CipherAlgorithm valueOfLabel(final String label) {
+            for (CipherAlgorithm c : values()) {
+                if (c.algorithm.equals(label)) {
+                    return c;
+                }
+            }
+            return null;
+        }
+    }
 
     /**
      * Gets the Configuration context for this connector.
@@ -190,7 +222,6 @@ public class OktaConnector implements Connector,
 
         if (ObjectClass.ACCOUNT.equals(objectClass)) {
             User result = null;
-            String passwordHashAlgorithm = this.configuration.getPasswordHashAlgorithm();
             Attribute status = accessor.find(OperationalAttributes.ENABLE_NAME);
             Attribute email = accessor.find("email");
             try {
@@ -208,20 +239,29 @@ public class OktaConnector implements Connector,
                 GuardedString password = accessor.getPassword();
                 if (password != null && StringUtil.isNotBlank(SecurityUtil.decrypt(password))) {
                     String passwordValue = SecurityUtil.decrypt(password);
-                    if (configuration.isImportHashedPassword()) {
-                        switch (passwordHashAlgorithm) {
-                            case SHA_1:
-                                userBuilder.setSha1PasswordHash(passwordValue,
-                                        configuration.getSalt(), configuration.getSaltOrder());
+                    String passwordHashAlgorithm = accessor.findString(CIPHER_ALGORITHM);
+                    if (configuration.isImportHashedPassword() 
+                            && StringUtil.isNotBlank(passwordHashAlgorithm)) {
+                        String salt = accessor.findString(SALT);
+                        String saltOrder = accessor.findString(SALT_ORDER);
+                        switch (CipherAlgorithm.valueOfLabel(passwordHashAlgorithm)) {
+                            case SHA:
+                            case SHA1:
+                            case SSHA:
+                            case SSHA1:
+                                userBuilder.setSha1PasswordHash(passwordValue, salt, saltOrder);
                                 break;
-                            case SHA_256:
-                                userBuilder.setSha256PasswordHash(passwordValue, null, null);
+                            case SHA256:
+                            case SSHA256:
+                                userBuilder.setSha256PasswordHash(passwordValue, salt, saltOrder);
                                 break;
-                            case SHA_512:
-                                userBuilder.setSha512PasswordHash(passwordValue, null, null);
+                            case SHA512:
+                            case SSHA512:
+                                userBuilder.setSha512PasswordHash(passwordValue, salt, saltOrder);
                                 break;
                             case BCRYPT:
-                                userBuilder.setBcryptPasswordHash(passwordValue, null, 10);
+                                userBuilder.setBcryptPasswordHash(
+                                        passwordValue, salt, accessor.findInteger(WORK_FACTOR));
                                 break;
                             default:
                                 OktaUtils.handleGeneralError(
@@ -281,7 +321,7 @@ public class OktaConnector implements Connector,
                         OktaUtils.wrapGeneralError("Could not update password for User " + uid.getUidValue(), e);
                     }
                 }
-                
+
                 updateUserAttributes(user, replaceAttributes);
                 User updatedUser = user.update(true);
 
@@ -293,7 +333,7 @@ public class OktaConnector implements Connector,
                             OperationalAttributes.ENABLE_NAME);
                 } else {
                     if (Boolean.parseBoolean(status.getValue().get(0).toString())) {
-                            updatedUser.activate(Boolean.FALSE);
+                        updatedUser.activate(Boolean.FALSE);
                     } else {
                         if (!updatedUser.getStatus().equals(UserStatus.DEPROVISIONED)) {
                             updatedUser.deactivate();
@@ -654,7 +694,8 @@ public class OktaConnector implements Connector,
                 DefaultGroupList groupList = null;
                 try {
                     if (pagesSize != -1) {
-                        String nextPage = StringUtil.isBlank(cookie) ? GROUP_API_URL + "?limit=" + pagesSize : cookie;
+                        String nextPage = StringUtil.isBlank(cookie) ? GROUP_API_URL + "?limit=" + pagesSize
+                                : cookie;
                         groupList = client.getDataStore().getResource(nextPage, DefaultGroupList.class
                         );
                         nextPage = ((AbstractCollectionResource) groupList).hasProperty("nextPage")
@@ -776,7 +817,8 @@ public class OktaConnector implements Connector,
             if (!OperationalAttributes.ENABLE_NAME.equals(attrName)
                     && !OktaAttribute.ID.equals(attrName)
                     && !Name.NAME.equals(attrName)
-                    && !OktaAttribute.STATUS.equals(attrName) && !OperationalAttributes.PASSWORD_NAME.equals(attrName)) {
+                    && !OktaAttribute.STATUS.equals(attrName) && !OperationalAttributes.PASSWORD_NAME.equals(
+                    attrName)) {
 
                 objectClassInfo.getAttributeInfo().stream().filter(
                         attr -> attr.getName().equals(attrName)).findFirst().ifPresent(attributeInfo -> {
@@ -784,10 +826,12 @@ public class OktaConnector implements Connector,
                             if (OktaAttribute.BASIC_PROFILE_ATTRIBUTES.contains(attributeInfo.getName())) {
                                 switch (attributeInfo.getName()) {
                                     case OktaAttribute.FIRSTNAME:
-                                        userBuilder.setFirstName(AttributeUtil.getStringValue(accessor.find(attrName)));
+                                        userBuilder.setFirstName(AttributeUtil.getStringValue(accessor.
+                                                find(attrName)));
                                         break;
                                     case OktaAttribute.LASTNAME:
-                                        userBuilder.setLastName(AttributeUtil.getStringValue(accessor.find(attrName)));
+                                        userBuilder.setLastName(AttributeUtil.
+                                                getStringValue(accessor.find(attrName)));
                                         break;
                                     case OktaAttribute.EMAIL:
                                         userBuilder.setEmail(AttributeUtil.getStringValue(accessor.find(attrName)));
@@ -854,10 +898,12 @@ public class OktaConnector implements Connector,
                                             user.getProfile().setLogin(AttributeUtil.getStringValue(attribute));
                                             break;
                                         case OktaAttribute.MOBILEPHONE:
-                                            user.getProfile().setMobilePhone(AttributeUtil.getStringValue(attribute));
+                                            user.getProfile().
+                                                    setMobilePhone(AttributeUtil.getStringValue(attribute));
                                             break;
                                         case OktaAttribute.SECOND_EMAIL:
-                                            user.getProfile().setSecondEmail(AttributeUtil.getStringValue(attribute));
+                                            user.getProfile().
+                                                    setSecondEmail(AttributeUtil.getStringValue(attribute));
                                             break;
                                     }
                                 } else {

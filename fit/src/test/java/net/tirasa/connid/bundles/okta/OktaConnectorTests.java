@@ -76,7 +76,6 @@ public class OktaConnectorTests extends AbstractConnectorTests {
         conf = new OktaConfiguration();
         conf.setDomain(PROPS.getProperty("domain"));
         conf.setOktaApiToken(PROPS.getProperty("oktaApiToken"));
-        conf.setPasswordHashAlgorithm(PROPS.getProperty("passwordHashAlgorithm"));
 
         try {
             conf.validate();
@@ -93,7 +92,6 @@ public class OktaConnectorTests extends AbstractConnectorTests {
         assertNotNull(conf);
         assertNotNull(conf.getDomain());
         assertNotNull(conf.getOktaApiToken());
-        assertNotNull(conf.getPasswordHashAlgorithm());
 
         createSearchTestData();
     }

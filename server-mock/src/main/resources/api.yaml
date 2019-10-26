@@ -3666,6 +3666,8 @@ definitions:
         type: integer
       salt:
         type: string
+      saltOrder:
+        type: string
       value:
         format: password
         type: string
