@@ -15,6 +15,10 @@
  */
 package net.tirasa.connid.bundles.okta;
 
+import static net.tirasa.connid.bundles.okta.utils.OktaAttribute.LASTUPDATE;
+import static net.tirasa.connid.bundles.okta.utils.OktaAttribute.buildAttribute;
+import static org.identityconnectors.common.IOUtil.UTF8;
+
 import com.okta.sdk.authc.credentials.TokenClientCredentials;
 import com.okta.sdk.client.Client;
 import com.okta.sdk.client.Clients;
@@ -22,30 +26,38 @@ import com.okta.sdk.impl.resource.AbstractCollectionResource;
 import com.okta.sdk.impl.resource.application.DefaultApplicationList;
 import com.okta.sdk.impl.resource.group.DefaultGroupList;
 import com.okta.sdk.impl.resource.user.DefaultUserList;
-import com.okta.sdk.resource.CollectionResource;
+import com.okta.sdk.resource.ExtensibleResource;
 import com.okta.sdk.resource.application.Application;
 import com.okta.sdk.resource.application.ApplicationList;
 import com.okta.sdk.resource.group.Group;
 import com.okta.sdk.resource.group.GroupList;
+import com.okta.sdk.resource.log.LogEvent;
+import com.okta.sdk.resource.log.LogEventList;
 import com.okta.sdk.resource.user.PasswordCredential;
 import com.okta.sdk.resource.user.User;
 import com.okta.sdk.resource.user.UserBuilder;
 import com.okta.sdk.resource.user.UserCredentials;
 import com.okta.sdk.resource.user.UserList;
 import com.okta.sdk.resource.user.UserStatus;
-import java.time.Instant;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import net.tirasa.connid.bundles.okta.schema.OktaSchema;
+import net.tirasa.connid.bundles.okta.utils.CipherAlgorithm;
 import net.tirasa.connid.bundles.okta.utils.OktaAttribute;
+import net.tirasa.connid.bundles.okta.utils.OktaEventType;
 import net.tirasa.connid.bundles.okta.utils.OktaUtils;
 import org.identityconnectors.common.CollectionUtil;
 import org.identityconnectors.common.StringUtil;
@@ -67,7 +79,6 @@ import org.identityconnectors.framework.common.objects.OperationalAttributes;
 import org.identityconnectors.framework.common.objects.ResultsHandler;
 import org.identityconnectors.framework.common.objects.Schema;
 import org.identityconnectors.framework.common.objects.SearchResult;
-import org.identityconnectors.framework.common.objects.SyncDelta;
 import org.identityconnectors.framework.common.objects.SyncDeltaBuilder;
 import org.identityconnectors.framework.common.objects.SyncDeltaType;
 import org.identityconnectors.framework.common.objects.SyncResultsHandler;
@@ -130,38 +141,6 @@ public class OktaConnector implements Connector,
     private Client client;
 
     private OktaSchema schema;
-
-    public static enum CipherAlgorithm {
-
-        SHA("SHA-1"),
-        SHA1("SHA-1"),
-        SHA256("SHA-256"),
-        SHA512("SHA-512"),
-        SSHA("S-SHA-1"),
-        SSHA1("S-SHA-1"),
-        SSHA256("S-SHA-256"),
-        SSHA512("S-SHA-512"),
-        BCRYPT("BCRYPT");
-
-        private final String algorithm;
-
-        CipherAlgorithm(final String algorithm) {
-            this.algorithm = algorithm;
-        }
-
-        public String getAlgorithm() {
-            return algorithm;
-        }
-
-        public static CipherAlgorithm valueOfLabel(final String label) {
-            for (CipherAlgorithm c : values()) {
-                if (c.algorithm.equals(label)) {
-                    return c;
-                }
-            }
-            return null;
-        }
-    }
 
     /**
      * Gets the Configuration context for this connector.
@@ -227,9 +206,7 @@ public class OktaConnector implements Connector,
             try {
                 final UserBuilder userBuilder = UserBuilder.instance();
 
-                if (status == null
-                        || status.getValue() == null
-                        || status.getValue().isEmpty()) {
+                if (status == null || CollectionUtil.isEmpty(status.getValue())) {
                     LOG.warn("{0} attribute value not correct or not found, won't handle User status",
                             OperationalAttributes.ENABLE_NAME);
                 } else {
@@ -240,7 +217,7 @@ public class OktaConnector implements Connector,
                 if (password != null && StringUtil.isNotBlank(SecurityUtil.decrypt(password))) {
                     String passwordValue = SecurityUtil.decrypt(password);
                     String passwordHashAlgorithm = accessor.findString(CIPHER_ALGORITHM);
-                    if (configuration.isImportHashedPassword() 
+                    if (configuration.isImportHashedPassword()
                             && StringUtil.isNotBlank(passwordHashAlgorithm)) {
                         String salt = accessor.findString(SALT);
                         String saltOrder = accessor.findString(SALT_ORDER);
@@ -326,9 +303,7 @@ public class OktaConnector implements Connector,
                 User updatedUser = user.update(true);
 
                 Attribute status = accessor.find(OperationalAttributes.ENABLE_NAME);
-                if (status == null
-                        || status.getValue() == null
-                        || status.getValue().isEmpty()) {
+                if (status == null || CollectionUtil.isEmpty(status.getValue())) {
                     LOG.warn("{0} attribute value not correct, can't handle User status update",
                             OperationalAttributes.ENABLE_NAME);
                 } else {
@@ -452,11 +427,10 @@ public class OktaConnector implements Connector,
     @Override
     public SyncToken getLatestSyncToken(final ObjectClass objectClass) {
         LOG.ok("check the ObjectClass");
-        Date maxlastUpdate = null;
+        long maxlastUpdate = 0;
         try {
-            UserList users = client.listUsers();
-            maxlastUpdate = users.stream().map(User::getLastUpdated).max(Date::compareTo).get();
-            LOG.ok("getLatestSyncToken on {0}", objectClass);
+            maxlastUpdate = getLastLogEvent(objectClass) + 1;
+            LOG.ok("getLatestSyncToken on {0} - {1}", objectClass, maxlastUpdate);
         } catch (Exception e) {
             OktaUtils.handleGeneralError("Error during retrieve SyncToken", e);
         }
@@ -480,48 +454,49 @@ public class OktaConnector implements Connector,
             attributesToGet.add(OktaAttribute.LASTUPDATE);
         }
 
-        // Se filtro è vuoto, niente condizione
-        String tokenFilter = "";
+        Object tokenValue = null;
+        if (token == null || token.getValue() == null) {
+            LOG.info("Synchronization with empty token.");
+        } else {
+            LOG.info("Synchronization with token.");
+            //Add one to get all events after this SyncToken
+            tokenValue = Long.valueOf(token.getValue().toString()) + 1;
+        }
 
-        if (token != null && token.getValue() != null) {
-            LOG.info("Sync token is {0}", token.getValue());
-            Object tokenVal;
+        LOG.info("Execute sync query {0} on {1}", tokenValue, objectClass);
+        getEvents(objectClass, tokenValue != null
+                ? OktaUtils.convertToDate(tokenValue.toString()) : null).stream().forEach(item -> {
+            ConnectorObject connObj = null;
+            ExtensibleResource result;
             try {
-                tokenVal = Instant.parse(token.getValue().toString());
-            } catch (Exception e) {
-                tokenVal = token.getValue();
-            }
-            tokenFilter = OktaAttribute.LASTUPDATE + " gt \"" + tokenVal + "\"";
-        }
-
-        try {
-            LOG.info("execute sync query {0} on {1}", tokenFilter, objectClass);
-            CollectionResource<?> result;
-            if (ObjectClass.ACCOUNT.equals(objectClass)) {
-                result = client.listUsers(null, tokenFilter, null, null, null);
-            } else if (ObjectClass.GROUP.equals(objectClass)) {
-                result = client.listGroups(null, tokenFilter, null);
-            } else {
-                result = client.listApplications(null, tokenFilter, null, false);
-            }
-            result.stream().forEach(item -> {
-                ConnectorObject connObj;
-                if (item instanceof User) {
-                    connObj = fromUser((User) item, attributesToGet);
-                } else if (item instanceof Group) {
-                    connObj = fromGroup((Group) item, attributesToGet);
+                if (isDeleteEvent(item.getEventType())) {
+                    connObj = fromLogEvent(
+                            item.getTarget().get(0).getId(), item.get("published").toString(), objectClass);
                 } else {
-                    connObj = fromApplication((Application) item, attributesToGet);
+                    try {
+                        if (ObjectClass.ACCOUNT.equals(objectClass)) {
+                            result = client.getUser(item.getTarget().get(0).getId());
+                            connObj = fromUser((User) result, attributesToGet);
+                        } else if (ObjectClass.GROUP.equals(objectClass)) {
+                            result = client.getGroup(item.getTarget().get(0).getId());
+                            connObj = fromGroup((Group) result, attributesToGet);
+                        } else {
+                            result = client.getApplication(item.getTarget().get(0).getId());
+                            connObj = fromApplication((Application) result, attributesToGet);
+                        }
+                    } catch (Exception ex) {
+                        LOG.info("{0} not found", item.getTarget().get(0).getId());
+                    }
                 }
-                final SyncDelta delta = buildSyncDelta(connObj).build();
-                if (delta != null) {
-                    handler.handle(delta);
-                }
-            });
 
-        } catch (Exception e) {
-            OktaUtils.handleGeneralError("Sync " + tokenFilter + " on " + objectClass + " error", e);
-        }
+                if (connObj != null && !handler.handle(buildSyncDelta(connObj, item).build())) {
+                    LOG.ok("Stop processing of the sync result set");
+                    OktaUtils.handleGeneralError("Stop processing of the sync result set");
+                }
+            } catch (Exception e) {
+                OktaUtils.handleGeneralError("Sync on " + objectClass + " error", e);
+            }
+        });
     }
 
     @Override
@@ -584,7 +559,8 @@ public class OktaConnector implements Connector,
                 try {
                     if (pagesSize != -1) {
                         String nextPage = StringUtil.isBlank(cookie) ? USER_API_URL + "?limit=" + pagesSize : cookie;
-                        userList = client.getDataStore().getResource(nextPage, DefaultUserList.class);
+                        userList = client.getDataStore().getResource(nextPage, DefaultUserList.class
+                        );
                         nextPage = ((AbstractCollectionResource) userList).hasProperty("nextPage")
                                 && ((AbstractCollectionResource) userList).getProperty("nextPage") != null
                                 ? ((AbstractCollectionResource) userList).getProperty("nextPage").toString() : null;
@@ -640,7 +616,8 @@ public class OktaConnector implements Connector,
                 try {
                     if (pagesSize != -1) {
                         String nextPage = StringUtil.isBlank(cookie) ? APP_API_URL + "?limit=" + pagesSize : cookie;
-                        applicationList = client.getDataStore().getResource(nextPage, DefaultApplicationList.class);
+                        applicationList = client.getDataStore().getResource(nextPage, DefaultApplicationList.class
+                        );
                         nextPage = ((AbstractCollectionResource) applicationList).hasProperty("nextPage")
                                 && ((AbstractCollectionResource) applicationList).getProperty("nextPage") != null
                                 ? ((AbstractCollectionResource) applicationList).getProperty("nextPage").toString()
@@ -750,6 +727,61 @@ public class OktaConnector implements Connector,
         }
     }
 
+    private long getLastLogEvent(final ObjectClass objectClass) {
+        String filter = buildFilterByObjectClass(objectClass);
+        if (StringUtil.isBlank(filter)) {
+            OktaUtils.handleGeneralError("Provide envenType for Sync");
+        }
+        LogEventList events =
+                client.getLogs(null, null, filter, null, "DESCENDING");
+        return events.stream().findFirst().isPresent()
+                ? OktaUtils.convertToTimestamp(events.stream().max(
+                        Comparator.comparingLong(item
+                                -> OktaUtils.convertToTimestamp(
+                                item.get("published").toString()))).get().get("published").toString())
+                : Long.valueOf(0);
+    }
+
+    private LogEventList getEvents(final ObjectClass objectClass, final String from) {
+        String filter = buildFilterByObjectClass(objectClass);
+        if (StringUtil.isBlank(filter)) {
+            OktaUtils.handleGeneralError("Provide envenType for Sync");
+        }
+        return client.getLogs(null, from, filter, null, "DESCENDING");
+    }
+
+    private String buildFilterByObjectClass(final ObjectClass objectClass) {
+        return ObjectClass.ACCOUNT.equals(objectClass)
+                ? buildLogEventFilter(configuration.getUserEvents()) : ObjectClass.GROUP.equals(objectClass)
+                ? buildLogEventFilter(configuration.getGroupEvents()) : APPLICATION.equals(objectClass)
+                ? buildLogEventFilter(configuration.getApplicationEvents()) : null;
+    }
+
+    private String buildLogEventFilter(final String[] eventTypes) {
+        boolean isFirst = true;
+        StringBuilder builder = new StringBuilder();
+        for (String type : eventTypes) {
+            if (!isFirst) {
+                builder.append(" or ");
+            }
+            builder.append("eventType eq ");
+            builder.append("\"");
+            builder.append(type);
+            builder.append("\"");
+            isFirst = false;
+        }
+        return builder.toString();
+    }
+
+    private ConnectorObject fromLogEvent(final String id, final String lastUpdate, final ObjectClass objectClass) {
+        ConnectorObjectBuilder builder = new ConnectorObjectBuilder();
+        builder.setObjectClass(objectClass);
+        builder.setUid(id);
+        builder.setName(id);
+        builder.addAttribute(buildAttribute(lastUpdate, LASTUPDATE, String.class).build());
+        return builder.build();
+    }
+
     private ConnectorObject fromUser(final User user, final Set<String> attributesToGet) {
         ConnectorObjectBuilder builder = new ConnectorObjectBuilder();
         builder.setObjectClass(ObjectClass.ACCOUNT);
@@ -779,28 +811,43 @@ public class OktaConnector implements Connector,
                         schema.getSchema(), attributesToGet, ObjectClass.GROUP_NAME)).build();
     }
 
-    private SyncDeltaBuilder buildSyncDelta(final ConnectorObject connectorObject) {
+    private SyncDeltaBuilder buildSyncDelta(final ConnectorObject connectorObject, final LogEvent event) {
         LOG.info("buildSyncDelta");
         SyncDeltaBuilder bld = new SyncDeltaBuilder();
-
-        Attribute lastUpdate = connectorObject.getAttributeByName(OktaAttribute.LASTUPDATE);
-        if (lastUpdate == null || lastUpdate.getValue() == null || lastUpdate.getValue().isEmpty()) {
-            OktaUtils.handleGeneralError("LastUpdate attribute is not present");
+        String published;
+        if (isMembershipOperationEvent(event.getEventType())) {
+            published = event.get("published").toString();
+        } else {
+            Attribute lastUpdate = connectorObject.getAttributeByName(OktaAttribute.LASTUPDATE);
+            if (lastUpdate == null) {
+                OktaUtils.handleGeneralError("LastUpdate attribute is not present");
+            }
+            published = CollectionUtil.isEmpty(lastUpdate.getValue()) ? "0" : lastUpdate.getValue().get(0).toString();
         }
 
-        Object lastUpdateValue = lastUpdate.getValue().get(0);
-        if (lastUpdateValue == null) {
-            LOG.ok("token value is null, replacing to 0L");
-            lastUpdateValue = 0L;
-        }
-
-        // To be sure that sync token is present
-        bld.setToken(new SyncToken(lastUpdateValue));
+        bld.setToken(new SyncToken(published));
         bld.setObject(connectorObject);
-        bld.setDeltaType(SyncDeltaType.CREATE_OR_UPDATE);
+        bld.setDeltaType(getSyncDeltaTypeByEvent(event.getEventType()));
         LOG.ok("SyncDeltaBuilder is ok");
 
         return bld;
+    }
+
+    private SyncDeltaType getSyncDeltaTypeByEvent(final String event) {
+        OktaEventType oktaEventType = OktaEventType.getValueByName(event);
+        if (oktaEventType == null) {
+            LOG.error("Okta event not found: {}", event);
+            OktaUtils.handleGeneralError("Okta event not defined");
+        }
+        return OktaEventType.getValueByName(event).getSyncDeltaType();
+    }
+
+    private boolean isDeleteEvent(final String eventType) {
+        return OktaEventType.getDeleteEventType().contains(eventType);
+    }
+
+    private boolean isMembershipOperationEvent(final String eventType) {
+        return OktaEventType.getMembershipOperationEventType().contains(eventType);
     }
 
     /**
@@ -882,7 +929,7 @@ public class OktaConnector implements Connector,
                 objectClassInfo.getAttributeInfo().stream().filter(
                         attr -> attr.getName().equals(attribute.getName())).findFirst().ifPresent(attributeInfo -> {
 
-                            if (attribute.getValue() != null && !attribute.getValue().isEmpty()) {
+                            if (!CollectionUtil.isEmpty(attribute.getValue())) {
                                 if (OktaAttribute.BASIC_PROFILE_ATTRIBUTES.contains(attribute.getName())) {
                                     switch (attributeInfo.getName()) {
                                         case OktaAttribute.FIRSTNAME:
@@ -907,16 +954,21 @@ public class OktaConnector implements Connector,
                                             break;
                                     }
                                 } else {
-                                    if (Boolean.class.isInstance(attributeInfo.getType())) {
-                                        user.getProfile().put(attribute.getName(),
-                                                AttributeUtil.getBooleanValue(attribute));
-                                    } else if (Integer.class.isInstance(attributeInfo.getType())) {
-                                        user.getProfile().put(attribute.getName(),
-                                                AttributeUtil.getIntegerValue(attribute));
+                                    if (Boolean.class
+                                            .isInstance(attributeInfo.getType())) {
+                                        user.getProfile()
+                                                .put(attribute.getName(),
+                                                        AttributeUtil.getBooleanValue(attribute));
+                                    } else if (Integer.class
+                                            .isInstance(attributeInfo.getType())) {
+                                        user.getProfile()
+                                                .put(attribute.getName(),
+                                                        AttributeUtil.getIntegerValue(attribute));
                                     } else if (String.class
                                             .isInstance(attributeInfo.getType())) {
-                                        user.getProfile().put(attribute.getName(),
-                                                AttributeUtil.getStringValue(attribute));
+                                        user.getProfile()
+                                                .put(attribute.getName(),
+                                                        AttributeUtil.getStringValue(attribute));
                                     } else {
                                         user.getProfile().put(attribute.getName(),
                                                 AttributeUtil.getSingleValue(attribute));

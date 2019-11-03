@@ -3875,7 +3875,7 @@ definitions:
         readOnly: true
         type: string
       eventType:
-        readOnly: true
+        readOnly: false
         type: string
       legacyEventType:
         readOnly: true
@@ -3885,7 +3885,7 @@ definitions:
         readOnly: true
       published:
         format: date-time
-        readOnly: true
+        readOnly: false
         type: string
       request:
         $ref: '#/definitions/LogRequest'
@@ -3899,7 +3899,7 @@ definitions:
       target:
         items:
           $ref: '#/definitions/LogTarget'
-        readOnly: true
+        readOnly: false
         type: array
       transaction:
         $ref: '#/definitions/LogTransaction'
@@ -4038,7 +4038,7 @@ definitions:
         readOnly: true
         type: string
       id:
-        readOnly: true
+        readOnly: false
         type: string
       type:
         readOnly: true

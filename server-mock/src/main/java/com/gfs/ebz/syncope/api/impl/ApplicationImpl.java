@@ -48,6 +48,7 @@ public class ApplicationImpl extends AbstractApi<Application> implements Applica
         if (APPLICATION_REPOSITORY.stream().anyMatch(app -> StringUtils.equals(appId, app.getId()))
                 && USER_REPOSITORY.stream().anyMatch(user -> StringUtils.equals(body.getId(), user.getId()))) {
             APPLICATION_USER_REPOSITORY.add(new ImmutablePair<>(appId, body.getId()));
+            createLogEvent("application.user_membership.add", body.getId());
             return Response.ok().build();
         } else {
             return Response.status(Response.Status.BAD_REQUEST).build();
@@ -69,6 +70,7 @@ public class ApplicationImpl extends AbstractApi<Application> implements Applica
             body.setCreated(Date.from(Instant.now()));
             body.setLastUpdated(Date.from(Instant.now()));
             APPLICATION_REPOSITORY.add(body);
+            createLogEvent("application.lifecycle.create", body.getId());
             return Response.status(Response.Status.CREATED).entity(body).build();
         } else {
             return updateApplication(body, body.getId());
@@ -90,6 +92,7 @@ public class ApplicationImpl extends AbstractApi<Application> implements Applica
                 .findFirst().map(item -> {
                     item.setStatus(Application.StatusEnum.INACTIVE);
                     item.setLastUpdated(Date.from(Instant.now()));
+                    createLogEvent("application.lifecycle.deactivate", appId);
                     return Response.ok().entity(item).build();
                 });
         return Response.status(Response.Status.NOT_FOUND).build();
@@ -97,6 +100,7 @@ public class ApplicationImpl extends AbstractApi<Application> implements Applica
 
     @Override
     public Response deleteApplication(final String appId) {
+        createLogEvent("application.lifecycle.delete", appId);
         return APPLICATION_REPOSITORY.removeIf(app -> StringUtils.equals(appId, app.getId())) ? Response.
                 noContent().build() : Response.status(Response.Status.NOT_FOUND).build();
     }
@@ -108,6 +112,7 @@ public class ApplicationImpl extends AbstractApi<Application> implements Applica
 
     @Override
     public Response deleteApplicationUser(final String appId, final String userId, final Boolean sendEmail) {
+        createLogEvent("application.user_membership.remove", appId);
         return APPLICATION_USER_REPOSITORY.removeIf(pair -> StringUtils.equals(pair.getLeft(), appId)
                 && StringUtils.equals(pair.getRight(), userId)) ? Response.noContent().build() : Response.status(
                 Response.Status.NOT_FOUND).build();
@@ -241,6 +246,7 @@ public class ApplicationImpl extends AbstractApi<Application> implements Applica
             APPLICATION_REPOSITORY.remove(found.get());
             APPLICATION_REPOSITORY.add(body);
             body.setLastUpdated(Date.from(Instant.now()));
+            createLogEvent("application.lifecycle.update", appId);
             return Response.ok().entity(body).build();
         } else {
             return Response.status(Response.Status.NOT_FOUND).build();

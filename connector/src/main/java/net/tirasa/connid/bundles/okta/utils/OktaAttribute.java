@@ -114,7 +114,7 @@ public final class OktaAttribute {
         Set<Attribute> attributes = new HashSet<>();
         ObjectClassInfo objectClassInfo = schema.findObjectClassInfo(ObjectClass.ACCOUNT_NAME);
         UserProfile userProfile = user.getProfile();
-        attributesToGet.stream().forEach(attributeToGetName -> {
+        attributesToGet.stream().forEach((String attributeToGetName) -> {
             if (Name.NAME.equals(attributeToGetName)
                     || Uid.NAME.equals(attributeToGetName)
                     || OktaAttribute.ID.equals(attributeToGetName)) {
@@ -132,9 +132,9 @@ public final class OktaAttribute {
                 } catch (Exception ex) {
                     LOG.error(ex, "Could not list groups for User {0}", user.getId());
                 }
-            } else if (OktaAttribute.LASTUPDATE.equals(attributeToGetName)) {
+            } else if (OktaAttribute.LASTUPDATE.equals(attributeToGetName)) {             
                 attributes.add(
-                        buildAttribute(user.getLastUpdated().toString(), attributeToGetName, String.class).build());
+                        buildAttribute(user.get(LASTUPDATE), attributeToGetName, String.class).build());
             } else {
                 objectClassInfo.getAttributeInfo().stream().
                         filter(attr -> attr.getName().equals(attributeToGetName)).findFirst().ifPresent(
@@ -186,6 +186,9 @@ public final class OktaAttribute {
                             addValue(((Application) resource).getStatus().equals(Application.StatusEnum.ACTIVE));
                 }
                 attributes.add(attributeBuilder.build());
+            } else if (OktaAttribute.LASTUPDATE.equals(attributeToGetName)) {
+                attributes.add(
+                        buildAttribute(resource.get(LASTUPDATE), attributeToGetName, String.class).build());
             } else {
                 objectClassInfo.getAttributeInfo().stream().
                         filter(attr -> attr.getName().equals(attributeToGetName)).findFirst().ifPresent(
@@ -201,14 +204,12 @@ public final class OktaAttribute {
         return attributes;
     }
 
-    
-    
     public static AttributeBuilder buildAttribute(final Object value,
             final String name,
             final Class<?> clazz) {
         return buildAttribute(value, name, clazz, new AttributeBuilder());
     }
-    
+
     public static AttributeBuilder buildAttribute(final Object value,
             final String name,
             final Class<?> clazz,

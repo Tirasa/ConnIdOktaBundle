@@ -45,6 +45,7 @@ public class GroupImpl extends AbstractApi<Group> implements GroupApi {
         if (GROUP_REPOSITORY.stream().anyMatch(group -> StringUtils.equals(groupId, group.getId()))
                 && USER_REPOSITORY.stream().anyMatch(user -> StringUtils.equals(userId, user.getId()))) {
             GROUP_USER_REPOSITORY.add(new ImmutablePair<>(groupId, userId));
+            createLogEvent("group.user_membership.add", userId);
             return Response.ok().build();
         } else {
             return Response.status(Response.Status.BAD_REQUEST).build();
@@ -158,6 +159,7 @@ public class GroupImpl extends AbstractApi<Group> implements GroupApi {
 
     @Override
     public Response removeGroupUser(final String groupId, final String userId) {
+        createLogEvent("group.user_membership.remove", userId);
         return GROUP_USER_REPOSITORY.removeIf(pair -> StringUtils.equals(pair.getLeft(), groupId)
                 && StringUtils.equals(pair.getRight(), userId)) ? Response.noContent().build() : Response.status(
                 Response.Status.NOT_FOUND).build();

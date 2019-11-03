@@ -48,6 +48,7 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
             found.get().setActivated(Date.from(Instant.now()));
             found.get().setLastUpdated(Date.from(Instant.now()));
             found.get().setStatusChanged(Date.from(Instant.now()));
+            createLogEvent("user.lifecycle.activate", userId);
             return Response.ok().entity(found.get()).build();
         } else {
             return Response.status(Response.Status.NOT_FOUND).build();
@@ -83,6 +84,7 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
             USER_PASSWORD_REPOSITORY.get(userId).add(changePasswordRequest.getNewPassword().getValue());
             found.get().setLastUpdated(Date.from(Instant.now()));
             found.get().setPasswordChanged(Date.from(Instant.now()));
+            createLogEvent("user.account.update_password", userId);
             return Response.ok().entity(found.get().getCredentials()).build();
         } else {
             return Response.status(Response.Status.NOT_FOUND).build();
@@ -130,8 +132,10 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
             }
 
             USER_REPOSITORY.add(body);
+            createLogEvent("user.lifecycle.create", body.getId());
             return Response.status(Response.Status.CREATED).entity(body).build();
         } else {
+            createLogEvent("user.lifecycle.update", body.getId());
             return updateUser(body, body.getId(), false);
         }
     }
@@ -146,11 +150,13 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
         } else if (found.get().getStatus() == UserStatus.DEPROVISIONED) {
             USER_REPOSITORY.remove(found.get());
             USER_PASSWORD_REPOSITORY.remove(userId);
+            createLogEvent("user.lifecycle.delete", userId);
             return Response.noContent().build();
         } else {
             found.get().setStatus(UserStatus.DEPROVISIONED);
             found.get().setLastUpdated(Date.from(Instant.now()));
             found.get().setStatusChanged(Date.from(Instant.now()));
+            createLogEvent("user.lifecycle.deactivate", userId);
             return Response.ok().entity(found.get()).build();
         }
     }
@@ -163,6 +169,7 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
                     user.setStatus(UserStatus.DEPROVISIONED);
                     user.setLastUpdated(Date.from(Instant.now()));
                     user.setStatusChanged(Date.from(Instant.now()));
+                    createLogEvent("user.lifecycle.deactivate", userId);
                     return Response.ok().entity(user).build();
                 }).findFirst().
                 orElse(Response.status(Response.Status.NOT_FOUND).build());
@@ -335,6 +342,7 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
             USER_REPOSITORY.remove(found.get());
             USER_REPOSITORY.add(user);
             user.setLastUpdated(Date.from(Instant.now()));
+            createLogEvent("user.lifecycle.update", userId);
             return Response.ok().entity(user).build();
         } else {
             return Response.status(Response.Status.NOT_FOUND).build();

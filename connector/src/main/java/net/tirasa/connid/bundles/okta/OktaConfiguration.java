@@ -31,6 +31,12 @@ public class OktaConfiguration extends AbstractConfiguration {
 
     private boolean importHashedPassword;
 
+    private String[] userEvents = { "user.account.update_profile" };
+
+    private String[] groupEvents = {};
+    
+    private String[] applicationEvents = {};
+
     @ConfigurationProperty(order = 1, displayMessageKey = "domain.display",
             groupMessageKey = "basic.group", helpMessageKey = "domain.help", required = true,
             confidential = false)
@@ -62,6 +68,42 @@ public class OktaConfiguration extends AbstractConfiguration {
 
     public void setImportHashedPassword(final boolean importHashedPassword) {
         this.importHashedPassword = importHashedPassword;
+    }
+
+    @ConfigurationProperty(order = 4,
+            displayMessageKey = "userEvents.display",
+            groupMessageKey = "basic.group",
+            helpMessageKey = "userEvents.help")
+    public String[] getUserEvents() {
+        return userEvents.clone();
+    }
+
+    public void setUserEvents(String... userEvents) {
+        this.userEvents = userEvents.clone();
+    }
+
+    @ConfigurationProperty(order = 5,
+            displayMessageKey = "groupEvents.display",
+            groupMessageKey = "basic.group",
+            helpMessageKey = "groupEvents.help")
+    public String[] getGroupEvents() {
+        return groupEvents.clone();
+    }
+
+    public void setGroupEvents(String... groupEvents) {
+        this.groupEvents = groupEvents.clone();
+    }
+
+    @ConfigurationProperty(order = 6,
+            displayMessageKey = "applicationEvents.display",
+            groupMessageKey = "basic.group",
+            helpMessageKey = "applicationEvents.help")
+    public String[] getApplicationEvents() {
+        return applicationEvents.clone();
+    }
+
+    public void setApplicationEvents(String... applicationEvents) {
+        this.applicationEvents = applicationEvents.clone();
     }
 
     @Override

@@ -23,6 +23,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import com.okta.sdk.resource.group.Group;
+import com.okta.sdk.resource.user.User;
 import com.okta.sdk.resource.group.GroupBuilder;
 import com.okta.sdk.resource.group.GroupList;
 import java.io.IOException;
@@ -34,6 +35,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import net.tirasa.connid.bundles.okta.utils.OktaAttribute;
+import net.tirasa.connid.bundles.okta.utils.OktaUtils;
 import org.identityconnectors.common.logging.Log;
 import org.identityconnectors.common.security.GuardedString;
 import org.identityconnectors.framework.api.APIConfiguration;
@@ -42,11 +44,13 @@ import org.identityconnectors.framework.api.ConnectorFacadeFactory;
 import org.identityconnectors.framework.common.objects.Attribute;
 import org.identityconnectors.framework.common.objects.AttributeBuilder;
 import org.identityconnectors.framework.common.objects.AttributeUtil;
+import org.identityconnectors.framework.common.objects.ConnectorObject;
 import org.identityconnectors.framework.common.objects.ObjectClass;
 import org.identityconnectors.framework.common.objects.OperationOptions;
 import org.identityconnectors.framework.common.objects.OperationOptionsBuilder;
 import org.identityconnectors.framework.common.objects.Schema;
 import org.identityconnectors.framework.common.objects.SearchResult;
+import org.identityconnectors.framework.common.objects.SyncDelta;
 import org.identityconnectors.framework.common.objects.SyncToken;
 import org.identityconnectors.framework.common.objects.Uid;
 import org.identityconnectors.framework.common.objects.filter.EqualsFilter;
@@ -76,6 +80,11 @@ public class OktaConnectorTests extends AbstractConnectorTests {
         conf = new OktaConfiguration();
         conf.setDomain(PROPS.getProperty("domain"));
         conf.setOktaApiToken(PROPS.getProperty("oktaApiToken"));
+        conf.setUserEvents("user.lifecycle.create",
+                "user.lifecycle.update",
+                "user.lifecycle.delete",
+                "group.user_membership.add",
+                "group.user_membership.remove");
 
         try {
             conf.validate();
@@ -411,24 +420,93 @@ public class OktaConnectorTests extends AbstractConnectorTests {
         assertEquals(-1, result.getRemainingPagedResults());
     }
 
-    public void syncFromTheBeginningWithNullToken() {
-        TestSyncResultsHandler handler = new TestSyncResultsHandler();
-        OperationOptions operationOption =
-                new OperationOptionsBuilder().setAttributesToGet(OktaAttribute.EMAIL,
-                        OktaAttribute.MOBILEPHONE,
-                        OktaAttribute.FIRSTNAME,
-                        OktaAttribute.LASTNAME).build();
+    @Test
+    public void sync() {
+        final TestSyncResultsHandler handler = new TestSyncResultsHandler();
 
-        SyncToken previous = connector.sync(ObjectClass.ACCOUNT, null, handler, operationOption);
+        OperationOptionsBuilder operationOptionBuilder =
+                new OperationOptionsBuilder().setAttributesToGet(
+                        OktaAttribute.EMAIL, OktaAttribute.MOBILEPHONE, OktaAttribute.OKTA_GROUPS);
+        
+        SyncToken token = connector.getLatestSyncToken(ObjectClass.ACCOUNT);
+        connector.sync(ObjectClass.ACCOUNT, token, handler, operationOptionBuilder.build());
+        
+        assertTrue(handler.getDeleted().isEmpty());
+        assertTrue(handler.getUpdated().isEmpty());
 
-        assertNull(previous);
+        handler.clear();
 
-        SyncToken newly = connector.sync(ObjectClass.ACCOUNT, previous, handler, operationOption);
-        assertNotNull(newly);
-        assertNotNull(newly.getValue());
-        assertTrue(((byte[]) newly.getValue()).length > 0);
+        // user added sync
+        Uid newUser = connector.create(ObjectClass.ACCOUNT, createUserAttrs("Password123"), operationOptionBuilder.
+                build());
 
-        assertFalse(Arrays.equals((byte[]) previous.getValue(), (byte[]) newly.getValue()));
+        connector.sync(ObjectClass.ACCOUNT, token, handler, operationOptionBuilder.build());
+        assertFalse(token.equals(handler.getLatestReceivedToken()));
+
+        token = handler.getLatestReceivedToken();
+
+        assertFalse(handler.getUpdated().isEmpty());
+        assertTrue(handler.getDeleted().isEmpty());
+
+        for (SyncDelta usr : handler.getUpdated()) {
+            final ConnectorObject obj = usr.getObject();
+            assertEquals(newUser.getUidValue(), obj.getUid().getValue().get(0));
+            assertNotNull(obj.getAttributeByName(OktaAttribute.EMAIL));
+            assertNotNull(obj.getAttributeByName(OktaAttribute.MOBILEPHONE));
+            assertNotNull(obj.getAttributeByName("__NAME__"));
+            assertNotNull(obj.getAttributeByName("__UID__"));
+        }
+
+        handler.clear();
+
+        // check with updated token and without any modification
+        connector.sync(ObjectClass.ACCOUNT, token, handler, operationOptionBuilder.build());
+        assertTrue(token.equals(handler.getLatestReceivedToken()));
+
+        token = handler.getLatestReceivedToken();
+
+        assertTrue(handler.getDeleted().isEmpty());
+        assertTrue(handler.getUpdated().isEmpty());
+
+        // created a new user without memberships
+        Uid created = connector.create(ObjectClass.ACCOUNT,
+                createUserAttrs("Password123"), operationOptionBuilder.build());
+        handler.clear();
+
+        connector.sync(ObjectClass.ACCOUNT, token, handler, operationOptionBuilder.build());
+        assertFalse(token.equals(handler.getLatestReceivedToken()));
+
+        token = handler.getLatestReceivedToken();
+
+        assertTrue(handler.getDeleted().isEmpty());
+        assertFalse(handler.getUpdated().isEmpty());
+
+        //Add membership to existing user
+        Group group = createGroup(conn.getClient());
+        User user = conn.getClient().getUser(created.getUidValue());
+        user.addToGroup(group.getId());
+        handler.clear();
+
+        connector.sync(ObjectClass.ACCOUNT, token, handler, operationOptionBuilder.build());
+        assertFalse(token.equals(handler.getLatestReceivedToken()));
+
+        token = handler.getLatestReceivedToken();
+
+        assertTrue(handler.getDeleted().isEmpty());
+        assertFalse(handler.getUpdated().isEmpty());
+
+        handler.clear();
+
+        // sync user delete
+        assertTrue(Arrays.asList(conf.getUserEvents()).contains("user.lifecycle.delete"));
+
+        connector.delete(ObjectClass.ACCOUNT, created, operationOptionBuilder.build());
+
+        connector.sync(ObjectClass.ACCOUNT, token, handler, operationOptionBuilder.build());
+        token = handler.getLatestReceivedToken();
+
+        assertTrue(handler.getUpdated().isEmpty());
+        assertEquals(1, handler.getDeleted().size());
     }
 
     @AfterClass
