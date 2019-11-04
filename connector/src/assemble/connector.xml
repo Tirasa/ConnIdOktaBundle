@@ -45,6 +45,12 @@
         <exclude>net.tirasa.connid:connector-framework</exclude>
         <exclude>net.tirasa.connid:connector-framework-internal</exclude>
       </excludes>
+      <!-- Required to work with JDK 1.8 -->
+      <unpackOptions>
+        <excludes>
+          <exclude>module-info.class</exclude>
+        </excludes>
+      </unpackOptions>
     </dependencySet>
   </dependencySets>
 </assembly>
