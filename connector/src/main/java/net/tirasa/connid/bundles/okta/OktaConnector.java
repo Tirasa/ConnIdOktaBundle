@@ -17,7 +17,6 @@ package net.tirasa.connid.bundles.okta;
 
 import static net.tirasa.connid.bundles.okta.utils.OktaAttribute.LASTUPDATE;
 import static net.tirasa.connid.bundles.okta.utils.OktaAttribute.buildAttribute;
-import static org.identityconnectors.common.IOUtil.UTF8;
 
 import com.okta.sdk.authc.credentials.TokenClientCredentials;
 import com.okta.sdk.client.Client;
@@ -39,19 +38,14 @@ import com.okta.sdk.resource.user.UserBuilder;
 import com.okta.sdk.resource.user.UserCredentials;
 import com.okta.sdk.resource.user.UserList;
 import com.okta.sdk.resource.user.UserStatus;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import net.tirasa.connid.bundles.okta.schema.OktaSchema;
@@ -464,39 +458,42 @@ public class OktaConnector implements Connector,
         }
 
         LOG.info("Execute sync query {0} on {1}", tokenValue, objectClass);
-        getEvents(objectClass, tokenValue != null
-                ? OktaUtils.convertToDate(tokenValue.toString()) : null).stream().forEach(item -> {
-            ConnectorObject connObj = null;
-            ExtensibleResource result;
-            try {
-                if (isDeleteEvent(item.getEventType())) {
-                    connObj = fromLogEvent(
-                            item.getTarget().get(0).getId(), item.get("published").toString(), objectClass);
-                } else {
-                    try {
-                        if (ObjectClass.ACCOUNT.equals(objectClass)) {
-                            result = client.getUser(item.getTarget().get(0).getId());
-                            connObj = fromUser((User) result, attributesToGet);
-                        } else if (ObjectClass.GROUP.equals(objectClass)) {
-                            result = client.getGroup(item.getTarget().get(0).getId());
-                            connObj = fromGroup((Group) result, attributesToGet);
-                        } else {
-                            result = client.getApplication(item.getTarget().get(0).getId());
-                            connObj = fromApplication((Application) result, attributesToGet);
+        LogEventList logEvents = getEvents(objectClass,
+                tokenValue != null ? OktaUtils.convertToDate(tokenValue.toString()) : null);
+        if (logEvents != null) {
+            logEvents.stream().forEach(item -> {
+                ConnectorObject connObj = null;
+                ExtensibleResource result;
+                try {
+                    if (isDeleteEvent(item.getEventType())) {
+                        connObj = fromLogEvent(
+                                item.getTarget().get(0).getId(), item.get("published").toString(), objectClass);
+                    } else {
+                        try {
+                            if (ObjectClass.ACCOUNT.equals(objectClass)) {
+                                result = client.getUser(item.getTarget().get(0).getId());
+                                connObj = fromUser((User) result, attributesToGet);
+                            } else if (ObjectClass.GROUP.equals(objectClass)) {
+                                result = client.getGroup(item.getTarget().get(0).getId());
+                                connObj = fromGroup((Group) result, attributesToGet);
+                            } else {
+                                result = client.getApplication(item.getTarget().get(0).getId());
+                                connObj = fromApplication((Application) result, attributesToGet);
+                            }
+                        } catch (Exception ex) {
+                            LOG.info("{0} not found", item.getTarget().get(0).getId());
                         }
-                    } catch (Exception ex) {
-                        LOG.info("{0} not found", item.getTarget().get(0).getId());
                     }
-                }
 
-                if (connObj != null && !handler.handle(buildSyncDelta(connObj, item).build())) {
-                    LOG.ok("Stop processing of the sync result set");
-                    OktaUtils.handleGeneralError("Stop processing of the sync result set");
+                    if (connObj != null && !handler.handle(buildSyncDelta(connObj, item).build())) {
+                        LOG.ok("Stop processing of the sync result set");
+                        OktaUtils.handleGeneralError("Stop processing of the sync result set");
+                    }
+                } catch (Exception e) {
+                    OktaUtils.handleGeneralError("Sync on " + objectClass + " error", e);
                 }
-            } catch (Exception e) {
-                OktaUtils.handleGeneralError("Sync on " + objectClass + " error", e);
-            }
-        });
+            });
+        }
     }
 
     @Override
@@ -745,7 +742,8 @@ public class OktaConnector implements Connector,
     private LogEventList getEvents(final ObjectClass objectClass, final String from) {
         String filter = buildFilterByObjectClass(objectClass);
         if (StringUtil.isBlank(filter)) {
-            OktaUtils.handleGeneralError("Provide envenType for Sync");
+            LOG.info("Provide envenType for Sync {0}", objectClass);
+            return null;
         }
         return client.getLogs(null, from, filter, null, "DESCENDING");
     }
@@ -836,7 +834,7 @@ public class OktaConnector implements Connector,
     private SyncDeltaType getSyncDeltaTypeByEvent(final String event) {
         OktaEventType oktaEventType = OktaEventType.getValueByName(event);
         if (oktaEventType == null) {
-            LOG.error("Okta event not found: {}", event);
+            LOG.error("Okta event not found: {0}", event);
             OktaUtils.handleGeneralError("Okta event not defined");
         }
         return OktaEventType.getValueByName(event).getSyncDeltaType();

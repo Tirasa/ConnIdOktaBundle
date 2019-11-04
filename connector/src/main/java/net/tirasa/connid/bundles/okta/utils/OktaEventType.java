@@ -52,6 +52,7 @@ public enum OktaEventType {
     USER_AUTHENTICATION_SSO("user.authentication.sso", SyncDeltaType.CREATE_OR_UPDATE),
     USER_LIFECYCLE_ACTIVATE("user.lifecycle.activate", SyncDeltaType.CREATE_OR_UPDATE),
     USER_LIFECYCLE_CREATE("user.lifecycle.create", SyncDeltaType.CREATE_OR_UPDATE),
+    USER_LIFECYCLE_UPDATE("user.lifecycle.update", SyncDeltaType.CREATE_OR_UPDATE),
     USER_LIFECYCLE_DEACTIVATE("user.lifecycle.deactivate", SyncDeltaType.CREATE_OR_UPDATE),
     USER_LIFECYCLE_SUSPEND("user.lifecycle.suspend", SyncDeltaType.CREATE_OR_UPDATE),
     USER_LIFECYCLE_UNSUSPENDED("user.lifecycle.unsuspend", SyncDeltaType.CREATE_OR_UPDATE),
