@@ -38,9 +38,8 @@
 
   <dependencySets>
     <dependencySet>
-      <outputDirectory>lib</outputDirectory>
       <useProjectArtifact>false</useProjectArtifact>
-      <unpack>false</unpack>
+      <unpack>true</unpack>
       <scope>runtime</scope>
       <excludes>
         <exclude>net.tirasa.connid:connector-framework</exclude>
