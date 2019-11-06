@@ -2592,6 +2592,56 @@ paths:
         summary: Fetch a list of events from your Okta organization system log.
         tags:
           - UserSchema
+#GFS Idp service
+  '/api/v1/idps/{idpId}/users/{userId}':
+    get:
+      consumes:
+        - application/json
+      description: Fetches a linked IdP user by ID.
+      operationId: getIdpUser
+      parameters:
+        - in: path
+          name: idpId
+          required: true
+          type: string
+        - in: path
+          name: userId
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/Idp'
+      security:
+        - api_token: []
+      tags:
+        - Idp
+    delete:
+      consumes:
+        - application/json
+      description: Unlink a idp from a user.
+      operationId: unlinkUserFromIdp
+      parameters:
+        - in: path
+          name: idpId
+          required: true
+          type: string
+        - in: path
+          name: userId
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '204':
+          description: Success
+      security:
+        - api_token: []
+      tags:
+        - Idp
 #GFS
 definitions:
   AppLink:
@@ -5721,4 +5771,27 @@ definitions:
     x-okta-parent: '#/definitions/ApplicationSettingsApplication'
     x-okta-tags:
       - Application
+  Idp:
+    properties:
+      _links:
+        additionalProperties:
+          type: object
+        type: object
+      id:
+        type: string
+      externalId:
+        type: string
+      created:
+        format: date-time
+        type: string
+      lastUpdated:
+        format: date-time
+        type: string
+      profile:
+        additionalProperties:
+          type: object
+        type: object
+    type: object
+    x-okta-tags:
+      - Idp
       

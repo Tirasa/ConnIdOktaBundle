@@ -26,7 +26,9 @@ import io.swagger.model.UserStatus;
 import java.lang.reflect.InvocationTargetException;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -130,7 +132,8 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
                 body.getCredentials().setPassword(null);
                 USER_PASSWORD_REPOSITORY.put(body.getId(), passwords);
             }
-
+            
+            USER_IDP_REPOSITORY.put(body.getId(), new HashSet<>(Arrays.asList("CAS 5 IDP")));
             USER_REPOSITORY.add(body);
             createLogEvent("user.lifecycle.create", body.getId());
             return Response.status(Response.Status.CREATED).entity(body).build();

@@ -20,15 +20,13 @@ import io.swagger.model.Group;
 import io.swagger.model.LogEvent;
 import io.swagger.model.LogTarget;
 import io.swagger.model.User;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import javax.ws.rs.core.Context;
@@ -57,6 +55,8 @@ public abstract class AbstractApi<T extends Object> {
     protected static final Map<String, List<String>> USER_PASSWORD_REPOSITORY = new HashMap<>();
 
     protected static final SortedMap<Date, LogEvent> EVENT_REPOSITORY = new TreeMap<Date, LogEvent>();
+    
+    protected static final Map<String, Set<String>> USER_IDP_REPOSITORY = new HashMap<String, Set<String>>();
 
     protected abstract String getNextPage(final Integer limit, final int after, final List<T> repository);
 

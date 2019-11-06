@@ -37,6 +37,7 @@
       <bean class="com.gfs.ebz.syncope.api.impl.GroupImpl"/>
       <bean class="com.gfs.ebz.syncope.api.impl.ApplicationImpl"/>
       <bean class="com.gfs.ebz.syncope.api.impl.LogImpl"/>
+      <bean class="com.gfs.ebz.syncope.api.impl.IdpImpl"/>
     </jaxrs:serviceBeans>
     <jaxrs:providers>
       <bean class="com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider"/>

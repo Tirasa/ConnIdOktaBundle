@@ -532,6 +532,7 @@ public class OktaConnector implements Connector,
         LOG.ok("Connector READ");
 
         Attribute key = null;
+        String keyValue = null;
         if (query instanceof EqualsFilter) {
             Attribute filterAttr = ((EqualsFilter) query).getAttribute();
             if (filterAttr instanceof Uid
@@ -539,6 +540,7 @@ public class OktaConnector implements Connector,
                     || ObjectClass.GROUP.equals(objectClass)
                     || APPLICATION.equals(objectClass)) {
                 key = filterAttr;
+                keyValue = AttributeUtil.getAsStringValue(key);
             }
         }
 
@@ -556,8 +558,7 @@ public class OktaConnector implements Connector,
                 try {
                     if (pagesSize != -1) {
                         String nextPage = StringUtil.isBlank(cookie) ? USER_API_URL + "?limit=" + pagesSize : cookie;
-                        userList = client.getDataStore().getResource(nextPage, DefaultUserList.class
-                        );
+                        userList = client.getDataStore().getResource(nextPage, DefaultUserList.class);
                         nextPage = ((AbstractCollectionResource) userList).hasProperty("nextPage")
                                 && ((AbstractCollectionResource) userList).getProperty("nextPage") != null
                                 ? ((AbstractCollectionResource) userList).getProperty("nextPage").toString() : null;
@@ -580,9 +581,8 @@ public class OktaConnector implements Connector,
             } else {
                 User result = null;
                 if (Uid.NAME.equals(key.getName()) || OktaAttribute.ID.equals(key.getName())) {
-                    result = null;
                     try {
-                        result = client.getUser(AttributeUtil.getAsStringValue(key));
+                        result = keyValue != null ? client.getUser(AttributeUtil.getAsStringValue(key)) : null;
                     } catch (Exception e) {
                         OktaUtils.wrapGeneralError("While getting User : "
                                 + key.getName() + " - " + AttributeUtil.getAsStringValue(key), e);
@@ -613,8 +613,7 @@ public class OktaConnector implements Connector,
                 try {
                     if (pagesSize != -1) {
                         String nextPage = StringUtil.isBlank(cookie) ? APP_API_URL + "?limit=" + pagesSize : cookie;
-                        applicationList = client.getDataStore().getResource(nextPage, DefaultApplicationList.class
-                        );
+                        applicationList = client.getDataStore().getResource(nextPage, DefaultApplicationList.class);
                         nextPage = ((AbstractCollectionResource) applicationList).hasProperty("nextPage")
                                 && ((AbstractCollectionResource) applicationList).getProperty("nextPage") != null
                                 ? ((AbstractCollectionResource) applicationList).getProperty("nextPage").toString()
@@ -637,9 +636,8 @@ public class OktaConnector implements Connector,
             } else {
                 Application result = null;
                 if (Uid.NAME.equals(key.getName()) || OktaAttribute.ID.equals(key.getName())) {
-                    result = null;
                     try {
-                        result = client.getApplication(AttributeUtil.getAsStringValue(key));
+                        result = keyValue != null ? client.getApplication(AttributeUtil.getAsStringValue(key)) : null;
                     } catch (Exception e) {
                         OktaUtils.wrapGeneralError("While getting Application : "
                                 + key.getName() + " - " + AttributeUtil.getAsStringValue(key), e);
@@ -694,9 +692,8 @@ public class OktaConnector implements Connector,
             } else {
                 Group result = null;
                 if (Uid.NAME.equals(key.getName()) || OktaAttribute.ID.equals(key.getName())) {
-                    result = null;
                     try {
-                        result = client.getGroup(AttributeUtil.getAsStringValue(key));
+                        result = keyValue != null ? client.getGroup(AttributeUtil.getAsStringValue(key)) : null;
                     } catch (Exception e) {
                         OktaUtils.wrapGeneralError("While getting Application : "
                                 + key.getName() + " - " + AttributeUtil.getAsStringValue(key), e);
