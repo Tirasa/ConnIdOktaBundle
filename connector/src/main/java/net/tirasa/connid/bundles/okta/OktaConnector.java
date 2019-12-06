@@ -301,14 +301,12 @@ public class OktaConnector implements Connector,
                     LOG.warn("{0} attribute value not correct, can't handle User status update",
                             OperationalAttributes.ENABLE_NAME);
                 } else {
-                    if (Boolean.parseBoolean(status.getValue().get(0).toString())) {
+                    if (updatedUser.getStatus().equals(UserStatus.STAGED)
+                            && Boolean.parseBoolean(status.getValue().get(0).toString())) {
                         updatedUser.activate(Boolean.FALSE);
-                    } else {
-                        if (!updatedUser.getStatus().equals(UserStatus.DEPROVISIONED)) {
-                            updatedUser.deactivate();
-                        } else {
-                            OktaUtils.handleGeneralError("User cannot be deactivated");
-                        }
+                    } else if (!updatedUser.getStatus().equals(UserStatus.DEPROVISIONED)
+                            && !Boolean.parseBoolean(status.getValue().get(0).toString())) {
+                        updatedUser.deactivate();
                     }
                 }
 
