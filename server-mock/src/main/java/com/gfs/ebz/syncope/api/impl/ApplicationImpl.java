@@ -15,8 +15,6 @@
  */
 package com.gfs.ebz.syncope.api.impl;
 
-import static com.gfs.ebz.syncope.api.impl.AbstractApi.USER_REPOSITORY;
-
 import io.swagger.api.ApplicationApi;
 import io.swagger.model.AppUser;
 import io.swagger.model.Application;

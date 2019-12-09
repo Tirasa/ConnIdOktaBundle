@@ -15,9 +15,6 @@
  */
 package net.tirasa.connid.bundles.okta;
 
-import static net.tirasa.connid.bundles.okta.utils.OktaAttribute.LASTUPDATE;
-import static net.tirasa.connid.bundles.okta.utils.OktaAttribute.buildAttribute;
-
 import com.okta.sdk.authc.credentials.TokenClientCredentials;
 import com.okta.sdk.client.Client;
 import com.okta.sdk.client.Clients;
@@ -771,7 +768,7 @@ public class OktaConnector implements Connector,
         builder.setObjectClass(objectClass);
         builder.setUid(id);
         builder.setName(id);
-        builder.addAttribute(buildAttribute(lastUpdate, LASTUPDATE, String.class).build());
+        builder.addAttribute(OktaAttribute.buildAttribute(lastUpdate, OktaAttribute.LASTUPDATE, String.class).build());
         return builder.build();
     }
 

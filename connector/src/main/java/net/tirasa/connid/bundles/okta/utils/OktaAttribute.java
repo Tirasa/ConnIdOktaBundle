@@ -132,7 +132,7 @@ public final class OktaAttribute {
                 } catch (Exception ex) {
                     LOG.error(ex, "Could not list groups for User {0}", user.getId());
                 }
-            } else if (OktaAttribute.LASTUPDATE.equals(attributeToGetName)) {             
+            } else if (OktaAttribute.LASTUPDATE.equals(attributeToGetName)) {
                 attributes.add(
                         buildAttribute(user.get(LASTUPDATE), attributeToGetName, String.class).build());
             } else {
