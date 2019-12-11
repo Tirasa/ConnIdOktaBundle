@@ -21,10 +21,9 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javax.ws.rs.core.Response;
 
@@ -52,28 +51,35 @@ public class LogImpl extends AbstractApi<LogEvent> implements LogApi {
             final Integer limit,
             final String sortOrder,
             final String after) {
-
-        return Response.ok().entity(searchEvents(filter, since)).build();
+        return Response.ok().entity(searchEvents(filter, since, limit)).build();
     }
 
-    public List<LogEvent> searchEvents(final String filter, final String since) {
+    public List<LogEvent> searchEvents(final String filter, final String since, final Integer limit) {
         List<String> eventTypeNames = filter != null
                 ? Arrays.asList(filter.replaceAll("\\\\", "").split(" or ")).stream().map(
                         item -> item.substring(item.indexOf("\"") + 1, item.lastIndexOf("\""))).collect(Collectors.
                                 toList())
                 : Collections.emptyList();
-        long time = 0L;
+        Date time = null;
         if (since != null) {
             try {
-                time = DATE_FORMAT.get().parse(since).getTime();
+                time = DATE_FORMAT.get().parse(since);
             } catch (ParseException ex) {
             }
         }
-        final long ts = time;
-        return EVENT_REPOSITORY.entrySet().stream().filter(
-                event -> (since == null || event.getKey().getTime() > ts)
-                && (!eventTypeNames.isEmpty() && eventTypeNames.contains(event.getValue().getEventType()))).map(
-                        event -> event.getValue()).collect(Collectors.toList());
+        final Date tokenTS = time;
+
+        if (limit != null) {
+            return EVENT_REPOSITORY.entrySet().stream().filter(
+                    event -> (tokenTS == null || event.getValue().getPublished().after(tokenTS))
+                    && (!eventTypeNames.isEmpty() && eventTypeNames.contains(event.getValue().getEventType()))).map(
+                            event -> event.getValue()).limit(limit).collect(Collectors.toList());
+        } else {
+            return EVENT_REPOSITORY.entrySet().stream().filter(
+                    event -> (tokenTS == null || event.getValue().getPublished().after(tokenTS))
+                    && (!eventTypeNames.isEmpty() && eventTypeNames.contains(event.getValue().getEventType()))).map(
+                            event -> event.getValue()).collect(Collectors.toList());
+        }
     }
 
     @Override

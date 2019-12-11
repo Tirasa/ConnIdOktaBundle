@@ -20,8 +20,11 @@ import io.swagger.model.Group;
 import io.swagger.model.LogEvent;
 import io.swagger.model.LogTarget;
 import io.swagger.model.User;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -54,7 +57,8 @@ public abstract class AbstractApi<T extends Object> {
 
     protected static final Map<String, List<String>> USER_PASSWORD_REPOSITORY = new HashMap<>();
 
-    protected static final SortedMap<Date, LogEvent> EVENT_REPOSITORY = new TreeMap<Date, LogEvent>();
+    protected static final SortedMap<Date, LogEvent> EVENT_REPOSITORY = 
+            new TreeMap<Date, LogEvent>(Collections.reverseOrder());
     
     protected static final Map<String, Set<String>> USER_IDP_REPOSITORY = new HashMap<String, Set<String>>();
 
@@ -62,7 +66,8 @@ public abstract class AbstractApi<T extends Object> {
 
     protected static void createLogEvent(final String eventTypeName, final String id) {
         LogEvent event = new LogEvent();
-        Date date = new Date();
+        OffsetDateTime utc = OffsetDateTime.now(ZoneOffset.UTC);
+        Date date = Date.from(utc.toInstant());
         event.eventType(eventTypeName).target(Arrays.asList(new LogTarget().id(id))).setPublished(date);
         EVENT_REPOSITORY.put(date, event);
     }

@@ -28,8 +28,11 @@
 
   <import resource="classpath:META-INF/cxf/cxf.xml" />
   <import resource="classpath:META-INF/cxf/cxf-servlet.xml" />
-	
-
+	  
+  <bean id="jacksonMapper" class="com.gfs.ebz.syncope.mapper.OktaObjectMapper" />
+  
+  <bean id="jsonProvider" class="com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider" p:mapper-ref="jacksonMapper"/>
+  
   <jaxrs:server id="services">
     <jaxrs:serviceBeans>
       <bean class="com.gfs.ebz.syncope.api.impl.UserImpl"/>
@@ -40,7 +43,7 @@
       <bean class="com.gfs.ebz.syncope.api.impl.IdpImpl"/>
     </jaxrs:serviceBeans>
     <jaxrs:providers>
-      <bean class="com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider"/>
+      <ref bean="jsonProvider"/>
     </jaxrs:providers>
     <jaxrs:features>
       <cxf:logging/>

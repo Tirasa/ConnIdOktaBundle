@@ -38,7 +38,6 @@ import com.okta.sdk.resource.user.UserStatus;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -113,6 +112,8 @@ public class OktaConnector implements Connector,
 
     public static final String GROUP_API_URL = "/api/v1/groups";
 
+    public static final String LOG_API_URL = "/api/v1/logs";
+
     public static final String LIMIT = "50";
 
     public static final String USER = "USER";
@@ -124,6 +125,8 @@ public class OktaConnector implements Connector,
     public static final String SALT = "salt";
 
     public static final String SALT_ORDER = "saltOrder";
+
+    public static final String SORT_ORDER = "sortOrder";
 
     public static final String WORK_FACTOR = "workFactor";
 
@@ -293,20 +296,7 @@ public class OktaConnector implements Connector,
                 updateUserAttributes(user, replaceAttributes);
                 User updatedUser = user.update(true);
 
-                Attribute status = accessor.find(OperationalAttributes.ENABLE_NAME);
-                if (status == null || CollectionUtil.isEmpty(status.getValue())) {
-                    LOG.warn("{0} attribute value not correct, can't handle User status update",
-                            OperationalAttributes.ENABLE_NAME);
-                } else {
-                    if (updatedUser.getStatus().equals(UserStatus.STAGED)
-                            && Boolean.parseBoolean(status.getValue().get(0).toString())) {
-                        updatedUser.activate(Boolean.FALSE);
-                    } else if (!updatedUser.getStatus().equals(UserStatus.DEPROVISIONED)
-                            && !Boolean.parseBoolean(status.getValue().get(0).toString())) {
-                        updatedUser.deactivate();
-                    }
-                }
-
+                updateUserStatus(updatedUser, accessor.find(OperationalAttributes.ENABLE_NAME));
                 returnUid = new Uid(updatedUser.getId());
             } catch (Exception e) {
                 OktaUtils.wrapGeneralError("Could not update User " + uid.getUidValue() + " from attributes ", e);
@@ -418,7 +408,7 @@ public class OktaConnector implements Connector,
         LOG.ok("check the ObjectClass");
         long maxlastUpdate = 0;
         try {
-            maxlastUpdate = getLastLogEvent(objectClass) + 1;
+            maxlastUpdate = getLastLogEvent(objectClass);
             LOG.ok("getLatestSyncToken on {0} - {1}", objectClass, maxlastUpdate);
         } catch (Exception e) {
             OktaUtils.handleGeneralError("Error during retrieve SyncToken", e);
@@ -449,7 +439,7 @@ public class OktaConnector implements Connector,
         } else {
             LOG.info("Synchronization with token.");
             //Add one to get all events after this SyncToken
-            tokenValue = Long.valueOf(token.getValue().toString()) + 1;
+            tokenValue = Long.valueOf(token.getValue().toString());
         }
 
         LOG.info("Execute sync query {0} on {1}", tokenValue, objectClass);
@@ -721,13 +711,10 @@ public class OktaConnector implements Connector,
         if (StringUtil.isBlank(filter)) {
             OktaUtils.handleGeneralError("Provide envenType for Sync");
         }
-        LogEventList events =
-                client.getLogs(null, null, filter, null, "DESCENDING");
+        LogEventList events = client.getDataStore().getResource(
+                LOG_API_URL + "?filter=" + filter + "&limit=1&sortOrder=DESCENDING", LogEventList.class);        
         return events.stream().findFirst().isPresent()
-                ? OktaUtils.convertToTimestamp(events.stream().max(
-                        Comparator.comparingLong(item
-                                -> OktaUtils.convertToTimestamp(
-                                item.get("published").toString()))).get().get("published").toString())
+                ? OktaUtils.convertToTimestamp(events.single().get("published").toString())
                 : Long.valueOf(0);
     }
 
@@ -804,15 +791,17 @@ public class OktaConnector implements Connector,
     private SyncDeltaBuilder buildSyncDelta(final ConnectorObject connectorObject, final LogEvent event) {
         LOG.info("buildSyncDelta");
         SyncDeltaBuilder bld = new SyncDeltaBuilder();
-        String published;
+        long published;
         if (isMembershipOperationEvent(event.getEventType())) {
-            published = event.get("published").toString();
+            published = OktaUtils.convertToTimestamp(event.get("published").toString());
         } else {
             Attribute lastUpdate = connectorObject.getAttributeByName(OktaAttribute.LASTUPDATE);
             if (lastUpdate == null) {
                 OktaUtils.handleGeneralError("LastUpdate attribute is not present");
             }
-            published = CollectionUtil.isEmpty(lastUpdate.getValue()) ? "0" : lastUpdate.getValue().get(0).toString();
+            published = CollectionUtil.isEmpty(lastUpdate.getValue())
+                    ? 0L
+                    : OktaUtils.convertToTimestamp(lastUpdate.getValue().get(0).toString());
         }
 
         bld.setToken(new SyncToken(published));
@@ -968,5 +957,26 @@ public class OktaConnector implements Connector,
                         });
             }
         });
+    }
+
+    private void updateUserStatus(final User updatedUser, final Attribute status) {
+        if (status == null || CollectionUtil.isEmpty(status.getValue())) {
+            LOG.warn("{0} attribute value not correct, can't handle User status update",
+                    OperationalAttributes.ENABLE_NAME);
+        } else {
+            if (updatedUser.getStatus().equals(UserStatus.ACTIVE)
+                    && !Boolean.parseBoolean(status.getValue().get(0).toString())) {
+                updatedUser.suspend();
+            } else if (updatedUser.getStatus().equals(UserStatus.SUSPENDED)
+                    && Boolean.parseBoolean(status.getValue().get(0).toString())) {
+                updatedUser.unsuspend();
+            } else if (updatedUser.getStatus().equals(UserStatus.STAGED)
+                    && Boolean.parseBoolean(status.getValue().get(0).toString())) {
+                updatedUser.activate(Boolean.FALSE);
+            } else if (!updatedUser.getStatus().equals(UserStatus.DEPROVISIONED)
+                    && !Boolean.parseBoolean(status.getValue().get(0).toString())) {
+                updatedUser.deactivate();
+            }
+        }
     }
 }

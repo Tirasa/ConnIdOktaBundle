@@ -132,7 +132,7 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
                 body.getCredentials().setPassword(null);
                 USER_PASSWORD_REPOSITORY.put(body.getId(), passwords);
             }
-            
+
             USER_IDP_REPOSITORY.put(body.getId(), new HashSet<>(Arrays.asList("CAS 5 IDP")));
             USER_REPOSITORY.add(body);
             createLogEvent("user.lifecycle.create", body.getId());
@@ -303,7 +303,17 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
 
     @Override
     public Response suspendUser(final String userId) {
-        throw new UnsupportedOperationException(ERROR_MESSAGE);
+        Optional<User> found = USER_REPOSITORY.stream()
+                .filter(user -> StringUtils.equals(userId, user.getId()))
+                .findAny();
+        if (found.isPresent() && found.get().getStatus() == UserStatus.ACTIVE) {
+            found.get().setStatus(UserStatus.SUSPENDED);
+            found.get().setStatusChanged(Date.from(Instant.now()));
+            createLogEvent("user.lifecycle.suspend", userId);
+            return Response.ok().entity(found.get()).build();
+        } else {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
     }
 
     @Override
@@ -313,7 +323,17 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
 
     @Override
     public Response unsuspendUser(final String userId) {
-        throw new UnsupportedOperationException(ERROR_MESSAGE);
+        Optional<User> found = USER_REPOSITORY.stream()
+                .filter(user -> StringUtils.equals(userId, user.getId()))
+                .findAny();
+        if (found.isPresent() && found.get().getStatus() == UserStatus.SUSPENDED) {
+            found.get().setStatus(UserStatus.ACTIVE);
+            found.get().setStatusChanged(Date.from(Instant.now()));
+            createLogEvent("user.lifecycle.unsuspend", userId);
+            return Response.ok().entity(found.get()).build();
+        } else {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
     }
 
     @Override
@@ -356,15 +376,15 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
         String[] split = filter.split(" ");
 
         return users.stream().
-                filter(user -> {
-                    try {
-                        return StringUtils.equals(StringUtils.remove(split[2], "\""),
-                                BeanUtils.getProperty(user, split[0]));
-                    } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
-                        return false;
-                    }
-                }).
-                collect(Collectors.toList());
+                        filter(user -> {
+                            try {
+                                return StringUtils.equals(StringUtils.remove(split[2], "\""),
+                                        BeanUtils.getProperty(user, split[0]));
+                            } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
+                                return false;
+                            }
+                        }).
+                        collect(Collectors.toList());
     }
 
     @Override

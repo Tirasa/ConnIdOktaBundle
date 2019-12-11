@@ -35,7 +35,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import net.tirasa.connid.bundles.okta.utils.OktaAttribute;
-import net.tirasa.connid.bundles.okta.utils.OktaUtils;
 import org.identityconnectors.common.logging.Log;
 import org.identityconnectors.common.security.GuardedString;
 import org.identityconnectors.framework.api.APIConfiguration;
@@ -48,6 +47,7 @@ import org.identityconnectors.framework.common.objects.ConnectorObject;
 import org.identityconnectors.framework.common.objects.ObjectClass;
 import org.identityconnectors.framework.common.objects.OperationOptions;
 import org.identityconnectors.framework.common.objects.OperationOptionsBuilder;
+import org.identityconnectors.framework.common.objects.OperationalAttributes;
 import org.identityconnectors.framework.common.objects.Schema;
 import org.identityconnectors.framework.common.objects.SearchResult;
 import org.identityconnectors.framework.common.objects.SyncDelta;
@@ -427,19 +427,18 @@ public class OktaConnectorTests extends AbstractConnectorTests {
         OperationOptionsBuilder operationOptionBuilder =
                 new OperationOptionsBuilder().setAttributesToGet(
                         OktaAttribute.EMAIL, OktaAttribute.MOBILEPHONE, OktaAttribute.OKTA_GROUPS);
-        
+
         SyncToken token = connector.getLatestSyncToken(ObjectClass.ACCOUNT);
         connector.sync(ObjectClass.ACCOUNT, token, handler, operationOptionBuilder.build());
-        
+
         assertTrue(handler.getDeleted().isEmpty());
         assertTrue(handler.getUpdated().isEmpty());
 
         handler.clear();
 
         // user added sync
-        Uid newUser = connector.create(ObjectClass.ACCOUNT, createUserAttrs("Password123"), operationOptionBuilder.
-                build());
-
+        Uid newUser = connector.create(
+                ObjectClass.ACCOUNT, createUserAttrs("Password123"), operationOptionBuilder.build());
         connector.sync(ObjectClass.ACCOUNT, token, handler, operationOptionBuilder.build());
         assertFalse(token.equals(handler.getLatestReceivedToken()));
 
@@ -507,6 +506,75 @@ public class OktaConnectorTests extends AbstractConnectorTests {
 
         assertTrue(handler.getUpdated().isEmpty());
         assertEquals(1, handler.getDeleted().size());
+    }
+
+    @Test
+    public void suspendUnsuspend() {
+        ToListResultsHandler handler = new ToListResultsHandler();
+        OperationOptions operationOption =
+                new OperationOptionsBuilder().setAttributesToGet(
+                        OktaAttribute.EMAIL,
+                        OktaAttribute.MOBILEPHONE,
+                        OperationalAttributes.ENABLE_NAME).build();
+        try {
+            // CREATE USER
+            String username = UUID.randomUUID().toString();
+            Attribute password = AttributeBuilder.buildPassword(new GuardedString("Password123".toCharArray()));
+            Attribute mobilePhone = AttributeBuilder.build(OktaAttribute.MOBILEPHONE, "123456789");
+
+            Set<Attribute> userAttrs = new HashSet<>();
+            userAttrs.add(AttributeBuilder.build(OktaAttribute.EMAIL, username + "@tirasa.net"));
+            userAttrs.add(AttributeBuilder.build(OktaAttribute.FIRSTNAME, "Test"));
+            userAttrs.add(AttributeBuilder.build(OktaAttribute.LASTNAME, "Test"));
+            userAttrs.add(AttributeBuilder.build(OperationalAttributes.ENABLE_NAME, true));
+            userAttrs.add(mobilePhone);
+            userAttrs.add(password);
+
+            Uid created = connector.create(ObjectClass.ACCOUNT, userAttrs, operationOption);
+            USERS.add(created.getUidValue());
+            assertNotNull(created);
+
+            // GET USER
+            EqualsFilter filter = (EqualsFilter) FilterBuilder.equalTo(
+                    AttributeBuilder.build("email", username + "@tirasa.net"));
+            connector.search(ObjectClass.ACCOUNT, filter, handler, operationOption);
+            assertNotNull(handler.getObjects());
+            assertFalse(handler.getObjects().isEmpty());
+            assertEquals(handler.getObjects().get(0).getUid().getUidValue(), created.getUidValue());
+
+            assertTrue(AttributeUtil.isEnabled(handler.getObjects().get(0)));
+            LOG.info("Created User with id {0} on Okta", handler.getObjects().get(0).getUid());
+
+            userAttrs.remove(mobilePhone);
+            userAttrs.remove(password);
+            Attribute enable = AttributeBuilder.build(OperationalAttributes.ENABLE_NAME, false);
+            userAttrs.add(enable);
+            Uid updated = connector.update(ObjectClass.ACCOUNT, created, userAttrs, operationOption);
+
+            assertNotNull(updated);
+            assertTrue(AttributeUtil.isEnabled(handler.getObjects().get(0)));
+
+            //GET USER
+            handler = new ToListResultsHandler();
+            connector.search(ObjectClass.ACCOUNT, filter, handler, operationOption);
+            assertNotNull(handler.getObjects());
+            assertFalse(handler.getObjects().isEmpty());
+            assertFalse(AttributeUtil.isEnabled(handler.getObjects().get(0)));
+
+            userAttrs.remove(enable);
+            userAttrs.add(AttributeBuilder.build(OperationalAttributes.ENABLE_NAME, true));
+            connector.update(ObjectClass.ACCOUNT, created, userAttrs, operationOption);
+
+            //GET USER
+            handler = new ToListResultsHandler();
+            connector.search(ObjectClass.ACCOUNT, filter, handler, operationOption);
+            assertNotNull(handler.getObjects());
+            assertFalse(handler.getObjects().isEmpty());
+            assertTrue(AttributeUtil.isEnabled(handler.getObjects().get(0)));
+        } catch (Exception e) {
+            LOG.error(e, "While running test");
+            fail(e.getMessage());
+        }
     }
 
     @AfterClass
