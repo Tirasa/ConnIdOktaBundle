@@ -33,7 +33,7 @@
   
   <bean id="jsonProvider" class="com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider" p:mapper-ref="jacksonMapper"/>
   
-  <jaxrs:server id="services">
+  <jaxrs:server id="services" address="/">
     <jaxrs:serviceBeans>
       <bean class="com.gfs.ebz.syncope.api.impl.UserImpl"/>
       <bean class="com.gfs.ebz.syncope.api.impl.UserSchemaImpl"/>
