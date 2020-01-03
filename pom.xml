@@ -79,10 +79,10 @@
     <connid.version>1.4.5.1</connid.version>
     <okta.version>1.6.0-SNAPSHOT</okta.version>
     
-    <swagger-codegen.plugin.version>3.0.13</swagger-codegen.plugin.version>
+    <swagger-codegen.plugin.version>3.0.14</swagger-codegen.plugin.version>
     <javax.servlet.version>3.1.0</javax.servlet.version>
-    <spring.version>5.1.11.RELEASE</spring.version>
-    <jackson.version>2.10.0</jackson.version>
+    <spring.version>5.1.12.RELEASE</spring.version>
+    <jackson.version>2.10.1</jackson.version>
     <javax.validation.version>2.0.1.Final</javax.validation.version>
     <apache.cxf.version>3.3.4</apache.cxf.version>
     <swagger-annotations.version>2.0.10</swagger-annotations.version>
