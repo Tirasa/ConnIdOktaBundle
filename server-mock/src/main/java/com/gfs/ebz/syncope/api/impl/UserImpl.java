@@ -114,7 +114,7 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
                     body.getCredentials().setPassword(expired);
                 }
             } else {
-                body.setStatus(UserStatus.SUSPENDED);
+                body.setStatus(UserStatus.STAGED);
             }
             body.setId(UUID.randomUUID().toString());
             body.setCreated(Date.from(Instant.now()));

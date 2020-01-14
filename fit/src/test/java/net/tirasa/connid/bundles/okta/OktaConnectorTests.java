@@ -577,6 +577,36 @@ public class OktaConnectorTests extends AbstractConnectorTests {
         }
     }
 
+    @Test
+    public void createUserWithStatusStaged() {
+        ToListResultsHandler handler = new ToListResultsHandler();
+        OperationOptions operationOption =
+                new OperationOptionsBuilder().setAttributesToGet(
+                        OktaAttribute.EMAIL,
+                        OktaAttribute.MOBILEPHONE,
+                        OperationalAttributes.ENABLE_NAME).build();
+
+        // CREATE USER
+        String username = UUID.randomUUID().toString();
+        Attribute password = AttributeBuilder.buildPassword(new GuardedString("Password123".toCharArray()));
+        Attribute mobilePhone = AttributeBuilder.build(OktaAttribute.MOBILEPHONE, "123456789");
+
+        Set<Attribute> userAttrs = new HashSet<>();
+        userAttrs.add(AttributeBuilder.build(OktaAttribute.EMAIL, username + "@tirasa.net"));
+        userAttrs.add(AttributeBuilder.build(OktaAttribute.FIRSTNAME, "Test"));
+        userAttrs.add(AttributeBuilder.build(OktaAttribute.LASTNAME, "Test"));
+        userAttrs.add(AttributeBuilder.build(OperationalAttributes.ENABLE_NAME, false));
+        userAttrs.add(mobilePhone);
+        userAttrs.add(password);
+
+        Uid created = connector.create(ObjectClass.ACCOUNT, userAttrs, operationOption);
+        USERS.add(created.getUidValue());
+        assertNotNull(created);
+        
+        User user = conn.getClient().getUser(created.getUidValue());
+        assertEquals("STAGED", user.getStatus().STAGED.toString());
+    }
+
     @AfterClass
     public static void cleanTestData() {
         USERS.stream().forEach(item -> cleanUserTestData(conn.getClient(), item));
