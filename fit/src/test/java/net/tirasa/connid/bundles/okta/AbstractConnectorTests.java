@@ -15,6 +15,7 @@
  */
 package net.tirasa.connid.bundles.okta;
 
+import static net.tirasa.connid.bundles.okta.OktaConnectorTests.newFacade;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
@@ -26,6 +27,8 @@ import com.okta.sdk.resource.application.WsFederationApplicationSettingsApplicat
 import com.okta.sdk.resource.group.Group;
 import com.okta.sdk.resource.group.GroupBuilder;
 import com.okta.sdk.resource.user.User;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -47,10 +50,13 @@ import org.identityconnectors.framework.common.objects.SyncDeltaType;
 import org.identityconnectors.framework.common.objects.SyncResultsHandler;
 import org.identityconnectors.framework.common.objects.SyncToken;
 import org.identityconnectors.framework.common.objects.Uid;
+import org.junit.BeforeClass;
 
 public abstract class AbstractConnectorTests {
 
     private static final Log LOG = Log.getLog(AbstractConnectorTests.class);
+
+    protected static OktaConfiguration conf;
 
     protected static OktaConnector conn;
 
@@ -63,6 +69,45 @@ public abstract class AbstractConnectorTests {
     protected static final Set<String> GROUPS = new HashSet<>();
 
     protected static final Set<String> APPLICATIONS = new HashSet<>();
+
+    @BeforeClass
+    public static void setUpConf() {
+        try {
+            InputStream propStream =
+                    OktaConnectorTests.class.getResourceAsStream("/okta.properties");
+            PROPS.load(propStream);
+        } catch (IOException e) {
+            fail("Could not load okta.properties: " + e.getMessage());
+        }
+
+        conf = new OktaConfiguration();
+        conf.setDomain(PROPS.getProperty("domain"));
+        conf.setOktaApiToken(PROPS.getProperty("oktaApiToken"));
+        conf.setUserEvents("user.lifecycle.create",
+                "user.lifecycle.update",
+                "user.lifecycle.delete",
+                "group.user_membership.add",
+                "group.user_membership.remove");
+
+        conf.setRateLimitMaxRetries(0);
+        conf.setRetryMaxElapsed(0);
+
+        try {
+            conf.validate();
+            conn = new OktaConnector();
+            conn.init(conf);
+            conn.test();
+
+        } catch (Exception e) {
+            LOG.error(e, "While testing connector");
+        }
+        conn.schema();
+        connector = newFacade();
+
+        assertNotNull(conf);
+        assertNotNull(conf.getDomain());
+        assertNotNull(conf.getOktaApiToken());
+    }
 
     protected static void cleanUserTestData(final Client client, final String userId) {
         try {
@@ -171,7 +216,7 @@ public abstract class AbstractConnectorTests {
         groupTest = createGroup(conn.getClient());
         assertNotNull(groupTest);
         GROUPS.add(groupTest.getId());
-        
+
         Application app = createApplication(conn.getClient());
         assertNotNull(app);
         APPLICATIONS.add(app.getId());

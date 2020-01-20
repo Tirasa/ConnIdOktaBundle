@@ -157,6 +157,8 @@ public class OktaConnector implements Connector,
             this.client = Clients.builder()
                     .setOrgUrl(this.configuration.getDomain())
                     .setClientCredentials(new TokenClientCredentials(this.configuration.getOktaApiToken()))
+                    .setRetryMaxAttempts(this.configuration.getRateLimitMaxRetries())
+                    .setRetryMaxElapsed(this.configuration.getRetryMaxElapsed())
                     .build();
         } catch (Exception ex) {
             OktaUtils.wrapGeneralError("Could not create Okta client", ex);

@@ -34,8 +34,12 @@ public class OktaConfiguration extends AbstractConfiguration {
     private String[] userEvents = { "user.account.update_profile" };
 
     private String[] groupEvents = {};
-    
+
     private String[] applicationEvents = {};
+
+    private int rateLimitMaxRetries = 0;
+
+    private int retryMaxElapsed = 0;
 
     @ConfigurationProperty(order = 1, displayMessageKey = "domain.display",
             groupMessageKey = "basic.group", helpMessageKey = "domain.help", required = true,
@@ -78,7 +82,7 @@ public class OktaConfiguration extends AbstractConfiguration {
         return userEvents.clone();
     }
 
-    public void setUserEvents(String... userEvents) {
+    public void setUserEvents(final String... userEvents) {
         this.userEvents = userEvents.clone();
     }
 
@@ -90,7 +94,7 @@ public class OktaConfiguration extends AbstractConfiguration {
         return groupEvents.clone();
     }
 
-    public void setGroupEvents(String... groupEvents) {
+    public void setGroupEvents(final String... groupEvents) {
         this.groupEvents = groupEvents.clone();
     }
 
@@ -102,8 +106,32 @@ public class OktaConfiguration extends AbstractConfiguration {
         return applicationEvents.clone();
     }
 
-    public void setApplicationEvents(String... applicationEvents) {
+    public void setApplicationEvents(final String... applicationEvents) {
         this.applicationEvents = applicationEvents.clone();
+    }
+
+    public void setRateLimitMaxRetries(final int rateLimitMaxRetries) {
+        this.rateLimitMaxRetries = rateLimitMaxRetries;
+    }
+
+    @ConfigurationProperty(order = 7,
+            displayMessageKey = "rateLimitMaxRetries.display",
+            groupMessageKey = "basic.group",
+            helpMessageKey = "rateLimitMaxRetries.help")
+    public int getRateLimitMaxRetries() {
+        return rateLimitMaxRetries;
+    }
+
+    public void setRetryMaxElapsed(final int retryMaxElapsed) {
+        this.retryMaxElapsed = retryMaxElapsed;
+    }
+
+    @ConfigurationProperty(order = 8,
+            displayMessageKey = "retryMaxElapsed.display",
+            groupMessageKey = "basic.group",
+            helpMessageKey = "retryMaxElapsed.help")
+    public int getRetryMaxElapsed() {
+        return retryMaxElapsed;
     }
 
     @Override

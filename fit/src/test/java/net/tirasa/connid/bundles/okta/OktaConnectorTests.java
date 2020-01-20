@@ -26,8 +26,6 @@ import com.okta.sdk.resource.group.Group;
 import com.okta.sdk.resource.user.User;
 import com.okta.sdk.resource.group.GroupBuilder;
 import com.okta.sdk.resource.group.GroupList;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Arrays;
 import java.util.HashSet;
 
@@ -65,43 +63,8 @@ public class OktaConnectorTests extends AbstractConnectorTests {
 
     private static final Log LOG = Log.getLog(OktaConnectorTests.class);
 
-    private static OktaConfiguration conf;
-
     @BeforeClass
-    public static void setUpConf() {
-        try {
-            InputStream propStream =
-                    OktaConnectorTests.class.getResourceAsStream("/okta.properties");
-            PROPS.load(propStream);
-        } catch (IOException e) {
-            fail("Could not load okta.properties: " + e.getMessage());
-        }
-
-        conf = new OktaConfiguration();
-        conf.setDomain(PROPS.getProperty("domain"));
-        conf.setOktaApiToken(PROPS.getProperty("oktaApiToken"));
-        conf.setUserEvents("user.lifecycle.create",
-                "user.lifecycle.update",
-                "user.lifecycle.delete",
-                "group.user_membership.add",
-                "group.user_membership.remove");
-
-        try {
-            conf.validate();
-            conn = new OktaConnector();
-            conn.init(conf);
-            conn.test();
-
-        } catch (Exception e) {
-            LOG.error(e, "While testing connector");
-        }
-        conn.schema();
-        connector = newFacade();
-
-        assertNotNull(conf);
-        assertNotNull(conf.getDomain());
-        assertNotNull(conf.getOktaApiToken());
-
+    public static void setupData() {
         createSearchTestData();
     }
 
@@ -602,7 +565,7 @@ public class OktaConnectorTests extends AbstractConnectorTests {
         Uid created = connector.create(ObjectClass.ACCOUNT, userAttrs, operationOption);
         USERS.add(created.getUidValue());
         assertNotNull(created);
-        
+
         User user = conn.getClient().getUser(created.getUidValue());
         assertEquals("STAGED", user.getStatus().STAGED.toString());
     }

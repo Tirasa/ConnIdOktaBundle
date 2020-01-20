@@ -182,6 +182,9 @@
               <includes>
                 <include>**/*Tests.java</include>
               </includes>
+              <excludes>
+                <exclude>**/OktaRateLimitsTests.java</exclude>
+              </excludes>
             </configuration>
           </execution>
         </executions>
@@ -354,6 +357,107 @@
                   <argLine></argLine>
                   <includes>
                     <include>**/*Tests.java</include>
+                  </includes>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+        
+        <testResources>
+          <testResource>
+            <directory>src/test/resources/it</directory>
+            <filtering>true</filtering>
+            <includes>
+              <include>okta.properties</include>
+            </includes>
+          </testResource>
+        </testResources>
+      </build>
+    </profile>
+    
+    <profile>
+      <id>rate-limits</id>
+
+      <build>
+        <defaultGoal>clean package integration-test</defaultGoal>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.cargo</groupId>
+            <artifactId>cargo-maven2-plugin</artifactId>
+            <inherited>false</inherited>
+            <executions>
+              <execution>
+                <id>start-container</id>
+                <phase>none</phase>
+              </execution>
+              <execution>
+                <id>stop-container</id>
+                <phase>none</phase>
+              </execution>
+            </executions>
+          </plugin>
+          
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <inherited>false</inherited>
+            <configuration>
+              <skipTests>true</skipTests>
+            </configuration>
+            <executions>
+              <execution>
+                <id>integration-test-mock</id>
+                <phase>none</phase>
+              </execution>
+            </executions>
+          </plugin>
+          
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-resources-plugin</artifactId>
+            <inherited>true</inherited>
+            <executions>
+              <execution>
+                <id>copy-okta-properties</id>
+                <phase>test-compile</phase>
+                <goals>
+                  <goal>copy-resources</goal>
+                </goals>
+                <configuration>
+                  <outputDirectory>${basedir}/target/test-classes/</outputDirectory>
+                  <resources>
+                    <resource>
+                      <directory>${basedir}/src/test/resources/it</directory>
+                      <includes>
+                        <include>okta.properties</include>
+                      </includes>
+                    </resource>
+                  </resources>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <inherited>true</inherited>
+            <configuration>
+              <skipTests>false</skipTests>
+              <skip>true</skip>
+            </configuration>
+            <executions>
+              <execution>
+                <id>integration-test-okta</id>
+                <phase>integration-test</phase>
+                <goals>
+                  <goal>test</goal>
+                </goals>
+                <configuration>
+                  <skip>false</skip>
+                  <argLine></argLine>
+                  <includes>
+                    <include>**/OktaRateLimitsTests.java</include>
                   </includes>
                 </configuration>
               </execution>
