@@ -15,8 +15,11 @@
  */
 package net.tirasa.connid.bundles.okta;
 
+import java.util.Arrays;
+import java.util.List;
 import net.tirasa.connid.bundles.okta.utils.OktaAttribute;
-import net.tirasa.connid.bundles.okta.utils.OktaUtils;
+import net.tirasa.connid.bundles.okta.utils.OktaFilter;
+import net.tirasa.connid.bundles.okta.utils.OktaFilterOp;
 import org.identityconnectors.common.logging.Log;
 import org.identityconnectors.framework.common.objects.AttributeUtil;
 import org.identityconnectors.framework.common.objects.filter.AbstractFilterTranslator;
@@ -35,7 +38,7 @@ import org.identityconnectors.framework.common.objects.filter.StartsWithFilter;
  * This is an implementation of AbstractFilterTranslator that gives a concrete representation
  * of which filters can be applied at the connector level
  */
-public class OktaFilterTranslator extends AbstractFilterTranslator<String> {
+public class OktaFilterTranslator extends AbstractFilterTranslator<OktaFilter> {
 
     private static final Log LOG = Log.getLog(OktaFilterTranslator.class);
 
@@ -43,136 +46,110 @@ public class OktaFilterTranslator extends AbstractFilterTranslator<String> {
      * {@inheritDoc}
      */
     @Override
-    public String createAndExpression(final String leftExpression, final String rightExpression) {
-        return createAndOrExpression("and", leftExpression, rightExpression);
+    public OktaFilter createAndExpression(final OktaFilter leftExpression, final OktaFilter rightExpression) {
+        return createOktaFilter(OktaFilterOp.AND, null, false, Arrays.asList(leftExpression, rightExpression), false);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public String createOrExpression(final String leftExpression, final String rightExpression) {
-        return createAndOrExpression("or", leftExpression, rightExpression);
+    public OktaFilter createOrExpression(final OktaFilter leftExpression, final OktaFilter rightExpression) {
+        return createOktaFilter(OktaFilterOp.OR, null, false, Arrays.asList(leftExpression, rightExpression), false);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public String createContainsExpression(final ContainsFilter filter, final boolean not) {
-        return createNotExpression(filter, "co", not);
+    public OktaFilter createContainsExpression(final ContainsFilter filter, final boolean not) {
+        return createOktaFilter(OktaFilterOp.CONTAINS, filter, true, null, not);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public String createEndsWithExpression(final EndsWithFilter filter, final boolean not) {
-        return createNotExpression(filter, "ew", not);
+    public OktaFilter createEndsWithExpression(final EndsWithFilter filter, final boolean not) {
+        return createOktaFilter(OktaFilterOp.ENDS_WITH, filter, true, null, not);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public String createStartsWithExpression(final StartsWithFilter filter, final boolean not) {
-        return createNotExpression(filter, "sw", not);
+    public OktaFilter createStartsWithExpression(final StartsWithFilter filter, final boolean not) {
+        return createOktaFilter(OktaFilterOp.STARTS_WITH, filter, true, null, not);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public String createGreaterThanExpression(final GreaterThanFilter filter, final boolean not) {
-        return createNotExpression(filter, "gt", !not);
+    public OktaFilter createGreaterThanExpression(final GreaterThanFilter filter, final boolean not) {
+        return createOktaFilter(OktaFilterOp.GREATER_THAN, filter, true, null, not);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public String createGreaterThanOrEqualExpression(final GreaterThanOrEqualFilter filter, final boolean not) {
-        return createNotExpression(filter, "ge", not);
+    public OktaFilter createGreaterThanOrEqualExpression(final GreaterThanOrEqualFilter filter, final boolean not) {
+        return createOktaFilter(OktaFilterOp.GREATER_OR_EQUAL, filter, true, null, not);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public String createLessThanExpression(final LessThanFilter filter, final boolean not) {
-        return createNotExpression(filter, "lt", !not);
+    public OktaFilter createLessThanExpression(final LessThanFilter filter, final boolean not) {
+        return createOktaFilter(OktaFilterOp.LESS_THAN, filter, true, null, not);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public String createLessThanOrEqualExpression(final LessThanOrEqualFilter filter, final boolean not) {
-        return createNotExpression(filter, "le", not);
+    public OktaFilter createLessThanOrEqualExpression(final LessThanOrEqualFilter filter, final boolean not) {
+        return createOktaFilter(OktaFilterOp.LESS_OR_EQUAL, filter, true, null, not);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public String createEqualsExpression(final EqualsFilter filter, final boolean not) {
-        return createNotExpression(filter, "eq", not);
+    public OktaFilter createEqualsExpression(final EqualsFilter filter, final boolean not) {
+        return createOktaFilter(OktaFilterOp.EQUALS, filter, true, null, not);
     }
 
     @Override
-    protected String createEqualsIgnoreCaseExpression(EqualsIgnoreCaseFilter filter, boolean not) {
-        return createNotExpression(filter, "eq", not);
+    public OktaFilter createEqualsIgnoreCaseExpression(final EqualsIgnoreCaseFilter filter, final boolean not) {
+        return createOktaFilter(OktaFilterOp.EQUALS, filter, true, null, not);
     }
 
-    private String createNotExpression(final AttributeFilter filter, final String operator, final boolean not) {
-        String expression = createExpression(filter, operator);
-        if (not) {
-            LOG.info("Search with not is not supported by Okta");
-            return null;
-        }
-        return expression;
+    private OktaFilter createOktaFilter(final OktaFilterOp type, final AttributeFilter filter,
+            final boolean quote, final List<OktaFilter> filters, final boolean not) {
+        checkIfNot(not);
+        return filter == null
+                ? new OktaFilter(type, null, null, quote, filters)
+                : new OktaFilter(type, getFilterName(filter), getFilterValue(filter), quote, filters);
     }
 
-    private static String createAndOrExpression(final String operator, final String... operands) {
-        StringBuilder sb = new StringBuilder();
-        boolean addOp = false;
-        for (String s : operands) {
-            if (addOp) {
-                sb.append(" ");
-                sb.append(operator);
-                sb.append(" ");
-            }
-            addOp = true;
-            sb.append(s);
-            
-        }
-        return sb.toString();
+    private String getFilterName(final AttributeFilter filter) {
+        return OktaAttribute.ID.equals(filter.getName()) ? filter.getName() : "profile." + filter.getName();
     }
 
-    private String createExpression(final AttributeFilter filter, final String operator) {
-        LOG.ok("filter {0} ({1}) = {2}", filter.getName(), 
-                filter.getAttribute().getName(), filter.getAttribute().getValue());
-        StringBuilder sb = new StringBuilder();
-
-        String attrName = OktaAttribute.ID.equals(filter.getName()) ? filter.getName() : "profile." + filter.getName();
+    private String getFilterValue(final AttributeFilter filter) {
         Object attrValue = AttributeUtil.getSingleValue(filter.getAttribute());
         if (attrValue == null) {
-            OktaUtils.handleGeneralError("Illegal search filter");
+            return null;
         }
-        createCondition(sb, attrName, operator, attrValue.toString());
-        return sb.toString();
+        return attrValue.toString();
     }
 
-    private static void createCondition(
-            final StringBuilder sb,
-            final String name,
-            final String operator,
-            final Object value) {
-        sb.append(name);
-        sb.append(" ");
-        sb.append(operator);
-        sb.append(" \"");
-        sb.append(value);
-        sb.append("\"");
+    private void checkIfNot(final boolean not) {
+        if (not) {
+            LOG.info("Search with not is not supported by Okta");
+        }
     }
 }

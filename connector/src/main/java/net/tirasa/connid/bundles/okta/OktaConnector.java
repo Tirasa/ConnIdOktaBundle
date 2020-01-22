@@ -47,6 +47,7 @@ import net.tirasa.connid.bundles.okta.schema.OktaSchema;
 import net.tirasa.connid.bundles.okta.utils.CipherAlgorithm;
 import net.tirasa.connid.bundles.okta.utils.OktaAttribute;
 import net.tirasa.connid.bundles.okta.utils.OktaEventType;
+import net.tirasa.connid.bundles.okta.utils.OktaFilter;
 import net.tirasa.connid.bundles.okta.utils.OktaUtils;
 import org.identityconnectors.common.CollectionUtil;
 import org.identityconnectors.common.StringUtil;
@@ -93,7 +94,7 @@ import org.identityconnectors.framework.spi.operations.UpdateOp;
 @ConnectorClass(configurationClass = OktaConfiguration.class, displayNameKey = "okta.connector.display")
 public class OktaConnector implements Connector,
         CreateOp, UpdateOp, DeleteOp,
-        SchemaOp, SyncOp, TestOp, SearchOp<String> {
+        SchemaOp, SyncOp, TestOp, SearchOp<OktaFilter> {
 
     private static final Log LOG = Log.getLog(OktaConnector.class);
 
@@ -499,7 +500,7 @@ public class OktaConnector implements Connector,
     }
 
     @Override
-    public FilterTranslator<String> createFilterTranslator(
+    public FilterTranslator<OktaFilter> createFilterTranslator(
             ObjectClass oclass, final OperationOptions options) {
 
         LOG.info("check the ObjectClass");
@@ -513,11 +514,15 @@ public class OktaConnector implements Connector,
     @Override
     public void executeQuery(
             final ObjectClass objectClass,
-            final String filter,
+            final OktaFilter filter,
             final ResultsHandler handler,
             final OperationOptions options) {
 
         LOG.ok("Connector READ");
+
+        if (filter != null && filter.getAttribute() != null && filter.getValue() == null) {
+            return;
+        }
 
         Set<String> attributesToGet = new HashSet<>();
         if (options.getAttributesToGet() != null) {
@@ -555,7 +560,7 @@ public class OktaConnector implements Connector,
                 }
             } else {
                 try {
-                    UserList users = client.listUsers(null, filter, null, null, null);
+                    UserList users = client.listUsers(null, filter.toString(), null, null, null);
                     for (User user : users) {
                         if (!handler.handle(fromUser(user, attributesToGet))) {
                             LOG.ok("Stop processing of the result set");
@@ -598,7 +603,7 @@ public class OktaConnector implements Connector,
             } else {
                 Application result = null;
                 try {
-                    ApplicationList applications = client.listApplications(null, filter, null, null);
+                    ApplicationList applications = client.listApplications(null, filter.toString(), null, null);
                     for (Application app : applications) {
                         if (!handler.handle(fromApplication(app, attributesToGet))) {
                             LOG.ok("Stop processing of the result set");
@@ -606,7 +611,7 @@ public class OktaConnector implements Connector,
                         }
                     }
                 } catch (Exception e) {
-                    OktaUtils.wrapGeneralError("While getting Application : " + filter, e);
+                    OktaUtils.wrapGeneralError("While getting Application : " + filter.toString(), e);
                 }
                 if (result != null) {
                     handler.handle(fromApplication(result, attributesToGet));
@@ -643,7 +648,7 @@ public class OktaConnector implements Connector,
                 }
             } else {
                 try {
-                    GroupList groups = client.listGroups(null, filter, null);
+                    GroupList groups = client.listGroups(null, filter.toString(), null);
                     for (Group group : groups) {
                         if (!handler.handle(fromGroup(group, attributesToGet))) {
                             LOG.ok("Stop processing of the result set");
@@ -651,7 +656,7 @@ public class OktaConnector implements Connector,
                         }
                     }
                 } catch (Exception e) {
-                    OktaUtils.wrapGeneralError("While getting Application : " + filter, e);
+                    OktaUtils.wrapGeneralError("While getting Application : " + filter.toString(), e);
                 }
             }
         } else {
