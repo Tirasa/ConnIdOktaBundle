@@ -81,10 +81,10 @@
     
     <swagger-codegen.plugin.version>3.0.14</swagger-codegen.plugin.version>
     <javax.servlet.version>3.1.0</javax.servlet.version>
-    <spring.version>5.1.12.RELEASE</spring.version>
+    <spring.version>5.1.13.RELEASE</spring.version>
     <jackson.version>2.10.1</jackson.version>
     <javax.validation.version>2.0.1.Final</javax.validation.version>
-    <apache.cxf.version>3.3.4</apache.cxf.version>
+    <apache.cxf.version>3.3.5</apache.cxf.version>
     <swagger-annotations.version>2.0.10</swagger-annotations.version>
     
     <log.directory>${project.build.directory}/log</log.directory>
@@ -95,7 +95,7 @@
     <cargo.log>${log.directory}/cargo.log</cargo.log>
     <cargo.output>${log.directory}/cargo-output.log</cargo.output>
 
-    <tomcat.version>9.0.27</tomcat.version>
+    <tomcat.version>9.0.30</tomcat.version>
     
     <java.version>1.8</java.version>
     <rootpom.basedir>${basedir}</rootpom.basedir>
@@ -267,12 +267,12 @@
         <plugin>
           <groupId>org.codehaus.cargo</groupId>
           <artifactId>cargo-maven2-plugin</artifactId>
-          <version>1.7.7</version>
+          <version>1.7.9</version>
           <configuration>
             <container>
               <containerId>tomcat9x</containerId>
               <zipUrlInstaller>
-                <url>http://central.maven.org/maven2/org/apache/tomcat/tomcat/${tomcat.version}/tomcat-${tomcat.version}.zip</url>
+                <url>https://repo1.maven.org/maven2/org/apache/tomcat/tomcat/${tomcat.version}/tomcat-${tomcat.version}.zip</url>
                 <downloadDir>${settings.localRepository}/org/codehaus/cargo/cargo-container-archives</downloadDir>
                 <extractDir>${project.build.directory}/cargo/extract</extractDir>
               </zipUrlInstaller>
