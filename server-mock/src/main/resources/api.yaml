@@ -5556,7 +5556,7 @@ definitions:
         type: string
       login:
         type: string
-      GUID:
+      guid:
         typr: string
       mobilePhone:
         type: string

@@ -74,8 +74,8 @@ public class UserSchemaImpl implements UserSchemaApi {
                 initializeUserSchemaProperty("Email", "string", "NONE", "READ_WRITE", true, 0, 0, permissions));
         baseProperty.put("secondEmail",
                 initializeUserSchemaProperty("Second Email", "string", "NONE", "READ_WRITE", true, 0, 0, permissions));
-        customProperty.put("GUID",
-                initializeUserSchemaProperty("GUID", "string", "NONE", "READ_WRITE", true, 0, 0, permissions));
+        customProperty.put("guid",
+                initializeUserSchemaProperty("guid", "string", "NONE", "READ_WRITE", true, 0, 0, permissions));
         customProperty.put("contactID",
                 initializeUserSchemaProperty("Contact ID", "string", "NONE", "READ_WRITE", true, 0, 0, permissions));
         baseProperty.put("firstName",
