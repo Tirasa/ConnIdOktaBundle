@@ -252,7 +252,9 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
             final String search,
             final String expand) {
 
-        if (filter != null) {
+        if (search != null) {
+            return Response.ok().entity(searchUsers(USER_REPOSITORY, search)).build();
+        } else if (filter != null) {
             return Response.ok().entity(searchUsers(USER_REPOSITORY, filter)).build();
         }
 
@@ -376,15 +378,15 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
         String[] split = filter.split(" ");
 
         return users.stream().
-                        filter(user -> {
-                            try {
-                                return StringUtils.equals(StringUtils.remove(split[2], "\""),
-                                        BeanUtils.getProperty(user, split[0]));
-                            } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
-                                return false;
-                            }
-                        }).
-                        collect(Collectors.toList());
+                filter(user -> {
+                    try {
+                        return StringUtils.equals(StringUtils.remove(split[2], "\""),
+                                BeanUtils.getProperty(user, split[0]));
+                    } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
+                        return false;
+                    }
+                }).
+                collect(Collectors.toList());
     }
 
     @Override

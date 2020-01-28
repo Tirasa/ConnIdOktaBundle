@@ -560,7 +560,7 @@ public class OktaConnector implements Connector,
                 }
             } else {
                 try {
-                    UserList users = client.listUsers(null, filter.toString(), null, null, null);
+                    UserList users = client.listUsers(null, null, null, filter.toString(), null);
                     for (User user : users) {
                         if (!handler.handle(fromUser(user, attributesToGet))) {
                             LOG.ok("Stop processing of the result set");
