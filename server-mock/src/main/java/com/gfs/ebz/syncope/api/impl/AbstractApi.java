@@ -26,12 +26,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.UriInfo;
 import org.apache.commons.lang3.tuple.Pair;
@@ -45,22 +45,26 @@ public abstract class AbstractApi<T extends Object> {
 
     protected static final String ERROR_MESSAGE = "Not supported yet.";
 
-    protected static final List<Application> APPLICATION_REPOSITORY = new ArrayList<>();
+    protected static final List<Application> APPLICATION_REPOSITORY =
+            Collections.synchronizedList(new ArrayList<>());
 
-    protected static final List<Pair<String, String>> APPLICATION_USER_REPOSITORY = new ArrayList<>();
+    protected static final List<Pair<String, String>> APPLICATION_USER_REPOSITORY =
+            Collections.synchronizedList(new ArrayList<>());
 
-    protected static final List<Group> GROUP_REPOSITORY = new ArrayList<>();
+    protected static final List<Group> GROUP_REPOSITORY = 
+            Collections.synchronizedList(new ArrayList<>());
 
-    protected static final List<Pair<String, String>> GROUP_USER_REPOSITORY = new ArrayList<>();
+    protected static final List<Pair<String, String>> GROUP_USER_REPOSITORY =
+            Collections.synchronizedList(new ArrayList<>());
 
-    protected static final List<User> USER_REPOSITORY = new ArrayList<>();
+    protected static final List<User> USER_REPOSITORY = Collections.synchronizedList(new ArrayList<>());
 
-    protected static final Map<String, List<String>> USER_PASSWORD_REPOSITORY = new HashMap<>();
+    protected static final Map<String, List<String>> USER_PASSWORD_REPOSITORY = new ConcurrentHashMap<>();
 
-    protected static final SortedMap<Date, LogEvent> EVENT_REPOSITORY = 
-            new TreeMap<Date, LogEvent>(Collections.reverseOrder());
-    
-    protected static final Map<String, Set<String>> USER_IDP_REPOSITORY = new HashMap<String, Set<String>>();
+    protected static final SortedMap<Date, LogEvent> EVENT_REPOSITORY =
+            Collections.synchronizedSortedMap(new TreeMap<Date, LogEvent>(Collections.reverseOrder()));
+
+    protected static final Map<String, Set<String>> USER_IDP_REPOSITORY = new ConcurrentHashMap<>();
 
     protected abstract String getNextPage(final Integer limit, final int after, final List<T> repository);
 

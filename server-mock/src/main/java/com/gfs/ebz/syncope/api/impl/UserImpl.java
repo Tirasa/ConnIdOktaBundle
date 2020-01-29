@@ -32,6 +32,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.ws.rs.core.Response;
 import org.apache.commons.beanutils.BeanUtils;
@@ -201,7 +202,7 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
         Optional<User> found = USER_REPOSITORY.stream()
                 .filter(user -> StringUtils.equals(userId, user.getId())
                 || StringUtils.equals(userId, user.getProfile().getLogin()))
-                .findAny();
+                .findFirst();
         if (found.isPresent()) {
             return Response.ok().entity(found.get()).build();
         } else {
@@ -242,6 +243,21 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
                 collect(Collectors.toList())).build();
     }
 
+    public List<User> searchUsers(final List<User> users, final String filter) {
+        String[] split = filter.split(" ");
+        return users.stream().
+                filter(user -> {
+                    try {
+                        return user.getStatus() != UserStatus.DEPROVISIONED
+                                && StringUtils.equals(
+                                        StringUtils.remove(split[2], "\""),
+                                        BeanUtils.getProperty(user, split[0]));
+                    } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
+                        return false;
+                    }
+                }).collect(Collectors.toList());
+    }
+
     @Override
     public Response listUsers(
             final String q,
@@ -258,27 +274,32 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
             return Response.ok().entity(searchUsers(USER_REPOSITORY, filter)).build();
         }
 
+        Predicate<? super User> predicate = q == null
+                ? user -> user.getStatus() != UserStatus.DEPROVISIONED
+                : user -> user.getStatus() != UserStatus.DEPROVISIONED
+                && (user.getProfile().getFirstName().contains(q)
+                || user.getProfile().getLastName().contains(q)
+                || user.getProfile().getEmail().contains(q));
+
         if (after != null) {
-            Optional<User> found = USER_REPOSITORY.stream()
-                    .filter(group -> StringUtils.equals(after, group.getId()))
-                    .findAny();
+            Optional<User> found = USER_REPOSITORY.stream().
+                    filter(group -> StringUtils.equals(after, group.getId())).
+                    findAny();
             if (found.isPresent()) {
                 int lastIndexOf = USER_REPOSITORY.lastIndexOf(found.get());
                 return Response.ok().entity(USER_REPOSITORY.stream().
                         skip(lastIndexOf).
                         limit(limit == null ? DEFAULT_LIMIT : limit.longValue()).
-                        filter(q == null ? user -> true : user -> user.getProfile().getFirstName().contains(q)
-                        || user.getProfile().getLastName().contains(q)
-                        || user.getProfile().getEmail().contains(q)).
-                        collect(Collectors.toList())).header("link", getNextPage(limit, lastIndexOf, USER_REPOSITORY)).
+                        filter(predicate).
+                        collect(Collectors.toList())).
+                        header("link", getNextPage(limit, lastIndexOf, USER_REPOSITORY)).
                         build();
             }
         }
         return Response.ok().entity(USER_REPOSITORY.stream().
                 limit(limit == null ? DEFAULT_LIMIT : limit.longValue()).
-                filter(q == null ? user -> true : user -> user.getProfile().getFirstName().contains(q)
-                || user.getProfile().getLastName().contains(q)
-                || user.getProfile().getEmail().contains(q)).
+                filter(predicate).
+                filter(user -> user.getStatus() != UserStatus.DEPROVISIONED).
                 collect(Collectors.toList())).header("link", getNextPage(limit, 0, USER_REPOSITORY)).
                 build();
     }
@@ -372,21 +393,6 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
         } else {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
-    }
-
-    public List<User> searchUsers(final List<User> users, final String filter) {
-        String[] split = filter.split(" ");
-
-        return users.stream().
-                filter(user -> {
-                    try {
-                        return StringUtils.equals(StringUtils.remove(split[2], "\""),
-                                BeanUtils.getProperty(user, split[0]));
-                    } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
-                        return false;
-                    }
-                }).
-                collect(Collectors.toList());
     }
 
     @Override

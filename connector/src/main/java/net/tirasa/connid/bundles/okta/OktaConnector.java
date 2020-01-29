@@ -924,17 +924,19 @@ public class OktaConnector implements Connector,
             LOG.warn("{0} attribute value not correct, can't handle User status update",
                     OperationalAttributes.ENABLE_NAME);
         } else {
-            if (updatedUser.getStatus().equals(UserStatus.ACTIVE)
-                    && !Boolean.parseBoolean(status.getValue().get(0).toString())) {
+            boolean enabled = (boolean) status.getValue().get(0);
+
+            if (updatedUser.getStatus() == UserStatus.ACTIVE && !enabled) {
                 updatedUser.suspend();
-            } else if (updatedUser.getStatus().equals(UserStatus.SUSPENDED)
-                    && Boolean.parseBoolean(status.getValue().get(0).toString())) {
+            } else if (updatedUser.getStatus() == UserStatus.SUSPENDED && enabled) {
                 updatedUser.unsuspend();
-            } else if (updatedUser.getStatus().equals(UserStatus.STAGED)
-                    && Boolean.parseBoolean(status.getValue().get(0).toString())) {
-                updatedUser.activate(Boolean.FALSE);
-            } else if (!updatedUser.getStatus().equals(UserStatus.DEPROVISIONED)
-                    && !Boolean.parseBoolean(status.getValue().get(0).toString())) {
+            } else if (updatedUser.getStatus() == UserStatus.STAGED) {
+                if (enabled) {
+                    updatedUser.activate(Boolean.FALSE);
+                } else {
+                    LOG.ok("not suspending user {} as in STAGED status", updatedUser.getId());
+                }
+            } else if (updatedUser.getStatus() != UserStatus.DEPROVISIONED && !enabled) {
                 updatedUser.deactivate();
             }
         }
