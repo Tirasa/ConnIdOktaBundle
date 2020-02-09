@@ -934,7 +934,7 @@ public class OktaConnector implements Connector,
                 if (enabled) {
                     updatedUser.activate(Boolean.FALSE);
                 } else {
-                    LOG.ok("not suspending user {} as in STAGED status", updatedUser.getId());
+                    LOG.ok("not suspending user {0} as in STAGED status", updatedUser.getId());
                 }
             } else if (updatedUser.getStatus() != UserStatus.DEPROVISIONED && !enabled) {
                 updatedUser.deactivate();
