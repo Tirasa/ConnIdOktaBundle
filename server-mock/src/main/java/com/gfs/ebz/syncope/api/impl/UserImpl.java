@@ -23,14 +23,17 @@ import io.swagger.model.Role;
 import io.swagger.model.User;
 import io.swagger.model.UserCredentials;
 import io.swagger.model.UserStatus;
+import io.swagger.model.Idps;
 import java.lang.reflect.InvocationTargetException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -134,7 +137,7 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
                 USER_PASSWORD_REPOSITORY.put(body.getId(), passwords);
             }
 
-            USER_IDP_REPOSITORY.put(body.getId(), new HashSet<>(Arrays.asList("CAS 5 IDP")));
+            USER_IDP_REPOSITORY.put(body.getId(), new HashSet<>(Arrays.asList("6e77c44bf27d4750a10f1489ce4100df")));
             USER_REPOSITORY.add(body);
             createLogEvent("user.lifecycle.create", body.getId());
             return Response.status(Response.Status.CREATED).entity(body).build();
@@ -395,6 +398,21 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
         }
     }
 
+    @Override
+    public Response listUserIdps(final String userId, final String after, final Integer limit) {
+        Set<String> userIdps = USER_IDP_REPOSITORY.get(userId);
+        if (userIdps != null) {
+            return Response.ok(
+                    userIdps.isEmpty()
+                    ? Collections.emptyList()
+                    : userIdps.stream().map(item -> {
+                        return new Idps().
+                                id("6e77c44bf27d4750a10f1489ce4100df").type("SAML2").name("CAS 5 IDP");
+                    }).collect(Collectors.toList())).build();
+        }
+        return Response.status(Response.Status.NOT_FOUND).build();
+    }
+    
     @Override
     protected String getNextPage(Integer limit, int after, List<User> repository) {
         if (limit != null && limit + after < repository.size()) {

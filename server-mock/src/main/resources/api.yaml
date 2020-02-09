@@ -2488,6 +2488,39 @@ paths:
         - api_token: []
       tags:
         - User
+#GFS
+  '/api/v1/users/{userId}/idps/':
+      get:
+        consumes:
+          - application/json
+        description: Success
+        operationId: listUserIdps
+        parameters:
+          - in: path
+            name: userId
+            required: true
+            type: string
+          - in: query
+            name: after
+            type: string
+          - default: -1
+            format: int32
+            in: query
+            name: limit
+            type: integer
+        produces:
+          - application/json
+        responses:
+          '200':
+            description: Success
+            schema:
+              items:
+                $ref: '#/definitions/Idps'
+              type: array
+        security:
+          - api_token: []
+        tags:
+          - User
   '/api/v1/users/{userId}/roles/{roleId}/targets/groups/{groupId}':
     delete:
       consumes:
@@ -2512,6 +2545,12 @@ paths:
       responses:
         '200':
           description: Success
+          '200':
+            description: Success
+            schema:
+              items:
+                $ref: '#/definitions/Idps'
+              type: array
       security:
         - api_token: []
       tags:
@@ -5557,7 +5596,7 @@ definitions:
       login:
         type: string
       guid:
-        typr: string
+        type: string
       mobilePhone:
         type: string
       phone:
@@ -5788,6 +5827,37 @@ definitions:
         format: date-time
         type: string
       profile:
+        additionalProperties:
+          type: object
+        type: object
+    type: object
+    x-okta-tags:
+      - Idp
+  Idps:
+    properties:
+      id:
+        type: string
+      type:
+        type: string
+      status:
+        type: string
+      name:
+        type: string
+      created:
+        format: date-time
+        type: string
+      lastUpdated:
+        format: date-time
+        type: string
+      protocol:
+        additionalProperties:
+          type: object
+        type: object
+      policy:
+        additionalProperties:
+          type: object
+        type: object
+      _links:
         additionalProperties:
           type: object
         type: object
