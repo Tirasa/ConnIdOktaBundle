@@ -78,6 +78,7 @@ import org.identityconnectors.framework.common.objects.filter.FilterTranslator;
 import org.identityconnectors.framework.spi.Configuration;
 import org.identityconnectors.framework.spi.Connector;
 import org.identityconnectors.framework.spi.ConnectorClass;
+import org.identityconnectors.framework.spi.PoolableConnector;
 import org.identityconnectors.framework.spi.SearchResultsHandler;
 import org.identityconnectors.framework.spi.operations.CreateOp;
 import org.identityconnectors.framework.spi.operations.DeleteOp;
@@ -92,7 +93,7 @@ import org.identityconnectors.framework.spi.operations.UpdateOp;
  *
  */
 @ConnectorClass(configurationClass = OktaConfiguration.class, displayNameKey = "okta.connector.display")
-public class OktaConnector implements Connector,
+public class OktaConnector implements Connector, PoolableConnector,
         CreateOp, UpdateOp, DeleteOp,
         SchemaOp, SyncOp, TestOp, SearchOp<OktaFilter> {
 
@@ -155,30 +156,29 @@ public class OktaConnector implements Connector,
     public void init(final Configuration configuration) {
         this.configuration = (OktaConfiguration) configuration;
         try {
-            this.client = Clients.builder()
-                    .setOrgUrl(this.configuration.getDomain())
-                    .setClientCredentials(new TokenClientCredentials(this.configuration.getOktaApiToken()))
-                    .setRetryMaxAttempts(this.configuration.getRateLimitMaxRetries())
-                    .setRetryMaxElapsed(this.configuration.getRetryMaxElapsed())
-                    .build();
+            if (client == null) {
+                this.client = Clients.builder()
+                        .setOrgUrl(this.configuration.getDomain())
+                        .setClientCredentials(new TokenClientCredentials(this.configuration.getOktaApiToken()))
+                        .setRetryMaxAttempts(this.configuration.getRateLimitMaxRetries())
+                        .setRetryMaxElapsed(this.configuration.getRetryMaxElapsed())
+                        .build();
+            }
         } catch (Exception ex) {
             OktaUtils.wrapGeneralError("Could not create Okta client", ex);
         }
 
-        this.schema = new OktaSchema(client);
+        if (schema == null) {
+            this.schema = new OktaSchema(client);
+        }
+
         LOG.ok("Connector {0} successfully inited", getClass().getName());
     }
 
-    /**
-     * Disposes of the {@link OktaConnector}'s resources.
-     *
-     * @see org.identityconnectors.framework.spi.Connector#dispose()
-     */
     @Override
-    public void dispose() {
-        configuration = null;
-        client = null;
-        schema = null;
+    public void checkAlive() {
+        LOG.ok("Check Alive");
+        test();
     }
 
     @Override
@@ -333,7 +333,7 @@ public class OktaConnector implements Connector,
                                 LOG.ok("User removed from group: {0} after update", grp);
                             } catch (Exception ex) {
                                 LOG.error(ex, "Could not remove Group {0} from User {1} ", grp, uid.getUidValue());
-                                OktaUtils.handleGeneralError("Could not add User to Group ", ex);
+                                OktaUtils.handleGeneralError("Could not remove User to Group ", ex);
                             }
                         }
                     });
@@ -400,7 +400,7 @@ public class OktaConnector implements Connector,
     @Override
     public Schema schema() {
         LOG.ok("Building SCHEMA definition");
-        return new OktaSchema(client).getSchema();
+        return schema.getSchema();
     }
 
     @Override
@@ -485,7 +485,7 @@ public class OktaConnector implements Connector,
     public void test() {
         if (configuration != null && client != null) {
             try {
-                schema();
+                new OktaSchema(client).getClass();
             } catch (Exception ex) {
                 OktaUtils.handleGeneralError("Test error. Problems with client service", ex);
             }
@@ -940,5 +940,14 @@ public class OktaConnector implements Connector,
                 updatedUser.deactivate();
             }
         }
+    }
+
+    /**
+     * Disposes of the {@link OktaConnector}'s resources.
+     *
+     * @see org.identityconnectors.framework.spi.Connector#dispose()
+     */
+    @Override
+    public void dispose() {
     }
 }

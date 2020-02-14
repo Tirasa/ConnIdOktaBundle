@@ -18,12 +18,13 @@ package net.tirasa.connid.bundles.okta;
 import org.identityconnectors.common.StringUtil;
 import org.identityconnectors.framework.spi.AbstractConfiguration;
 import org.identityconnectors.framework.spi.ConfigurationProperty;
+import org.identityconnectors.framework.spi.StatefulConfiguration;
 
 /**
  * Extends the {@link AbstractConfiguration} class to provide all the necessary
  * parameters to initialize the Okta Connector.
  */
-public class OktaConfiguration extends AbstractConfiguration {
+public class OktaConfiguration extends AbstractConfiguration implements StatefulConfiguration {
 
     private String domain;
 
@@ -142,5 +143,9 @@ public class OktaConfiguration extends AbstractConfiguration {
         if (StringUtil.isBlank(oktaApiToken)) {
             throw new IllegalArgumentException("OktaApiToken cannot be null or empty.");
         }
+    }
+
+    @Override
+    public void release() {
     }
 }
