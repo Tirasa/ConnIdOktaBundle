@@ -485,7 +485,7 @@ public class OktaConnector implements Connector, PoolableConnector,
     public void test() {
         if (configuration != null && client != null) {
             try {
-                new OktaSchema(client).getClass();
+                new OktaSchema(client).getSchema();
             } catch (Exception ex) {
                 OktaUtils.handleGeneralError("Test error. Problems with client service", ex);
             }
