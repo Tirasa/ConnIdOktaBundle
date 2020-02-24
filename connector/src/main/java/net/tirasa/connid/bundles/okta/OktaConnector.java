@@ -656,7 +656,7 @@ public class OktaConnector implements Connector, PoolableConnector,
                         }
                     }
                 } catch (Exception e) {
-                    OktaUtils.wrapGeneralError("While getting Application : " + filter.toString(), e);
+                    OktaUtils.wrapGeneralError("While getting Groups: " + filter.toString(), e);
                 }
             }
         } else {

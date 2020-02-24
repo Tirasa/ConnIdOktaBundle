@@ -190,12 +190,13 @@ public class GroupImpl extends AbstractApi<Group> implements GroupApi {
 
     private List<Group> searchGroup(final String filter) {
         String[] split = filter.split(" ");
+        String attribute = split[0];
+        String value = StringUtils.substringBetween(filter, "\"", "\"");
 
         return GROUP_REPOSITORY.stream().
                 filter(group -> {
                     try {
-                        return StringUtils.equals(StringUtils.remove(split[2], "\""),
-                                BeanUtils.getProperty(group, split[0]));
+                        return StringUtils.equals(value, BeanUtils.getProperty(group, attribute));
                     } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
                         return false;
                     }
