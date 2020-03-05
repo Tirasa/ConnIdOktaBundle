@@ -22,6 +22,7 @@ import net.tirasa.connid.bundles.okta.utils.OktaFilter;
 import net.tirasa.connid.bundles.okta.utils.OktaFilterOp;
 import org.identityconnectors.common.logging.Log;
 import org.identityconnectors.framework.common.objects.AttributeUtil;
+import org.identityconnectors.framework.common.objects.ObjectClass;
 import org.identityconnectors.framework.common.objects.filter.AbstractFilterTranslator;
 import org.identityconnectors.framework.common.objects.filter.AttributeFilter;
 import org.identityconnectors.framework.common.objects.filter.ContainsFilter;
@@ -41,6 +42,12 @@ import org.identityconnectors.framework.common.objects.filter.StartsWithFilter;
 public class OktaFilterTranslator extends AbstractFilterTranslator<OktaFilter> {
 
     private static final Log LOG = Log.getLog(OktaFilterTranslator.class);
+
+    private final ObjectClass objectClass;
+
+    public OktaFilterTranslator(final ObjectClass objectClass) {
+        this.objectClass = objectClass;
+    }
 
     /**
      * {@inheritDoc}
@@ -136,7 +143,12 @@ public class OktaFilterTranslator extends AbstractFilterTranslator<OktaFilter> {
     }
 
     private String getFilterName(final AttributeFilter filter) {
-        return OktaAttribute.ID.equals(filter.getName()) ? filter.getName() : "profile." + filter.getName();
+        if (ObjectClass.GROUP == objectClass) {
+            return OktaAttribute.ID.equals(filter.getName()) || OktaAttribute.NAME.equals(filter.getName()) 
+                    ? filter.getName() : "profile." + filter.getName();
+        } else {
+            return OktaAttribute.ID.equals(filter.getName()) ? filter.getName() : "profile." + filter.getName();
+        }
     }
 
     private String getFilterValue(final AttributeFilter filter) {

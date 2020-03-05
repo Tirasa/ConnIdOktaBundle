@@ -508,7 +508,7 @@ public class OktaConnector implements Connector, PoolableConnector,
             throw new IllegalArgumentException("Object class not supported");
         }
         LOG.ok("The ObjectClass is ok");
-        return new OktaFilterTranslator();
+        return new OktaFilterTranslator(oclass);
     }
 
     @Override
@@ -648,7 +648,10 @@ public class OktaConnector implements Connector, PoolableConnector,
                 }
             } else {
                 try {
-                    GroupList groups = client.listGroups(null, filter.toString(), null);
+                    GroupList groups = OktaAttribute.ID.equals(filter.getAttribute())
+                            || OktaAttribute.NAME.equals(filter.getAttribute())
+                            ? client.listGroups(filter.getValue(), null, null)
+                            : client.listGroups(null, filter.toString(), null);
                     for (Group group : groups) {
                         if (!handler.handle(fromGroup(group, attributesToGet))) {
                             LOG.ok("Stop processing of the result set");
@@ -672,7 +675,8 @@ public class OktaConnector implements Connector, PoolableConnector,
             OktaUtils.handleGeneralError("Provide envenType for Sync");
         }
         LogEventList events = client.getDataStore().getResource(
-                LOG_API_URL + "?filter=" + filter + "&limit=1&sortOrder=DESCENDING", LogEventList.class);
+                LOG_API_URL + "?filter=" + filter + "&limit=1&sortOrder=DESCENDING", LogEventList.class
+        );
         return events.stream().findFirst().isPresent()
                 ? OktaUtils.convertToTimestamp(events.single().get("published").toString())
                 : Long.valueOf(0);
@@ -715,7 +719,8 @@ public class OktaConnector implements Connector, PoolableConnector,
         builder.setObjectClass(objectClass);
         builder.setUid(id);
         builder.setName(id);
-        builder.addAttribute(OktaAttribute.buildAttribute(lastUpdate, OktaAttribute.LASTUPDATE, String.class).build());
+        builder.addAttribute(OktaAttribute.buildAttribute(lastUpdate, OktaAttribute.LASTUPDATE, String.class
+        ).build());
         return builder.build();
     }
 
@@ -836,13 +841,16 @@ public class OktaConnector implements Connector, PoolableConnector,
                                         break;
                                 }
                             } else {
-                                if (Boolean.class.isInstance(attributeInfo.getType())) {
+                                if (Boolean.class
+                                        .isInstance(attributeInfo.getType())) {
                                     userBuilder.putProfileProperty(attrName,
                                             AttributeUtil.getBooleanValue(accessor.find(attrName)));
-                                } else if (Integer.class.isInstance(attributeInfo.getType())) {
+                                } else if (Integer.class
+                                        .isInstance(attributeInfo.getType())) {
                                     userBuilder.putProfileProperty(attrName,
                                             AttributeUtil.getIntegerValue(accessor.find(attrName)));
-                                } else if (String.class.isInstance(attributeInfo.getType())) {
+                                } else if (String.class
+                                        .isInstance(attributeInfo.getType())) {
                                     userBuilder.putProfileProperty(attrName,
                                             AttributeUtil.getStringValue(accessor.find(attrName)));
                                 } else {
