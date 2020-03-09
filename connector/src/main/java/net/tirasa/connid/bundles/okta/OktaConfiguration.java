@@ -42,6 +42,8 @@ public class OktaConfiguration extends AbstractConfiguration implements Stateful
 
     private int retryMaxElapsed = 0;
 
+    private int requestTimeout = 20;
+
     @ConfigurationProperty(order = 1, displayMessageKey = "domain.display",
             groupMessageKey = "basic.group", helpMessageKey = "domain.help", required = true,
             confidential = false)
@@ -135,6 +137,18 @@ public class OktaConfiguration extends AbstractConfiguration implements Stateful
         return retryMaxElapsed;
     }
 
+    public void setRequestTimeout(final int requestTimeout) {
+        this.requestTimeout = requestTimeout;
+    }
+
+    @ConfigurationProperty(order = 9,
+            displayMessageKey = "requestTimeout.display",
+            groupMessageKey = "basic.group",
+            helpMessageKey = "requestTimeout.help")
+    public int getRequestTimeout() {
+        return requestTimeout;
+    }
+
     @Override
     public void validate() {
         if (StringUtil.isBlank(domain)) {
@@ -142,6 +156,9 @@ public class OktaConfiguration extends AbstractConfiguration implements Stateful
         }
         if (StringUtil.isBlank(oktaApiToken)) {
             throw new IllegalArgumentException("OktaApiToken cannot be null or empty.");
+        }
+        if (requestTimeout < 0) {
+            throw new IllegalArgumentException("Timeout cannot be a negative number");
         }
     }
 

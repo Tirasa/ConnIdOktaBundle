@@ -162,6 +162,7 @@ public class OktaConnector implements Connector, PoolableConnector,
                         .setClientCredentials(new TokenClientCredentials(this.configuration.getOktaApiToken()))
                         .setRetryMaxAttempts(this.configuration.getRateLimitMaxRetries())
                         .setRetryMaxElapsed(this.configuration.getRetryMaxElapsed())
+                        .setConnectionTimeout(this.configuration.getRequestTimeout())
                         .build();
             }
         } catch (Exception ex) {

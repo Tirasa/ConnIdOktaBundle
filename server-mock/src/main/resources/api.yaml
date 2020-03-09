@@ -5605,6 +5605,8 @@ definitions:
         type: string
       secondEmail:
         type: string
+      policyAgreements:
+        type: string
     type: object
     x-okta-extensible: true
     x-okta-tags:
