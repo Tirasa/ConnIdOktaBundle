@@ -15,6 +15,8 @@
  */
 package com.gfs.ebz.syncope.api.impl;
 
+import static com.gfs.ebz.syncope.api.impl.AbstractApi.GROUP_USER_REPOSITORY;
+
 import io.swagger.api.UserApi;
 import io.swagger.model.ChangePasswordRequest;
 import io.swagger.model.Group;
@@ -40,6 +42,7 @@ import java.util.stream.Collectors;
 import javax.ws.rs.core.Response;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
 public class UserImpl extends AbstractApi<User> implements UserApi {
@@ -136,7 +139,9 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
                 body.getCredentials().setPassword(null);
                 USER_PASSWORD_REPOSITORY.put(body.getId(), passwords);
             }
-
+            
+            GROUP_USER_REPOSITORY.add(new ImmutablePair<>(EVERYONE_ID, body.getId()));
+            
             USER_IDP_REPOSITORY.put(body.getId(), new HashSet<>(Arrays.asList("6e77c44bf27d4750a10f1489ce4100df")));
             USER_REPOSITORY.add(body);
             createLogEvent("user.lifecycle.create", body.getId());

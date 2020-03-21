@@ -17,6 +17,7 @@ package com.gfs.ebz.syncope.api.impl;
 
 import io.swagger.model.Application;
 import io.swagger.model.Group;
+import io.swagger.model.GroupProfile;
 import io.swagger.model.LogEvent;
 import io.swagger.model.LogTarget;
 import io.swagger.model.User;
@@ -31,6 +32,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.UriInfo;
@@ -43,6 +45,10 @@ public abstract class AbstractApi<T extends Object> {
 
     protected static final long DEFAULT_LIMIT = 200;
 
+    protected static final String EVERYONE = "Everyone";
+    
+    protected static final String EVERYONE_ID = "5602b236-6b6c-11ea-bc55-0242ac130003"; 
+
     protected static final String ERROR_MESSAGE = "Not supported yet.";
 
     protected static final List<Application> APPLICATION_REPOSITORY =
@@ -51,8 +57,10 @@ public abstract class AbstractApi<T extends Object> {
     protected static final List<Pair<String, String>> APPLICATION_USER_REPOSITORY =
             Collections.synchronizedList(new ArrayList<>());
 
-    protected static final List<Group> GROUP_REPOSITORY = 
-            Collections.synchronizedList(new ArrayList<>());
+    protected static final List<Group> GROUP_REPOSITORY =
+            Collections.synchronizedList(new ArrayList<Group>(Arrays.asList(
+                    new Group().id(EVERYONE_ID).profile(new GroupProfile().name(EVERYONE).description(
+                            EVERYONE)))));
 
     protected static final List<Pair<String, String>> GROUP_USER_REPOSITORY =
             Collections.synchronizedList(new ArrayList<>());

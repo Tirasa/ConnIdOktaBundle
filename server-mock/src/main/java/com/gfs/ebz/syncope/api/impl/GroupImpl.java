@@ -160,9 +160,13 @@ public class GroupImpl extends AbstractApi<Group> implements GroupApi {
     @Override
     public Response removeGroupUser(final String groupId, final String userId) {
         createLogEvent("group.user_membership.remove", userId);
-        return GROUP_USER_REPOSITORY.removeIf(pair -> StringUtils.equals(pair.getLeft(), groupId)
-                && StringUtils.equals(pair.getRight(), userId)) ? Response.noContent().build() : Response.status(
-                Response.Status.NOT_FOUND).build();
+        if (EVERYONE_ID.equals(groupId)) {
+            return Response.status(Response.Status.FORBIDDEN).build();
+        }
+        return GROUP_USER_REPOSITORY.removeIf(pair
+                -> StringUtils.equals(pair.getLeft(), groupId) && StringUtils.equals(pair.getRight(), userId))
+                ? Response.noContent().build()
+                : Response.status(Response.Status.NOT_FOUND).build();
     }
 
     @Override
