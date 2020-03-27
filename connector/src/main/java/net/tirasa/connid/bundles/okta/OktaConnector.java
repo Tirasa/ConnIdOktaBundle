@@ -179,7 +179,6 @@ public class OktaConnector implements Connector, PoolableConnector,
     @Override
     public void checkAlive() {
         LOG.ok("Check Alive");
-        test();
     }
 
     @Override
