@@ -235,4 +235,8 @@ public final class OktaAttribute {
         }
         return attributeBuilder;
     }
+
+    public static String buildProfileAttrName(final String name) {
+        return "profile." + name;
+    }
 }

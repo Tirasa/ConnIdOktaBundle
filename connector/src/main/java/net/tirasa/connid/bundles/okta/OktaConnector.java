@@ -48,6 +48,7 @@ import net.tirasa.connid.bundles.okta.utils.CipherAlgorithm;
 import net.tirasa.connid.bundles.okta.utils.OktaAttribute;
 import net.tirasa.connid.bundles.okta.utils.OktaEventType;
 import net.tirasa.connid.bundles.okta.utils.OktaFilter;
+import net.tirasa.connid.bundles.okta.utils.OktaFilterOp;
 import net.tirasa.connid.bundles.okta.utils.OktaUtils;
 import org.identityconnectors.common.CollectionUtil;
 import org.identityconnectors.common.StringUtil;
@@ -560,11 +561,18 @@ public class OktaConnector implements Connector, PoolableConnector,
                 }
             } else {
                 try {
-                    UserList users = client.listUsers(null, null, null, filter.toString(), null);
-                    for (User user : users) {
-                        if (!handler.handle(fromUser(user, attributesToGet))) {
-                            LOG.ok("Stop processing of the result set");
-                            break;
+                    if (filter.getFilters() == null
+                            && OktaFilter.SEARCH_ATTRS.contains(filter.getAttribute())
+                            && OktaFilterOp.EQUALS.equals(filter.getFilterOp())) {
+                        User user = client.getUser(filter.getValue());
+                        handler.handle(fromUser(user, attributesToGet));
+                    } else {
+                        UserList users = client.listUsers(null, null, null, filter.toString(), null);
+                        for (User user : users) {
+                            if (!handler.handle(fromUser(user, attributesToGet))) {
+                                LOG.ok("Stop processing of the result set");
+                                break;
+                            }
                         }
                     }
                 } catch (Exception e) {

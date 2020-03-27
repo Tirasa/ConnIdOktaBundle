@@ -384,6 +384,44 @@ public class OktaConnectorTests extends AbstractConnectorTests {
     }
 
     @Test
+    public void searchUserDifferentAttribute() {
+        ToListResultsHandler handler = new ToListResultsHandler();
+        OperationOptions operationOption =
+                new OperationOptionsBuilder().setAttributesToGet(
+                        OktaAttribute.EMAIL, OktaAttribute.LOGIN, OktaAttribute.MOBILEPHONE).build();
+        // CREATE USER
+        String username = UUID.randomUUID().toString();
+        Attribute password = AttributeBuilder.buildPassword(new GuardedString("Password123".toCharArray()));
+        Set<Attribute> userAttrs = new HashSet<>();
+        userAttrs.add(AttributeBuilder.build(OktaAttribute.EMAIL, username + "@tirasa.net"));
+        userAttrs.add(AttributeBuilder.build(OktaAttribute.LOGIN, username + "@tirasa.net"));
+        userAttrs.add(AttributeBuilder.build(OktaAttribute.FIRSTNAME, "Test"));
+        userAttrs.add(AttributeBuilder.build(OktaAttribute.LASTNAME, "Test"));
+        userAttrs.add(password);
+
+        Uid created = connector.create(ObjectClass.ACCOUNT, userAttrs, operationOption);
+        assertNotNull(created);
+        USERS.add(created.getUidValue());
+
+        // GET USER
+        EqualsFilter filter = (EqualsFilter) FilterBuilder.equalTo(
+                AttributeBuilder.build("login", username + "@tirasa.net"));
+        connector.search(ObjectClass.ACCOUNT, filter, handler, operationOption);
+        assertNotNull(handler.getObjects());
+        assertFalse(handler.getObjects().isEmpty());
+        assertEquals(handler.getObjects().get(0).getUid().getUidValue(), created.getUidValue());
+
+        handler.getObjects().clear();
+        
+        //List USER
+        filter = (EqualsFilter) FilterBuilder.equalTo(AttributeBuilder.build("email", username + "@tirasa.net"));
+        connector.search(ObjectClass.ACCOUNT, filter, handler, operationOption);
+        assertNotNull(handler.getObjects());
+        assertFalse(handler.getObjects().isEmpty());
+        assertEquals(handler.getObjects().get(0).getUid().getUidValue(), created.getUidValue());
+    }
+
+    @Test
     public void sync() {
         final TestSyncResultsHandler handler = new TestSyncResultsHandler();
 
