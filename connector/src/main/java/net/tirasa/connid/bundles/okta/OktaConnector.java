@@ -251,11 +251,15 @@ public class OktaConnector implements Connector, PoolableConnector,
                 User user = result;
                 Optional.ofNullable(accessor.findList(OktaAttribute.OKTA_GROUPS)).map(Collection::stream)
                         .orElseGet(Stream::empty).map(Object::toString).forEach(item -> user.addToGroup(item));
-
             } catch (Exception e) {
                 OktaUtils.wrapGeneralError("Could not create User : " + AttributeUtil.getAsStringValue(email), e);
             }
-            return new Uid(result != null ? result.getId() : null);
+
+            if (result == null || result.getId() == null) {
+                OktaUtils.handleGeneralError("Something wrong happened during user create, check logs");
+            }
+
+            return new Uid(result.getId());
         } else {
             LOG.warn("Create of type {0} is not supported", objectClass.getObjectClassValue());
             throw new UnsupportedOperationException("Create of type"
