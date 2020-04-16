@@ -337,8 +337,8 @@ public class OktaConnector implements Connector, PoolableConnector,
                                 client.getGroup(grp).removeUser(uid.getUidValue());
                                 LOG.ok("User removed from group: {0} after update", grp);
                             } catch (Exception ex) {
-                                LOG.error(ex, "Could not remove Group {0} from User {1} ", grp, uid.getUidValue());
-                                OktaUtils.handleGeneralError("Could not remove User to Group ", ex);
+                                LOG.error(ex, "Could not remove User {0} from Group {1} ", uid.getUidValue(), grp);
+                                OktaUtils.handleGeneralError("Could not remove User from Group " + grp, ex);
                             }
                         }
                     });
