@@ -15,8 +15,6 @@
  */
 package com.gfs.ebz.syncope.api.impl;
 
-import static com.gfs.ebz.syncope.api.impl.AbstractApi.GROUP_USER_REPOSITORY;
-
 import io.swagger.api.UserApi;
 import io.swagger.model.ChangePasswordRequest;
 import io.swagger.model.Group;
@@ -51,7 +49,7 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
     public Response activateUser(final String userId, final Boolean sendEmail) {
         Optional<User> found = USER_REPOSITORY.stream()
                 .filter(user -> StringUtils.equals(userId, user.getId()))
-                .findAny();
+                .findFirst();
         if (found.isPresent() && found.get().getStatus() != UserStatus.ACTIVE) {
             found.get().setStatus(UserStatus.ACTIVE);
             found.get().setActivated(Date.from(Instant.now()));
@@ -81,7 +79,7 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
             final Boolean strict) {
         Optional<User> found = USER_REPOSITORY.stream()
                 .filter(user -> StringUtils.equals(userId, user.getId()))
-                .findAny();
+                .findFirst();
         if (found.isPresent() && (found.get().getStatus().equals(UserStatus.ACTIVE)
                 || found.get().getStatus().equals(UserStatus.PASSWORD_EXPIRED)
                 || found.get().getStatus().equals(UserStatus.STAGED)
@@ -139,9 +137,9 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
                 body.getCredentials().setPassword(null);
                 USER_PASSWORD_REPOSITORY.put(body.getId(), passwords);
             }
-            
+
             GROUP_USER_REPOSITORY.add(new ImmutablePair<>(EVERYONE_ID, body.getId()));
-            
+
             USER_IDP_REPOSITORY.put(body.getId(), new HashSet<>(Arrays.asList("6e77c44bf27d4750a10f1489ce4100df")));
             USER_REPOSITORY.add(body);
             createLogEvent("user.lifecycle.create", body.getId());
@@ -156,7 +154,7 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
     public Response deactivateOrDeleteUser(final String userId, final Boolean sendEmail) {
         Optional<User> found = USER_REPOSITORY.stream()
                 .filter(user -> StringUtils.equals(userId, user.getId()))
-                .findAny();
+                .findFirst();
         if (!found.isPresent()) {
             return Response.status(Response.Status.NOT_FOUND).build();
         } else if (found.get().getStatus() == UserStatus.DEPROVISIONED) {
@@ -292,7 +290,7 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
         if (after != null) {
             Optional<User> found = USER_REPOSITORY.stream().
                     filter(group -> StringUtils.equals(after, group.getId())).
-                    findAny();
+                    findFirst();
             if (found.isPresent()) {
                 int lastIndexOf = USER_REPOSITORY.lastIndexOf(found.get());
                 return Response.ok().entity(USER_REPOSITORY.stream().
@@ -329,14 +327,29 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
 
     @Override
     public Response resetPassword(final String userId, final String provider, final Boolean sendEmail) {
-        throw new UnsupportedOperationException(ERROR_MESSAGE);
+        Optional<User> found = USER_REPOSITORY.stream()
+                .filter(user -> StringUtils.equals(userId, user.getId()))
+                .findFirst();
+        if (found.isPresent()) {
+            User user = found.get();
+            if (user.getStatus() == UserStatus.ACTIVE) {
+                found.get().setStatus(UserStatus.RECOVERY);
+                found.get().setStatusChanged(Date.from(Instant.now()));
+                createLogEvent("user.lifecycle.reset_password", userId);
+                return Response.ok().entity("{}").build();
+            } else {
+                return Response.status(Response.Status.FORBIDDEN).build();
+            }
+        } else {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
     }
 
     @Override
     public Response suspendUser(final String userId) {
         Optional<User> found = USER_REPOSITORY.stream()
                 .filter(user -> StringUtils.equals(userId, user.getId()))
-                .findAny();
+                .findFirst();
         if (found.isPresent() && found.get().getStatus() == UserStatus.ACTIVE) {
             found.get().setStatus(UserStatus.SUSPENDED);
             found.get().setStatusChanged(Date.from(Instant.now()));
@@ -356,7 +369,7 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
     public Response unsuspendUser(final String userId) {
         Optional<User> found = USER_REPOSITORY.stream()
                 .filter(user -> StringUtils.equals(userId, user.getId()))
-                .findAny();
+                .findFirst();
         if (found.isPresent() && found.get().getStatus() == UserStatus.SUSPENDED) {
             found.get().setStatus(UserStatus.ACTIVE);
             found.get().setStatusChanged(Date.from(Instant.now()));
@@ -371,7 +384,7 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
     public Response updateUser(final User user, final String userId, final Boolean strict) {
         Optional<User> found = USER_REPOSITORY.stream()
                 .filter(u -> StringUtils.equals(userId, u.getId()))
-                .findAny();
+                .findFirst();
         if (found.isPresent()) {
             user.setId(found.get().getId());
             user.setCreated(found.get().getCreated());
@@ -417,7 +430,7 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
         }
         return Response.status(Response.Status.NOT_FOUND).build();
     }
-    
+
     @Override
     protected String getNextPage(Integer limit, int after, List<User> repository) {
         if (limit != null && limit + after < repository.size()) {
