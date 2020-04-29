@@ -129,9 +129,10 @@ public class OktaConnector implements Connector, PoolableConnector,
 
     public static final String WORK_FACTOR = "workFactor";
 
-    public static final String OKTA_SECURITY_QUESTION = "oktaSecurityQuestion";
-
-    public static final String OKTA_SECURITY_ANSWER = "oktaSecurityAnswer";
+    private static final Set<String> NOT_FOR_PROFILE = CollectionUtil.newReadOnlySet(
+            Name.NAME, OperationalAttributes.ENABLE_NAME, OperationalAttributes.PASSWORD_NAME,
+            OktaAttribute.ID, OktaAttribute.STATUS,
+            OktaAttribute.OKTA_SECURITY_QUESTION, OktaAttribute.OKTA_SECURITY_ANSWER);
 
     private OktaConfiguration configuration;
 
@@ -190,6 +191,7 @@ public class OktaConnector implements Connector, PoolableConnector,
             final ObjectClass objectClass,
             final Set<Attribute> createAttributes,
             final OperationOptions options) {
+
         LOG.ok("Connector CREATE");
         if (createAttributes == null || createAttributes.isEmpty()) {
             OktaUtils.handleGeneralError("Set of Attributes value is null or empty");
@@ -200,7 +202,7 @@ public class OktaConnector implements Connector, PoolableConnector,
         if (ObjectClass.ACCOUNT.equals(objectClass)) {
             User result = null;
             Attribute status = accessor.find(OperationalAttributes.ENABLE_NAME);
-            Attribute email = accessor.find("email");
+            Attribute email = accessor.find(OktaAttribute.EMAIL);
             try {
                 final UserBuilder userBuilder = UserBuilder.instance();
 
@@ -249,11 +251,11 @@ public class OktaConnector implements Connector, PoolableConnector,
                         userBuilder.setPassword(passwordValue.toCharArray());
                     }
 
-                    String securityQuestion = accessor.findString(OKTA_SECURITY_QUESTION);
+                    String securityQuestion = accessor.findString(OktaAttribute.OKTA_SECURITY_QUESTION);
                     if (StringUtil.isNotBlank(securityQuestion)) {
                         userBuilder.setSecurityQuestion(securityQuestion);
                     }
-                    String securityAnswer = accessor.findString(OKTA_SECURITY_ANSWER);
+                    String securityAnswer = accessor.findString(OktaAttribute.OKTA_SECURITY_ANSWER);
                     if (StringUtil.isNotBlank(securityAnswer)) {
                         userBuilder.setSecurityQuestionAnswer(securityAnswer);
                     }
@@ -831,127 +833,109 @@ public class OktaConnector implements Connector, PoolableConnector,
             final ObjectClass objectClass) {
 
         ObjectClassInfo objectClassInfo = schema.getSchema().findObjectClassInfo(objectClass.getObjectClassValue());
-        accessor.listAttributeNames().stream().forEach(attrName -> {
-            if (!OperationalAttributes.ENABLE_NAME.equals(attrName)
-                    && !OktaAttribute.ID.equals(attrName)
-                    && !Name.NAME.equals(attrName)
-                    && !OktaAttribute.STATUS.equals(attrName) && !OperationalAttributes.PASSWORD_NAME.equals(
-                    attrName)) {
+        accessor.listAttributeNames().stream().
+                filter(attrName -> !NOT_FOR_PROFILE.contains(attrName)).
+                forEach(attrName -> objectClassInfo.getAttributeInfo().stream().
+                filter(attr -> attr.getName().equals(attrName)).findFirst().
+                ifPresent(attributeInfo -> {
 
-                objectClassInfo.getAttributeInfo().stream().filter(
-                        attr -> attr.getName().equals(attrName)).findFirst().ifPresent(attributeInfo -> {
+                    if (OktaAttribute.BASIC_PROFILE_ATTRIBUTES.contains(attributeInfo.getName())) {
+                        switch (attributeInfo.getName()) {
+                            case OktaAttribute.FIRSTNAME:
+                                userBuilder.setFirstName(AttributeUtil.getStringValue(accessor.find(attrName)));
+                                break;
 
-                            if (OktaAttribute.BASIC_PROFILE_ATTRIBUTES.contains(attributeInfo.getName())) {
-                                switch (attributeInfo.getName()) {
-                                    case OktaAttribute.FIRSTNAME:
-                                        userBuilder.setFirstName(AttributeUtil.getStringValue(accessor.
-                                                find(attrName)));
-                                        break;
-                                    case OktaAttribute.LASTNAME:
-                                        userBuilder.setLastName(AttributeUtil.
-                                                getStringValue(accessor.find(attrName)));
-                                        break;
-                                    case OktaAttribute.EMAIL:
-                                        userBuilder.setEmail(AttributeUtil.getStringValue(accessor.find(attrName)));
-                                        break;
-                                    case OktaAttribute.LOGIN:
-                                        userBuilder.setLogin(AttributeUtil.getStringValue(accessor.find(attrName)));
-                                        break;
-                                    case OktaAttribute.MOBILEPHONE:
-                                        userBuilder.setMobilePhone(
-                                                AttributeUtil.getStringValue(accessor.find(
-                                                        attrName)));
-                                        break;
-                                    case OktaAttribute.SECOND_EMAIL:
-                                        userBuilder.setSecondEmail(
-                                                AttributeUtil.getStringValue(accessor.find(attrName)));
-                                        break;
-                                }
-                            } else {
-                                if (Boolean.class
-                                        .isInstance(attributeInfo.getType())) {
-                                    userBuilder.putProfileProperty(attrName,
-                                            AttributeUtil.getBooleanValue(accessor.find(attrName)));
-                                } else if (Integer.class
-                                        .isInstance(attributeInfo.getType())) {
-                                    userBuilder.putProfileProperty(attrName,
-                                            AttributeUtil.getIntegerValue(accessor.find(attrName)));
-                                } else if (String.class
-                                        .isInstance(attributeInfo.getType())) {
-                                    userBuilder.putProfileProperty(attrName,
-                                            AttributeUtil.getStringValue(accessor.find(attrName)));
-                                } else {
-                                    userBuilder.putProfileProperty(attrName,
-                                            AttributeUtil.getSingleValue(accessor.find(attrName)));
-                                }
-                            }
-                        });
-            }
-        });
+                            case OktaAttribute.LASTNAME:
+                                userBuilder.setLastName(AttributeUtil.getStringValue(accessor.find(attrName)));
+                                break;
+
+                            case OktaAttribute.EMAIL:
+                                userBuilder.setEmail(AttributeUtil.getStringValue(accessor.find(attrName)));
+                                break;
+
+                            case OktaAttribute.LOGIN:
+                                userBuilder.setLogin(AttributeUtil.getStringValue(accessor.find(attrName)));
+                                break;
+
+                            case OktaAttribute.MOBILEPHONE:
+                                userBuilder.setMobilePhone(AttributeUtil.getStringValue(accessor.find(attrName)));
+                                break;
+
+                            case OktaAttribute.SECOND_EMAIL:
+                                userBuilder.setSecondEmail(AttributeUtil.getStringValue(accessor.find(attrName)));
+                                break;
+
+                            default:
+                        }
+                    } else {
+                        if (Boolean.class.isInstance(attributeInfo.getType())) {
+                            userBuilder.putProfileProperty(attrName,
+                                    AttributeUtil.getBooleanValue(accessor.find(attrName)));
+                        } else if (Integer.class.isInstance(attributeInfo.getType())) {
+                            userBuilder.putProfileProperty(attrName,
+                                    AttributeUtil.getIntegerValue(accessor.find(attrName)));
+                        } else if (String.class.isInstance(attributeInfo.getType())) {
+                            userBuilder.putProfileProperty(attrName,
+                                    AttributeUtil.getStringValue(accessor.find(attrName)));
+                        } else {
+                            userBuilder.putProfileProperty(attrName,
+                                    AttributeUtil.getSingleValue(accessor.find(attrName)));
+                        }
+                    }
+                }));
     }
 
     private void updateUserAttributes(final User user, final Set<Attribute> replaceAttributes) {
         ObjectClassInfo objectClassInfo = schema.getSchema().findObjectClassInfo(ObjectClass.ACCOUNT_NAME);
-        replaceAttributes.stream().forEach(attribute -> {
+        replaceAttributes.stream().
+                filter(attribute -> !NOT_FOR_PROFILE.contains(attribute.getName())).
+                forEach(attribute -> objectClassInfo.getAttributeInfo().stream().
+                filter(attr -> attr.getName().equals(attribute.getName())).findFirst().
+                ifPresent(attributeInfo -> {
 
-            if (!OperationalAttributes.ENABLE_NAME.equals(attribute.getName())
-                    && !Name.NAME.equals(attribute.getName())
-                    && !OktaAttribute.ID.equals(attribute.getName())
-                    && !OktaAttribute.STATUS.equals(attribute.getName())
-                    && !OperationalAttributes.PASSWORD_NAME.equals(attribute.getName())) {
+                    if (!CollectionUtil.isEmpty(attribute.getValue())) {
+                        if (OktaAttribute.BASIC_PROFILE_ATTRIBUTES.contains(attribute.getName())) {
+                            switch (attributeInfo.getName()) {
+                                case OktaAttribute.FIRSTNAME:
+                                    user.getProfile().setFirstName(AttributeUtil.getStringValue(attribute));
+                                    break;
 
-                objectClassInfo.getAttributeInfo().stream().filter(
-                        attr -> attr.getName().equals(attribute.getName())).findFirst().ifPresent(attributeInfo -> {
+                                case OktaAttribute.LASTNAME:
+                                    user.getProfile().setLastName(AttributeUtil.getStringValue(attribute));
+                                    break;
 
-                            if (!CollectionUtil.isEmpty(attribute.getValue())) {
-                                if (OktaAttribute.BASIC_PROFILE_ATTRIBUTES.contains(attribute.getName())) {
-                                    switch (attributeInfo.getName()) {
-                                        case OktaAttribute.FIRSTNAME:
-                                            user.getProfile().setFirstName(AttributeUtil.getStringValue(attribute));
-                                            break;
-                                        case OktaAttribute.LASTNAME:
-                                            user.getProfile().setLastName(AttributeUtil.getStringValue(attribute));
-                                            break;
-                                        case OktaAttribute.EMAIL:
-                                            user.getProfile().setEmail(AttributeUtil.getStringValue(attribute));
-                                            break;
-                                        case OktaAttribute.LOGIN:
-                                            user.getProfile().setLogin(AttributeUtil.getStringValue(attribute));
-                                            break;
-                                        case OktaAttribute.MOBILEPHONE:
-                                            user.getProfile().
-                                                    setMobilePhone(AttributeUtil.getStringValue(attribute));
-                                            break;
-                                        case OktaAttribute.SECOND_EMAIL:
-                                            user.getProfile().
-                                                    setSecondEmail(AttributeUtil.getStringValue(attribute));
-                                            break;
-                                    }
-                                } else {
-                                    if (Boolean.class
-                                            .isInstance(attributeInfo.getType())) {
-                                        user.getProfile()
-                                                .put(attribute.getName(),
-                                                        AttributeUtil.getBooleanValue(attribute));
-                                    } else if (Integer.class
-                                            .isInstance(attributeInfo.getType())) {
-                                        user.getProfile()
-                                                .put(attribute.getName(),
-                                                        AttributeUtil.getIntegerValue(attribute));
-                                    } else if (String.class
-                                            .isInstance(attributeInfo.getType())) {
-                                        user.getProfile()
-                                                .put(attribute.getName(),
-                                                        AttributeUtil.getStringValue(attribute));
-                                    } else {
-                                        user.getProfile().put(attribute.getName(),
-                                                AttributeUtil.getSingleValue(attribute));
-                                    }
-                                }
+                                case OktaAttribute.EMAIL:
+                                    user.getProfile().setEmail(AttributeUtil.getStringValue(attribute));
+                                    break;
+
+                                case OktaAttribute.LOGIN:
+                                    user.getProfile().setLogin(AttributeUtil.getStringValue(attribute));
+                                    break;
+
+                                case OktaAttribute.MOBILEPHONE:
+                                    user.getProfile().setMobilePhone(AttributeUtil.getStringValue(attribute));
+                                    break;
+
+                                case OktaAttribute.SECOND_EMAIL:
+                                    user.getProfile().setSecondEmail(AttributeUtil.getStringValue(attribute));
+                                    break;
+
+                                default:
                             }
-                        });
-            }
-        });
+                        } else {
+                            if (Boolean.class.isInstance(attributeInfo.getType())) {
+                                user.getProfile().put(attribute.getName(), AttributeUtil.getBooleanValue(attribute));
+                            } else if (Integer.class.isInstance(attributeInfo.getType())) {
+                                user.getProfile().put(attribute.getName(), AttributeUtil.getIntegerValue(attribute));
+                            } else if (String.class
+                                    .isInstance(attributeInfo.getType())) {
+                                user.getProfile().put(attribute.getName(), AttributeUtil.getStringValue(attribute));
+                            } else {
+                                user.getProfile().put(attribute.getName(), AttributeUtil.getSingleValue(attribute));
+                            }
+                        }
+                    }
+                }));
     }
 
     private void updateUserStatus(final User updatedUser, final Attribute status) {

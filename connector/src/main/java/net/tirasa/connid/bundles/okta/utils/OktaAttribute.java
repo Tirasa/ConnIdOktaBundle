@@ -70,6 +70,10 @@ public final class OktaAttribute {
 
     public static final String LASTUPDATE = "lastUpdated";
 
+    public static final String OKTA_SECURITY_QUESTION = "oktaSecurityQuestion";
+
+    public static final String OKTA_SECURITY_ANSWER = "oktaSecurityAnswer";
+
     public static final List<String> BASIC_PROFILE_ATTRIBUTES = new ArrayList<String>() {
 
         private static final long serialVersionUID = 5636572627689425575L;
