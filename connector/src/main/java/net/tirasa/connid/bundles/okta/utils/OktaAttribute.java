@@ -154,12 +154,14 @@ public final class OktaAttribute {
             final Schema schema,
             final Set<String> attributesToGet,
             final String objName) {
+
         Set<Attribute> attributes = new HashSet<>();
         ObjectClassInfo objectClassInfo = schema.findObjectClassInfo(objName);
         attributesToGet.stream().forEach(attributeToGetName -> {
             if (Name.NAME.equals(attributeToGetName)
                     || Uid.NAME.equals(attributeToGetName)
                     || OktaAttribute.ID.equals(attributeToGetName)) {
+
                 attributes.add(AttributeBuilder.build(attributeToGetName, resource.getString(ID)));
             } else if (STATUS.equals(attributeToGetName)) {
                 AttributeBuilder attributeBuilder = new AttributeBuilder();
@@ -179,8 +181,8 @@ public final class OktaAttribute {
                 attributes.add(attributeBuilder.build());
             } else if (OperationalAttributes.ENABLE_NAME.equals(attributeToGetName)
                     || STATUS.equals(attributeToGetName)) {
-                AttributeBuilder attributeBuilder = new AttributeBuilder();
-                attributeBuilder.setName(attributeToGetName);
+
+                AttributeBuilder attributeBuilder = new AttributeBuilder().setName(attributeToGetName);
                 if (resource instanceof Application) {
                     attributeBuilder.
                             addValue(((Application) resource).getStatus().equals(Application.StatusEnum.ACTIVE));
@@ -204,9 +206,7 @@ public final class OktaAttribute {
         return attributes;
     }
 
-    public static AttributeBuilder buildAttribute(final Object value,
-            final String name,
-            final Class<?> clazz) {
+    public static AttributeBuilder buildAttribute(final Object value, final String name, final Class<?> clazz) {
         return buildAttribute(value, name, clazz, new AttributeBuilder());
     }
 
@@ -214,15 +214,14 @@ public final class OktaAttribute {
             final String name,
             final Class<?> clazz,
             final AttributeBuilder attributeBuilder) {
+
         if (value != null) {
             if (clazz == boolean.class || clazz == Boolean.class) {
                 attributeBuilder.addValue(Boolean.class.cast(value));
             } else if (value instanceof List<?>) {
-                ArrayList<?> list = new ArrayList<>((List<?>) value);
+                List<?> list = new ArrayList<>((List<?>) value);
                 if (list.size() > 1) {
-                    for (Object elem : list) {
-                        buildAttribute(elem, name, clazz, attributeBuilder);
-                    }
+                    list.forEach(elem -> buildAttribute(elem, name, clazz, attributeBuilder));
                 } else if (!list.isEmpty()) {
                     attributeBuilder.addValue(list.get(0).toString());
                 }

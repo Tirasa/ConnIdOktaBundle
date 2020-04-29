@@ -95,8 +95,7 @@ import org.identityconnectors.framework.spi.operations.UpdateOp;
  */
 @ConnectorClass(configurationClass = OktaConfiguration.class, displayNameKey = "okta.connector.display")
 public class OktaConnector implements Connector, PoolableConnector,
-        CreateOp, UpdateOp, DeleteOp,
-        SchemaOp, SyncOp, TestOp, SearchOp<OktaFilter> {
+        CreateOp, UpdateOp, DeleteOp, SchemaOp, SyncOp, TestOp, SearchOp<OktaFilter> {
 
     private static final Log LOG = Log.getLog(OktaConnector.class);
 
@@ -129,6 +128,10 @@ public class OktaConnector implements Connector, PoolableConnector,
     public static final String SORT_ORDER = "sortOrder";
 
     public static final String WORK_FACTOR = "workFactor";
+
+    public static final String OKTA_SECURITY_QUESTION = "oktaSecurityQuestion";
+
+    public static final String OKTA_SECURITY_ANSWER = "oktaSecurityAnswer";
 
     private OktaConfiguration configuration;
 
@@ -212,8 +215,7 @@ public class OktaConnector implements Connector, PoolableConnector,
                 if (password != null && StringUtil.isNotBlank(SecurityUtil.decrypt(password))) {
                     String passwordValue = SecurityUtil.decrypt(password);
                     String passwordHashAlgorithm = accessor.findString(CIPHER_ALGORITHM);
-                    if (configuration.isImportHashedPassword()
-                            && StringUtil.isNotBlank(passwordHashAlgorithm)) {
+                    if (configuration.isImportHashedPassword() && StringUtil.isNotBlank(passwordHashAlgorithm)) {
                         String salt = accessor.findString(SALT);
                         String saltOrder = accessor.findString(SALT_ORDER);
                         switch (CipherAlgorithm.valueOfLabel(passwordHashAlgorithm)) {
@@ -223,24 +225,37 @@ public class OktaConnector implements Connector, PoolableConnector,
                             case SSHA1:
                                 userBuilder.setSha1PasswordHash(passwordValue, salt, saltOrder);
                                 break;
+
                             case SHA256:
                             case SSHA256:
                                 userBuilder.setSha256PasswordHash(passwordValue, salt, saltOrder);
                                 break;
+
                             case SHA512:
                             case SSHA512:
                                 userBuilder.setSha512PasswordHash(passwordValue, salt, saltOrder);
                                 break;
+
                             case BCRYPT:
                                 userBuilder.setBcryptPasswordHash(
                                         passwordValue, salt, accessor.findInteger(WORK_FACTOR));
                                 break;
+
                             default:
                                 OktaUtils.handleGeneralError(
                                         "Hash Algorithm not supported : " + passwordHashAlgorithm);
                         }
                     } else {
                         userBuilder.setPassword(passwordValue.toCharArray());
+                    }
+
+                    String securityQuestion = accessor.findString(OKTA_SECURITY_QUESTION);
+                    if (StringUtil.isNotBlank(securityQuestion)) {
+                        userBuilder.setSecurityQuestion(securityQuestion);
+                    }
+                    String securityAnswer = accessor.findString(OKTA_SECURITY_ANSWER);
+                    if (StringUtil.isNotBlank(securityAnswer)) {
+                        userBuilder.setSecurityQuestionAnswer(securityAnswer);
                     }
                 }
 
