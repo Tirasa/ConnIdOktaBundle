@@ -77,11 +77,11 @@
 
   <properties>
     <connid.version>1.4.5.1</connid.version>
-    <okta.version>1.6.0-SNAPSHOT</okta.version>
+    <okta.version>1.6.0</okta.version>
     
     <swagger-codegen.plugin.version>3.0.19</swagger-codegen.plugin.version>
     <javax.servlet.version>3.1.0</javax.servlet.version>
-    <spring.version>5.1.14.RELEASE</spring.version>
+    <spring.version>5.1.15.RELEASE</spring.version>
     <jackson.version>2.10.3</jackson.version>
     <javax.validation.version>2.0.1.Final</javax.validation.version>
     <apache.cxf.version>3.3.6</apache.cxf.version>
@@ -187,13 +187,13 @@
       <dependency>
         <groupId>org.apache.commons</groupId>
         <artifactId>commons-lang3</artifactId>
-        <version>3.9</version>
+        <version>3.10</version>
       </dependency>
     
       <dependency>
         <groupId>commons-beanutils</groupId>
         <artifactId>commons-beanutils</artifactId>
-        <version>1.9.3</version>
+        <version>1.9.4</version>
       </dependency>  
         
       <!-- TEST -->        
@@ -267,7 +267,7 @@
         <plugin>
           <groupId>org.codehaus.cargo</groupId>
           <artifactId>cargo-maven2-plugin</artifactId>
-          <version>1.7.11</version>
+          <version>1.7.12</version>
           <configuration>
             <container>
               <containerId>tomcat9x</containerId>
