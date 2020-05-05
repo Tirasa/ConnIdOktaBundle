@@ -23,6 +23,7 @@ import com.okta.sdk.resource.user.User;
 import com.okta.sdk.resource.user.UserProfile;
 import com.okta.sdk.resource.user.UserStatus;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -68,7 +69,7 @@ public final class OktaAttribute {
 
     public static final String DESCRIPTION = "description";
 
-    public static final String LASTUPDATE = "lastUpdated";
+    public static final String LASTUPDATED = "lastUpdated";
 
     public static final String OKTA_SECURITY_QUESTION = "oktaSecurityQuestion";
 
@@ -136,9 +137,12 @@ public final class OktaAttribute {
                 } catch (Exception ex) {
                     LOG.error(ex, "Could not list groups for User {0}", user.getId());
                 }
-            } else if (OktaAttribute.LASTUPDATE.equals(attributeToGetName)) {
+            } else if (OktaAttribute.LASTUPDATED.equals(attributeToGetName)) {
                 attributes.add(
-                        buildAttribute(user.get(LASTUPDATE), attributeToGetName, String.class).build());
+                        buildAttribute(user.getLastUpdated() != null
+                                ? user.getLastUpdated().getTime()
+                                : 0L,
+                                attributeToGetName, Long.class).build());
             } else {
                 objectClassInfo.getAttributeInfo().stream().
                         filter(attr -> attr.getName().equals(attributeToGetName)).findFirst().ifPresent(
@@ -192,9 +196,10 @@ public final class OktaAttribute {
                             addValue(((Application) resource).getStatus().equals(Application.StatusEnum.ACTIVE));
                 }
                 attributes.add(attributeBuilder.build());
-            } else if (OktaAttribute.LASTUPDATE.equals(attributeToGetName)) {
-                attributes.add(
-                        buildAttribute(resource.get(LASTUPDATE), attributeToGetName, String.class).build());
+            } else if (OktaAttribute.LASTUPDATED.equals(attributeToGetName)) {
+                attributes.add(buildAttribute(resource.get(LASTUPDATED) != null
+                        ? ((Date) resource.get(LASTUPDATED)).getTime() : 0L,
+                        attributeToGetName, Long.class).build());
             } else {
                 objectClassInfo.getAttributeInfo().stream().
                         filter(attr -> attr.getName().equals(attributeToGetName)).findFirst().ifPresent(

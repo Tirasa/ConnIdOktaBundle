@@ -56,15 +56,6 @@ public class OktaUtils {
         query.append("\"");
         return query.toString();
     }
-
-    public static long convertToTimestamp(final String source) {
-        try {
-            return DATE_FORMAT.get().parse(source).getTime();
-        } catch (Exception ex) {   
-            LOG.info("Parse exception for {0} ", source);
-        }
-        return Long.valueOf(source);
-    }
     
     public static String convertToDate(final String source) {
         try {

@@ -452,7 +452,7 @@ public class OktaConnector implements Connector, PoolableConnector,
         Set<String> attributesToGet = new HashSet<>();
         if (options.getAttributesToGet() != null) {
             attributesToGet.addAll(Arrays.asList(options.getAttributesToGet()));
-            attributesToGet.add(OktaAttribute.LASTUPDATE);
+            attributesToGet.add(OktaAttribute.LASTUPDATED);
         }
 
         Object tokenValue = null;
@@ -474,7 +474,7 @@ public class OktaConnector implements Connector, PoolableConnector,
                 try {
                     if (isDeleteEvent(item.getEventType())) {
                         connObj = fromLogEvent(
-                                item.getTarget().get(0).getId(), item.get("published").toString(), objectClass);
+                                item.getTarget().get(0).getId(), item.getPublished().getTime(), objectClass);
                     } else {
                         try {
                             if (ObjectClass.ACCOUNT.equals(objectClass)) {
@@ -704,11 +704,8 @@ public class OktaConnector implements Connector, PoolableConnector,
             OktaUtils.handleGeneralError("Provide envenType for Sync");
         }
         LogEventList events = client.getDataStore().getResource(
-                LOG_API_URL + "?filter=" + filter + "&limit=1&sortOrder=DESCENDING", LogEventList.class
-        );
-        return events.stream().findFirst().isPresent()
-                ? OktaUtils.convertToTimestamp(events.single().get("published").toString())
-                : Long.valueOf(0);
+                LOG_API_URL + "?filter=" + filter + "&limit=1&sortOrder=DESCENDING", LogEventList.class);
+        return events != null && events.stream().count() > 0 ? events.single().getPublished().getTime() : 0L;
     }
 
     private LogEventList getEvents(final ObjectClass objectClass, final String from) {
@@ -717,7 +714,7 @@ public class OktaConnector implements Connector, PoolableConnector,
             LOG.info("Provide envenType for Sync {0}", objectClass);
             return null;
         }
-        return client.getLogs(null, from, filter, null, "DESCENDING");
+        return client.getLogs(null, from, filter, null, "ASCENDING");
     }
 
     private String buildFilterByObjectClass(final ObjectClass objectClass) {
@@ -743,13 +740,13 @@ public class OktaConnector implements Connector, PoolableConnector,
         return builder.toString();
     }
 
-    private ConnectorObject fromLogEvent(final String id, final String lastUpdate, final ObjectClass objectClass) {
+    private ConnectorObject fromLogEvent(final String id, final long lastUpdate, final ObjectClass objectClass) {
         ConnectorObjectBuilder builder = new ConnectorObjectBuilder();
         builder.setObjectClass(objectClass);
         builder.setUid(id);
         builder.setName(id);
-        builder.addAttribute(OktaAttribute.buildAttribute(lastUpdate, OktaAttribute.LASTUPDATE, String.class
-        ).build());
+        builder.addAttribute(
+                OktaAttribute.buildAttribute(lastUpdate, OktaAttribute.LASTUPDATED, Long.class).build());
         return builder.build();
     }
 
@@ -783,19 +780,14 @@ public class OktaConnector implements Connector, PoolableConnector,
     }
 
     private SyncDeltaBuilder buildSyncDelta(final ConnectorObject connectorObject, final LogEvent event) {
-        LOG.info("buildSyncDelta");
+        LOG.info("Build SyncDelta");
         SyncDeltaBuilder bld = new SyncDeltaBuilder();
         long published;
         if (isMembershipOperationEvent(event.getEventType())) {
-            published = OktaUtils.convertToTimestamp(event.get("published").toString());
+            published = event.getPublished().getTime();
         } else {
-            Attribute lastUpdate = connectorObject.getAttributeByName(OktaAttribute.LASTUPDATE);
-            if (lastUpdate == null) {
-                OktaUtils.handleGeneralError("LastUpdate attribute is not present");
-            }
-            published = CollectionUtil.isEmpty(lastUpdate.getValue())
-                    ? 0L
-                    : OktaUtils.convertToTimestamp(lastUpdate.getValue().get(0).toString());
+            Attribute lastUpdate = connectorObject.getAttributeByName(OktaAttribute.LASTUPDATED);
+            published = Long.valueOf(AttributeUtil.getSingleValue(lastUpdate).toString());
         }
 
         bld.setToken(new SyncToken(published));
