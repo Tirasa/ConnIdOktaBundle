@@ -86,8 +86,8 @@ public class UserSchemaImpl implements UserSchemaApi {
                 initializeUserSchemaProperty("Display Name", "string", "NONE", "READ_WRITE", true, 0, 0, permissions));
         baseProperty.put("mobilePhone",
                 initializeUserSchemaProperty("Mobile Phone", "string", "NONE", "READ_WRITE", true, 0, 0, permissions));
-        customProperty.put("phone",
-                initializeUserSchemaProperty("Phone", "string", "NONE", "READ_WRITE", true, 0, 0, permissions));
+        customProperty.put("primaryPhone",
+                initializeUserSchemaProperty("Primary Phone", "string", "NONE", "READ_WRITE", true, 0, 0, permissions));
         baseProperty.put("preferredLanguage", initializeUserSchemaProperty(
                 "Preferred Language", "string", "NONE", "READ_WRITE", true, 0, 0, permissions));
         customProperty.put("entitlements",
