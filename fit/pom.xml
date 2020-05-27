@@ -33,6 +33,8 @@
   
   <properties>
     <bundles.directory>${project.build.directory}/bundles</bundles.directory>
+
+    <rootpom.basedir>${basedir}/..</rootpom.basedir>
   </properties>
   
   <dependencies>
