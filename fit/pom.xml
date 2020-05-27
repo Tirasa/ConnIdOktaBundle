@@ -21,7 +21,7 @@
   <parent>
     <groupId>net.tirasa.connid.bundles.okta</groupId>
     <artifactId>okta</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.0</version>
   </parent>
     
   <groupId>net.tirasa.connid.bundles.okta</groupId>
@@ -239,7 +239,7 @@
             <id>stop-container</id>
             <phase>no</phase>
             <goals>
-              <goal></goal>
+              <goal />
             </goals>
           </execution>
         </executions>
@@ -356,7 +356,7 @@
                 </goals>
                 <configuration>
                   <skip>false</skip>
-                  <argLine></argLine>
+                  <argLine />
                   <includes>
                     <include>**/*Tests.java</include>
                   </includes>
@@ -457,7 +457,7 @@
                 </goals>
                 <configuration>
                   <skip>false</skip>
-                  <argLine></argLine>
+                  <argLine />
                   <includes>
                     <include>**/OktaRateLimitsTests.java</include>
                   </includes>
