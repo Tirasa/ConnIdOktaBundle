@@ -22,7 +22,7 @@ The Okta bundle is part of the [ConnId](http://connid.tirasa.net) project.
 
 <a href="https://travis-ci.org/Tirasa/ConnIdOktaBundle"><img src="https://api.travis-ci.org/Tirasa/ConnIdOktaBundle.png"/></a>
 <a href="#">
-  <img src="https://img.shields.io/maven-central/v/net.tirasa.connid.bundles/net.tirasa.connid.bundles.okta.svg"/>
+  <img src="https://img.shields.io/maven-central/v/net.tirasa.connid.bundles.okta/net.tirasa.connid.bundles.okta.svg"/>
 </a>
 
 ## How to get it
@@ -38,7 +38,7 @@ The Okta bundle is part of the [ConnId](http://connid.tirasa.net) project.
 </dependency>
 ```
 
-where `connid.okta.version` is one of [available](http://repo1.maven.org/maven2/net/tirasa/connid/bundles/net.tirasa.connid.bundles.okta/).
+where `connid.okta.version` is one of [available](https://repo1.maven.org/maven2/net/tirasa/connid/bundles/okta/net.tirasa.connid.bundles.okta/).
 
 ### Downloads
 
