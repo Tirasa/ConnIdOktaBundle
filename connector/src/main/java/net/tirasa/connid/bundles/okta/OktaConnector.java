@@ -37,6 +37,7 @@ import com.okta.sdk.resource.user.UserList;
 import com.okta.sdk.resource.user.UserStatus;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -573,8 +574,10 @@ public class OktaConnector implements Connector, PoolableConnector,
                     OktaUtils.wrapGeneralError("While getting Users!", e);
                 }
 
-                for (User user : userList) {
-                    handler.handle(fromUser(user, attributesToGet));
+                if (userList != null) {
+                    for (User user : userList) {
+                        handler.handle(fromUser(user, attributesToGet));
+                    }
                 }
 
                 if (handler instanceof SearchResultsHandler) {
@@ -622,8 +625,10 @@ public class OktaConnector implements Connector, PoolableConnector,
                     OktaUtils.wrapGeneralError("While getting Applications!", e);
                 }
 
-                for (Application application : applicationList) {
-                    handler.handle(fromApplication(application, attributesToGet));
+                if (applicationList != null) {
+                    for (Application application : applicationList) {
+                        handler.handle(fromApplication(application, attributesToGet));
+                    }
                 }
 
                 if (handler instanceof SearchResultsHandler) {
@@ -668,8 +673,10 @@ public class OktaConnector implements Connector, PoolableConnector,
                     OktaUtils.wrapGeneralError("While getting Applications!", e);
                 }
 
-                for (Group group : groupList) {
-                    handler.handle(fromGroup(group, attributesToGet));
+                if (groupList != null) {
+                    for (Group group : groupList) {
+                        handler.handle(fromGroup(group, attributesToGet));
+                    }
                 }
 
                 if (handler instanceof SearchResultsHandler) {
@@ -679,8 +686,8 @@ public class OktaConnector implements Connector, PoolableConnector,
                 try {
                     GroupList groups = OktaAttribute.ID.equals(filter.getAttribute())
                             || OktaAttribute.NAME.equals(filter.getAttribute())
-                            ? client.listGroups(filter.getValue(), null, null)
-                            : client.listGroups(null, filter.toString(), null);
+                            ? client.listGroups(filter.getValue(), null)
+                            : client.listGroups(null, filter.toString());
                     for (Group group : groups) {
                         if (!handler.handle(fromGroup(group, attributesToGet))) {
                             LOG.ok("Stop processing of the result set");
@@ -708,7 +715,7 @@ public class OktaConnector implements Connector, PoolableConnector,
         return events != null && events.stream().count() > 0 ? events.single().getPublished().getTime() : 0L;
     }
 
-    private LogEventList getEvents(final ObjectClass objectClass, final String from) {
+    private LogEventList getEvents(final ObjectClass objectClass, final Date from) {
         String filter = buildFilterByObjectClass(objectClass);
         if (StringUtil.isBlank(filter)) {
             LOG.info("Provide envenType for Sync {0}", objectClass);

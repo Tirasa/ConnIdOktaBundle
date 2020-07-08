@@ -77,14 +77,14 @@
 
   <properties>
     <connid.version>1.4.5.1</connid.version>
-    <okta.version>1.6.0</okta.version>
+    <okta.version>2.0.0</okta.version>
     
-    <swagger-codegen.plugin.version>3.0.19</swagger-codegen.plugin.version>
+    <swagger-codegen.plugin.version>3.0.20</swagger-codegen.plugin.version>
     <javax.servlet.version>3.1.0</javax.servlet.version>
-    <spring.version>5.1.15.RELEASE</spring.version>
+    <spring.version>5.1.16.RELEASE</spring.version>
     <jackson.version>2.10.4</jackson.version>
     <javax.validation.version>2.0.1.Final</javax.validation.version>
-    <apache.cxf.version>3.3.6</apache.cxf.version>
+    <apache.cxf.version>3.3.7</apache.cxf.version>
     <swagger-annotations.version>2.0.10</swagger-annotations.version>
     
     <log.directory>${project.build.directory}/log</log.directory>
@@ -95,7 +95,7 @@
     <cargo.log>${log.directory}/cargo.log</cargo.log>
     <cargo.output>${log.directory}/cargo-output.log</cargo.output>
 
-    <tomcat.version>9.0.35</tomcat.version>
+    <tomcat.version>9.0.37</tomcat.version>
     
     <java.version>1.8</java.version>
     <rootpom.basedir>${basedir}</rootpom.basedir>
@@ -267,7 +267,7 @@
         <plugin>
           <groupId>org.codehaus.cargo</groupId>
           <artifactId>cargo-maven2-plugin</artifactId>
-          <version>1.7.12</version>
+          <version>1.7.13</version>
           <configuration>
             <container>
               <containerId>tomcat9x</containerId>

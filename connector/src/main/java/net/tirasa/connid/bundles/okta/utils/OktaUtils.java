@@ -56,13 +56,13 @@ public class OktaUtils {
         query.append("\"");
         return query.toString();
     }
-    
-    public static String convertToDate(final String source) {
+
+    public static Date convertToDate(final String source) {
         try {
-            return DATE_FORMAT.get().format(new Date(Long.valueOf(source)));
-        } catch (Exception ex) {   
-            LOG.info("Format exception for {0} ", source);
+            return new Date(Long.valueOf(source));
+        } catch (Exception e) {
+            LOG.info(e, "While converting {0} to date", source);
         }
-        return source;
+        return null;
     }
 }
