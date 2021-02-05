@@ -102,7 +102,7 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
 
                     return Response.status(Response.Status.FORBIDDEN).
                             header("Okta-Request-Id", "E0000014").
-                            entity(Map.of("errorSummary", "E0000014 - Update of credentials failed - "
+                            entity(Collections.singletonMap("errorSummary", "E0000014 - Update of credentials failed - "
                                     + "Password requirements were not met. "
                                     + "Password requirements: at least 8 characters, a lowercase letter, "
                                     + "an uppercase letter, a number, "
@@ -112,13 +112,13 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
             } else {
                 return Response.status(Response.Status.FORBIDDEN).
                         header("Okta-Request-Id", "E0000014").
-                        entity(Map.of("errorSummary",
+                        entity(Collections.singletonMap("errorSummary",
                                 "E0000014 - Update of credentials failed - Old Password is not correct")).build();
             }
         } else {
             return Response.status(Response.Status.NOT_FOUND).
                     header("Okta-Request-Id", "E0000014").
-                    entity(Map.of("errorSummary", "E0000014 - User not found or status not valid")).build();
+                    entity(Collections.singletonMap("errorSummary", "E0000014 - User not found or status not valid")).build();
         }
     }
 
