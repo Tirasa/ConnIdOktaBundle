@@ -32,11 +32,14 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -44,6 +47,9 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
 public class UserImpl extends AbstractApi<User> implements UserApi {
+
+    @Context
+    private HttpHeaders headers;
 
     @Override
     public Response activateUser(final String userId, final Boolean sendEmail) {
@@ -83,18 +89,36 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
         if (found.isPresent() && (found.get().getStatus().equals(UserStatus.ACTIVE)
                 || found.get().getStatus().equals(UserStatus.PASSWORD_EXPIRED)
                 || found.get().getStatus().equals(UserStatus.STAGED)
-                || found.get().getStatus().equals(UserStatus.RECOVERY))
-                && changePasswordRequest.getOldPassword().getValue().equals(USER_PASSWORD_REPOSITORY.
-                        get(userId).get(USER_PASSWORD_REPOSITORY.get(userId).size() - 1))
-                && !USER_PASSWORD_REPOSITORY.get(userId).contains(changePasswordRequest.
-                        getNewPassword().getValue())) {
-            USER_PASSWORD_REPOSITORY.get(userId).add(changePasswordRequest.getNewPassword().getValue());
-            found.get().setLastUpdated(Date.from(Instant.now()));
-            found.get().setPasswordChanged(Date.from(Instant.now()));
-            createLogEvent("user.account.update_password", userId);
-            return Response.ok().entity(found.get().getCredentials()).build();
+                || found.get().getStatus().equals(UserStatus.RECOVERY))) {
+            if (changePasswordRequest.getOldPassword().getValue().equals(USER_PASSWORD_REPOSITORY.
+                    get(userId).get(USER_PASSWORD_REPOSITORY.get(userId).size() - 1))) {
+                if (!USER_PASSWORD_REPOSITORY.get(userId).contains(changePasswordRequest.getNewPassword().getValue())) {
+                    USER_PASSWORD_REPOSITORY.get(userId).add(changePasswordRequest.getNewPassword().getValue());
+                    found.get().setLastUpdated(Date.from(Instant.now()));
+                    found.get().setPasswordChanged(Date.from(Instant.now()));
+                    createLogEvent("user.account.update_password", userId);
+                    return Response.ok().entity(found.get().getCredentials()).build();
+                } else {
+
+                    return Response.status(Response.Status.FORBIDDEN).
+                            header("Okta-Request-Id", "E0000014").
+                            entity(Map.of("errorSummary", "E0000014 - Update of credentials failed - "
+                                    + "Password requirements were not met. "
+                                    + "Password requirements: at least 8 characters, a lowercase letter, "
+                                    + "an uppercase letter, a number, "
+                                    + "no parts of your username. "
+                                    + "Your password cannot be any of your last 4 passwords.")).build();
+                }
+            } else {
+                return Response.status(Response.Status.FORBIDDEN).
+                        header("Okta-Request-Id", "E0000014").
+                        entity(Map.of("errorSummary",
+                                "E0000014 - Update of credentials failed - Old Password is not correct")).build();
+            }
         } else {
-            return Response.status(Response.Status.NOT_FOUND).build();
+            return Response.status(Response.Status.NOT_FOUND).
+                    header("Okta-Request-Id", "E0000014").
+                    entity(Map.of("errorSummary", "E0000014 - User not found or status not valid")).build();
         }
     }
 

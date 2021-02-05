@@ -29,6 +29,7 @@ import com.okta.sdk.resource.group.Group;
 import com.okta.sdk.resource.group.GroupList;
 import com.okta.sdk.resource.log.LogEvent;
 import com.okta.sdk.resource.log.LogEventList;
+import com.okta.sdk.resource.user.ChangePasswordRequest;
 import com.okta.sdk.resource.user.PasswordCredential;
 import com.okta.sdk.resource.user.User;
 import com.okta.sdk.resource.user.UserBuilder;
@@ -304,17 +305,24 @@ public class OktaConnector implements Connector, PoolableConnector,
             try {
                 GuardedString password = accessor.getPassword();
                 if (password != null && StringUtil.isNotBlank(SecurityUtil.decrypt(password))) {
-                    try {
-                        UserCredentials userCredentials = client.instantiate(UserCredentials.class);
-                        PasswordCredential passwordCredentials = client.instantiate(PasswordCredential.class);
-                        passwordCredentials.setValue(SecurityUtil.decrypt(password).toCharArray());
-                        userCredentials.setPassword(passwordCredentials);
-                        user.setCredentials(userCredentials);
-                    } catch (Exception e) {
-                        OktaUtils.wrapGeneralError("Could not update password for User " + uid.getUidValue(), e);
+                    Attribute currentPassword = accessor.find(OperationalAttributes.CURRENT_PASSWORD_NAME);
+                    GuardedString currentPasswordValue =
+                            currentPassword == null ? null : AttributeUtil.getGuardedStringValue(currentPassword);
+                    if (currentPasswordValue != null
+                            && StringUtil.isNotBlank(SecurityUtil.decrypt(currentPasswordValue))) {
+                        selfPasswordUpdate(user, currentPasswordValue, password);
+                    } else {
+                        try {
+                            UserCredentials userCredentials = client.instantiate(UserCredentials.class);
+                            PasswordCredential passwordCredentials = client.instantiate(PasswordCredential.class);
+                            passwordCredentials.setValue(SecurityUtil.decrypt(password).toCharArray());
+                            userCredentials.setPassword(passwordCredentials);
+                            user.setCredentials(userCredentials);
+                        } catch (Exception e) {
+                            OktaUtils.wrapGeneralError("Could not update password for User " + uid.getUidValue(), e);
+                        }
                     }
                 }
-
                 updateUserAttributes(user, replaceAttributes);
                 User updatedUser = user.update(true);
 
@@ -950,6 +958,20 @@ public class OktaConnector implements Connector, PoolableConnector,
             } else if (updatedUser.getStatus() != UserStatus.DEPROVISIONED && !enabled) {
                 updatedUser.deactivate();
             }
+        }
+    }
+
+    private void selfPasswordUpdate(final User user, final GuardedString oldPassword, final GuardedString newPassword) {
+        try {
+            user.changePassword(client.instantiate(ChangePasswordRequest.class).
+                    setOldPassword(client.instantiate(PasswordCredential.class).
+                            setValue(SecurityUtil.decrypt(oldPassword).toCharArray())).
+                    setNewPassword(client.instantiate(PasswordCredential.class).
+                            setValue(SecurityUtil.decrypt(newPassword).toCharArray())));
+            LOG.ok("Self change passsowrd user {0}" + user.getId());
+        } catch (Exception e) {
+            LOG.error(e.getMessage(), e);
+            OktaUtils.handleGeneralError(e.getMessage(), e);
         }
     }
 

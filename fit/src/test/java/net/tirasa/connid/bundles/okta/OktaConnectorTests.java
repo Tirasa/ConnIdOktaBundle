@@ -412,7 +412,7 @@ public class OktaConnectorTests extends AbstractConnectorTests {
         assertEquals(handler.getObjects().get(0).getUid().getUidValue(), created.getUidValue());
 
         handler.getObjects().clear();
-        
+
         //List USER
         filter = (EqualsFilter) FilterBuilder.equalTo(AttributeBuilder.build("email", username + "@tirasa.net"));
         connector.search(ObjectClass.ACCOUNT, filter, handler, operationOption);
@@ -608,6 +608,97 @@ public class OktaConnectorTests extends AbstractConnectorTests {
         assertEquals("STAGED", user.getStatus().STAGED.toString());
     }
 
+    @Test
+    public void changePasswordWithOldValidation() {
+        ToListResultsHandler handler = new ToListResultsHandler();
+        OperationOptions operationOption =
+                new OperationOptionsBuilder().setAttributesToGet(OktaAttribute.EMAIL, OktaAttribute.MOBILEPHONE).build();
+        try {
+            // CREATE USER
+            String username = UUID.randomUUID().toString();
+            Attribute password = AttributeBuilder.buildPassword(new GuardedString("Federico123".toCharArray()));
+            Attribute newPassword = AttributeBuilder.buildPassword(new GuardedString("123Federico".toCharArray()));
+
+            Set<Attribute> userAttrs = new HashSet<>();
+            userAttrs.add(AttributeBuilder.build(OktaAttribute.EMAIL, username + "@tirasa.net"));
+            userAttrs.add(AttributeBuilder.build(OktaAttribute.FIRSTNAME, "Test"));
+            userAttrs.add(AttributeBuilder.build(OktaAttribute.LASTNAME, "Test"));
+            userAttrs.add(password);
+
+            Uid created = connector.create(ObjectClass.ACCOUNT, userAttrs, operationOption);
+            assertNotNull(created);
+            USERS.add(created.getUidValue());
+
+            // GET USER
+            EqualsFilter filter = (EqualsFilter) FilterBuilder.equalTo(
+                    AttributeBuilder.build("email", username + "@tirasa.net"));
+            connector.search(ObjectClass.ACCOUNT, filter, handler, operationOption);
+            assertNotNull(handler.getObjects());
+            assertFalse(handler.getObjects().isEmpty());
+            assertEquals(handler.getObjects().get(0).getUid().getUidValue(), created.getUidValue());
+            LOG.info("Created User with id {0} on Okta", handler.getObjects().get(0).getUid());
+
+            // UPDATE USER
+            Attribute currentPassword = AttributeBuilder.build(OperationalAttributes.CURRENT_PASSWORD_NAME,
+                    new GuardedString("Federico123".toCharArray()));
+            userAttrs.remove(password);
+            
+            userAttrs.add(currentPassword);
+            userAttrs.add(newPassword);
+            
+            Uid updated = connector.update(ObjectClass.ACCOUNT, created, userAttrs, operationOption);
+            assertNotNull(updated);
+        } catch (Exception e) {
+            fail();
+            LOG.error(e, "While running test");
+        }
+    }
+
+    @Test
+    public void oldPasswordNotValid() {
+        ToListResultsHandler handler = new ToListResultsHandler();
+        OperationOptions operationOption =
+                new OperationOptionsBuilder().setAttributesToGet(OktaAttribute.EMAIL, OktaAttribute.MOBILEPHONE).build();
+        try {
+            // CREATE USER
+            String username = UUID.randomUUID().toString();
+            Attribute password = AttributeBuilder.buildPassword(new GuardedString("Federico123".toCharArray()));
+            Attribute newPassword = AttributeBuilder.buildPassword(new GuardedString("123Federico".toCharArray()));
+
+            Set<Attribute> userAttrs = new HashSet<>();
+            userAttrs.add(AttributeBuilder.build(OktaAttribute.EMAIL, username + "@tirasa.net"));
+            userAttrs.add(AttributeBuilder.build(OktaAttribute.FIRSTNAME, "Test"));
+            userAttrs.add(AttributeBuilder.build(OktaAttribute.LASTNAME, "Test"));
+            userAttrs.add(password);
+
+            Uid created = connector.create(ObjectClass.ACCOUNT, userAttrs, operationOption);
+            assertNotNull(created);
+            USERS.add(created.getUidValue());
+
+            // GET USER
+            EqualsFilter filter = (EqualsFilter) FilterBuilder.equalTo(
+                    AttributeBuilder.build("email", username + "@tirasa.net"));
+            connector.search(ObjectClass.ACCOUNT, filter, handler, operationOption);
+            assertNotNull(handler.getObjects());
+            assertFalse(handler.getObjects().isEmpty());
+            assertEquals(handler.getObjects().get(0).getUid().getUidValue(), created.getUidValue());
+            LOG.info("Created User with id {0} on Okta", handler.getObjects().get(0).getUid());
+
+            // UPDATE USER
+            Attribute currentPassword = AttributeBuilder.build(OperationalAttributes.CURRENT_PASSWORD_NAME,
+                    new GuardedString("Federico".toCharArray()));
+            userAttrs.remove(password);
+            
+            userAttrs.add(currentPassword);
+            userAttrs.add(newPassword);
+            
+            Uid updated = connector.update(ObjectClass.ACCOUNT, created, userAttrs, operationOption);
+            fail();
+        } catch (Exception e) {
+            LOG.error(e, "While running test");
+        }
+    }
+    
     @AfterClass
     public static void cleanTestData() {
         USERS.stream().forEach(item -> cleanUserTestData(conn.getClient(), item));
