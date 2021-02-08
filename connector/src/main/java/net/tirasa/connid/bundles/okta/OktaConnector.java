@@ -23,6 +23,7 @@ import com.okta.sdk.impl.resource.application.DefaultApplicationList;
 import com.okta.sdk.impl.resource.group.DefaultGroupList;
 import com.okta.sdk.impl.resource.user.DefaultUserList;
 import com.okta.sdk.resource.ExtensibleResource;
+import com.okta.sdk.resource.ResourceException;
 import com.okta.sdk.resource.application.Application;
 import com.okta.sdk.resource.application.ApplicationList;
 import com.okta.sdk.resource.group.Group;
@@ -302,27 +303,27 @@ public class OktaConnector implements Connector, PoolableConnector,
             Uid returnUid = uid;
             User user = client.getUser(uid.getUidValue());
 
-            try {
-                GuardedString password = accessor.getPassword();
-                if (password != null && StringUtil.isNotBlank(SecurityUtil.decrypt(password))) {
-                    Attribute currentPassword = accessor.find(OperationalAttributes.CURRENT_PASSWORD_NAME);
-                    GuardedString currentPasswordValue =
-                            currentPassword == null ? null : AttributeUtil.getGuardedStringValue(currentPassword);
-                    if (currentPasswordValue != null
-                            && StringUtil.isNotBlank(SecurityUtil.decrypt(currentPasswordValue))) {
-                        selfPasswordUpdate(user, currentPasswordValue, password);
-                    } else {
-                        try {
-                            UserCredentials userCredentials = client.instantiate(UserCredentials.class);
-                            PasswordCredential passwordCredentials = client.instantiate(PasswordCredential.class);
-                            passwordCredentials.setValue(SecurityUtil.decrypt(password).toCharArray());
-                            userCredentials.setPassword(passwordCredentials);
-                            user.setCredentials(userCredentials);
-                        } catch (Exception e) {
-                            OktaUtils.wrapGeneralError("Could not update password for User " + uid.getUidValue(), e);
-                        }
+            GuardedString password = accessor.getPassword();
+            if (password != null && StringUtil.isNotBlank(SecurityUtil.decrypt(password))) {
+                Attribute currentPassword = accessor.find(OperationalAttributes.CURRENT_PASSWORD_NAME);
+                GuardedString currentPasswordValue =
+                        currentPassword == null ? null : AttributeUtil.getGuardedStringValue(currentPassword);
+                if (currentPasswordValue != null
+                        && StringUtil.isNotBlank(SecurityUtil.decrypt(currentPasswordValue))) {
+                    selfPasswordUpdate(user, currentPasswordValue, password);
+                } else {
+                    try {
+                        UserCredentials userCredentials = client.instantiate(UserCredentials.class);
+                        PasswordCredential passwordCredentials = client.instantiate(PasswordCredential.class);
+                        passwordCredentials.setValue(SecurityUtil.decrypt(password).toCharArray());
+                        userCredentials.setPassword(passwordCredentials);
+                        user.setCredentials(userCredentials);
+                    } catch (Exception e) {
+                        OktaUtils.wrapGeneralError("Could not update password for User " + uid.getUidValue(), e);
                     }
                 }
+            }
+            try {
                 updateUserAttributes(user, replaceAttributes);
                 User updatedUser = user.update(true);
 
@@ -969,6 +970,13 @@ public class OktaConnector implements Connector, PoolableConnector,
                     setNewPassword(client.instantiate(PasswordCredential.class).
                             setValue(SecurityUtil.decrypt(newPassword).toCharArray())));
             LOG.ok("Self change passsowrd user {0}" + user.getId());
+        } catch (ResourceException e) {
+            LOG.error(e.getMessage(), e);
+            if (!CollectionUtil.isEmpty(e.getCauses())) {
+                OktaUtils.handleGeneralError(e.getError().getCauses().get(0).getSummary());
+            } else {
+                OktaUtils.handleGeneralError(e.getMessage(), e);
+            }
         } catch (Exception e) {
             LOG.error(e.getMessage(), e);
             OktaUtils.handleGeneralError(e.getMessage(), e);

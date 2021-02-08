@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -90,20 +91,22 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
                 || found.get().getStatus().equals(UserStatus.PASSWORD_EXPIRED)
                 || found.get().getStatus().equals(UserStatus.STAGED)
                 || found.get().getStatus().equals(UserStatus.RECOVERY))) {
-            if (changePasswordRequest.getOldPassword().getValue().equals(USER_PASSWORD_REPOSITORY.
-                    get(userId).get(USER_PASSWORD_REPOSITORY.get(userId).size() - 1))) {
-                if (!USER_PASSWORD_REPOSITORY.get(userId).contains(changePasswordRequest.getNewPassword().getValue())) {
+            if (USER_PASSWORD_REPOSITORY.get(userId).isEmpty()
+                    || changePasswordRequest.getOldPassword().getValue().
+                            equals(USER_PASSWORD_REPOSITORY.get(userId).get(
+                                    USER_PASSWORD_REPOSITORY.get(userId).size() - 1))) {
+                if (!USER_PASSWORD_REPOSITORY.get(userId).
+                        contains(changePasswordRequest.getNewPassword().getValue())) {
                     USER_PASSWORD_REPOSITORY.get(userId).add(changePasswordRequest.getNewPassword().getValue());
                     found.get().setLastUpdated(Date.from(Instant.now()));
                     found.get().setPasswordChanged(Date.from(Instant.now()));
                     createLogEvent("user.account.update_password", userId);
                     return Response.ok().entity(found.get().getCredentials()).build();
                 } else {
-
                     return Response.status(Response.Status.FORBIDDEN).
                             header("Okta-Request-Id", "E0000014").
-                            entity(Collections.singletonMap("errorSummary", "E0000014 - Update of credentials failed - "
-                                    + "Password requirements were not met. "
+                            entity(buildErrorResponse("000123",
+                                    "Password requirements were not met. "
                                     + "Password requirements: at least 8 characters, a lowercase letter, "
                                     + "an uppercase letter, a number, "
                                     + "no parts of your username. "
@@ -112,14 +115,23 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
             } else {
                 return Response.status(Response.Status.FORBIDDEN).
                         header("Okta-Request-Id", "E0000014").
-                        entity(Collections.singletonMap("errorSummary",
-                                "E0000014 - Update of credentials failed - Old Password is not correct")).build();
+                        entity(buildErrorResponse("000123", "Old Password is not correct")).build();
             }
         } else {
             return Response.status(Response.Status.NOT_FOUND).
                     header("Okta-Request-Id", "E0000014").
-                    entity(Collections.singletonMap("errorSummary", "E0000014 - User not found or status not valid")).build();
+                    entity(buildErrorResponse("000123", "User not found or status not valid")).build();
         }
+    }
+
+    private Map<String, Object> buildErrorResponse(final String errorId, final String message) {
+        Map<String, Object> error = new LinkedHashMap<>();
+        error.put("errorCode", "E0000014");
+        error.put("errorSummary", "Update of credentials failed");
+        error.put("errorLink", "E0000014");
+        error.put("errorId", errorId);
+        error.put("errorCauses", Collections.singletonList(Collections.singletonMap("errorSummary", message)));
+        return error;
     }
 
     @Override
@@ -149,6 +161,7 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
             body.setCreated(Date.from(Instant.now()));
             body.setLastUpdated(Date.from(Instant.now()));
             body.setStatusChanged(Date.from(Instant.now()));
+            List<String> passwords = new ArrayList<>();
             if (body.getCredentials() != null) {
                 body.setPasswordChanged(Date.from(Instant.now()));
                 if (body.getCredentials().getPassword().getHash() != null) {
@@ -156,9 +169,10 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
                             setValue(body.getCredentials().getPassword().getHash().getValue());
                     body.getCredentials().getPassword().setHash(null);
                 }
-                List<String> passwords = new ArrayList<>();
                 passwords.add(body.getCredentials().getPassword().getValue());
                 body.getCredentials().setPassword(null);
+                USER_PASSWORD_REPOSITORY.put(body.getId(), passwords);
+            } else {
                 USER_PASSWORD_REPOSITORY.put(body.getId(), passwords);
             }
 
