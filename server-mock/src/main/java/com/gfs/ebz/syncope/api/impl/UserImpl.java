@@ -39,8 +39,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -48,9 +46,6 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
 public class UserImpl extends AbstractApi<User> implements UserApi {
-
-    @Context
-    private HttpHeaders headers;
 
     @Override
     public Response activateUser(final String userId, final Boolean sendEmail) {

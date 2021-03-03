@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.UriInfo;

@@ -20,7 +20,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
 import java.util.stream.IntStream;
-import org.identityconnectors.common.logging.Log;
 import org.identityconnectors.framework.api.APIConfiguration;
 import org.identityconnectors.framework.api.ConnectorFacade;
 import org.identityconnectors.framework.api.ConnectorFacadeFactory;
@@ -32,7 +31,7 @@ import org.identityconnectors.test.common.ToListResultsHandler;
 import org.junit.Test;
 
 public class OktaRateLimitsTests extends AbstractConnectorTests {
-    
+
     protected static ConnectorFacade newFacade() {
         ConnectorFacadeFactory factory = ConnectorFacadeFactory.getInstance();
         APIConfiguration impl = TestHelpers.createTestConfiguration(OktaConnector.class, conf);
