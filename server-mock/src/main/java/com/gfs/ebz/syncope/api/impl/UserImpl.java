@@ -379,6 +379,24 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
     }
 
     @Override
+    public Response reactivateUser(final String userId, final Boolean sendEmail) {
+        return USER_REPOSITORY.stream().
+                filter(user -> StringUtils.equals(userId, user.getId())).
+                findFirst().
+                map(user -> {
+                    if (user.getStatus() == UserStatus.PROVISIONED) {
+                        user.setStatus(UserStatus.RECOVERY);
+                        user.setStatusChanged(Date.from(Instant.now()));
+                        createLogEvent("user.lifecycle.reactivate", userId);
+                        return Response.ok().entity("{}").build();
+                    } else {
+                        return Response.status(Response.Status.FORBIDDEN).build();
+                    }
+                }).
+                orElseGet(() -> Response.status(Response.Status.NOT_FOUND).build());
+    }
+
+    @Override
     public Response suspendUser(final String userId) {
         Optional<User> found = USER_REPOSITORY.stream()
                 .filter(user -> StringUtils.equals(userId, user.getId()))
