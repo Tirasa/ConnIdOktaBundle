@@ -206,7 +206,7 @@ public class OktaConnector implements Connector, PoolableConnector,
             Attribute status = accessor.find(OperationalAttributes.ENABLE_NAME);
             Attribute email = accessor.find(OktaAttribute.EMAIL);
             try {
-                final UserBuilder userBuilder = UserBuilder.instance();
+                UserBuilder userBuilder = UserBuilder.instance();
 
                 if (status == null || CollectionUtil.isEmpty(status.getValue())) {
                     LOG.warn("{0} attribute value not correct or not found, won't handle User status",
@@ -216,10 +216,10 @@ public class OktaConnector implements Connector, PoolableConnector,
                 }
 
                 GuardedString password = accessor.getPassword();
-                if (password != null && StringUtil.isNotBlank(SecurityUtil.decrypt(password))) {
+                if (password != null) {
                     String passwordValue = SecurityUtil.decrypt(password);
                     String passwordHashAlgorithm = accessor.findString(CIPHER_ALGORITHM);
-                    if (configuration.isImportHashedPassword() && StringUtil.isNotBlank(passwordHashAlgorithm)) {
+                    if (StringUtil.isNotBlank(passwordHashAlgorithm)) {
                         String salt = accessor.findString(SALT);
                         String saltOrder = accessor.findString(SALT_ORDER);
                         switch (CipherAlgorithm.valueOfLabel(passwordHashAlgorithm)) {
