@@ -42,7 +42,6 @@ import java.util.stream.Collectors;
 import javax.ws.rs.core.Response;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
 public class UserImpl extends AbstractApi<User> implements UserApi {
@@ -166,12 +165,10 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
                 }
                 passwords.add(body.getCredentials().getPassword().getValue());
                 body.getCredentials().setPassword(null);
-                USER_PASSWORD_REPOSITORY.put(body.getId(), passwords);
-            } else {
-                USER_PASSWORD_REPOSITORY.put(body.getId(), passwords);
             }
+            USER_PASSWORD_REPOSITORY.put(body.getId(), passwords);
 
-            GROUP_USER_REPOSITORY.add(new ImmutablePair<>(EVERYONE_ID, body.getId()));
+            GROUP_USER_REPOSITORY.add(Pair.of(EVERYONE_ID, body.getId()));
 
             USER_IDP_REPOSITORY.put(body.getId(), new HashSet<>(Arrays.asList("6e77c44bf27d4750a10f1489ce4100df")));
             USER_REPOSITORY.add(body);
@@ -233,7 +230,11 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
             final String userId,
             final UserCredentials userCredentials,
             final Boolean sendEmail) {
-        throw new UnsupportedOperationException(ERROR_MESSAGE);
+
+        List<String> passwords = new ArrayList<>();
+        passwords.add(userCredentials.getPassword().getValue());
+        USER_PASSWORD_REPOSITORY.put(userId, passwords);
+        return Response.noContent().build();
     }
 
     @Override
