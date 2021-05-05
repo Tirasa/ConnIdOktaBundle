@@ -401,8 +401,8 @@ public class OktaConnector implements Connector, PoolableConnector,
         if (ObjectClass.ACCOUNT.equals(objectClass)) {
             try {
                 User user = client.getUser(uid.getUidValue());
-                user.deactivate();
-                user.delete();
+                user.delete(false);
+                user.delete(false);
             } catch (Exception e) {
                 OktaUtils.wrapGeneralError("Could not delete User " + uid.getUidValue(), e);
             }
