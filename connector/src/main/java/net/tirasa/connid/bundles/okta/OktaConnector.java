@@ -19,6 +19,7 @@ import com.okta.sdk.authc.credentials.TokenClientCredentials;
 import com.okta.sdk.client.Client;
 import com.okta.sdk.client.Clients;
 import com.okta.sdk.impl.resource.AbstractCollectionResource;
+import com.okta.sdk.impl.resource.DefaultUserBuilder;
 import com.okta.sdk.impl.resource.application.DefaultApplicationList;
 import com.okta.sdk.impl.resource.group.DefaultGroupList;
 import com.okta.sdk.impl.resource.user.DefaultUserList;
@@ -206,7 +207,7 @@ public class OktaConnector implements Connector, PoolableConnector,
             Attribute status = accessor.find(OperationalAttributes.ENABLE_NAME);
             Attribute email = accessor.find(OktaAttribute.EMAIL);
             try {
-                UserBuilder userBuilder = UserBuilder.instance();
+                UserBuilder userBuilder = new DefaultUserBuilder();
 
                 if (status == null || CollectionUtil.isEmpty(status.getValue())) {
                     LOG.warn("{0} attribute value not correct or not found, won't handle User status",
@@ -971,14 +972,14 @@ public class OktaConnector implements Connector, PoolableConnector,
                             setValue(SecurityUtil.decrypt(newPassword).toCharArray())));
             LOG.ok("Self change passsowrd user {0}" + user.getId());
         } catch (ResourceException e) {
-            LOG.error(e.getMessage(), e);
+            LOG.error(e, e.getMessage());
             if (!CollectionUtil.isEmpty(e.getCauses())) {
                 OktaUtils.handleGeneralError(e.getError().getCauses().get(0).getSummary());
             } else {
                 OktaUtils.handleGeneralError(e.getMessage(), e);
             }
         } catch (Exception e) {
-            LOG.error(e.getMessage(), e);
+            LOG.error(e, e.getMessage());
             OktaUtils.handleGeneralError(e.getMessage(), e);
         }
     }
