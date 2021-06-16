@@ -20,7 +20,9 @@ ConnIdOktaBundle
 
 The Okta bundle is part of the [ConnId](http://connid.tirasa.net) project.
 
-<a href="https://travis-ci.com/Tirasa/ConnIdOktaBundle"><img src="https://api.travis-ci.com/Tirasa/ConnIdOktaBundle.png"/></a>
+<a href="https://github.com/Tirasa/ConnIdOktaBundle/actions/workflows/ci.yml">
+  <img src="https://github.com/Tirasa/ConnIdOktaBundle/actions/workflows/ci.yml/badge.svg"/>
+</a>
 <a href="#">
   <img src="https://img.shields.io/maven-central/v/net.tirasa.connid.bundles.okta/net.tirasa.connid.bundles.okta.svg"/>
 </a>
