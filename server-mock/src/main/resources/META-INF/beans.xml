@@ -34,6 +34,8 @@
   <bean id="jacksonMapper" class="net.tirasa.connid.bundles.okta.servermock.OktaObjectMapper"/>
   
   <bean id="jsonProvider" class="com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider" p:mapper-ref="jacksonMapper"/>
+
+  <bean id="dateParamConverterProvider" class="net.tirasa.connid.bundles.okta.servermock.DateParamConverterProvider"/>
   
   <jaxrs:server id="services" address="/">
     <jaxrs:serviceBeans>
@@ -47,6 +49,7 @@
     </jaxrs:serviceBeans>
     <jaxrs:providers>
       <ref bean="jsonProvider"/>
+      <ref bean="dateParamConverterProvider"/>
     </jaxrs:providers>
     <jaxrs:features>
       <cxf:logging/>

@@ -129,8 +129,6 @@ public class OktaConnector implements Connector, PoolableConnector,
 
     public static final String SALT_ORDER = "saltOrder";
 
-    public static final String SORT_ORDER = "sortOrder";
-
     public static final String WORK_FACTOR = "workFactor";
 
     private static final Set<String> NOT_FOR_PROFILE = CollectionUtil.newReadOnlySet(
@@ -601,7 +599,7 @@ public class OktaConnector implements Connector, PoolableConnector,
                         User user = client.getUser(filter.getValue());
                         handler.handle(fromUser(user, attributesToGet));
                     } else {
-                        UserList users = client.listUsers(null, null, null, filter.toString(), null);
+                        UserList users = client.listUsers(null, null, filter.toString(), null, null);
                         for (User user : users) {
                             if (!handler.handle(fromUser(user, attributesToGet))) {
                                 LOG.ok("Stop processing of the result set");
@@ -731,7 +729,7 @@ public class OktaConnector implements Connector, PoolableConnector,
             LOG.info("Provide envenType for Sync {0}", objectClass);
             return null;
         }
-        return client.getLogs(null, from, filter, null, "ASCENDING");
+        return client.getLogs(from, null, filter, null, "ASCENDING");
     }
 
     private String buildFilterByObjectClass(final ObjectClass objectClass) {
