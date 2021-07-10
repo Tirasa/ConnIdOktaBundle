@@ -248,7 +248,7 @@ public class OktaConnectorTests extends AbstractConnectorTests {
             GROUPS.add(groupUpdate.getId());
 
             //Add default group everyone
-            GroupList groups = conn.getClient().listGroups("Everyone", null);
+            GroupList groups = conn.getClient().listGroups("Everyone", null, null);
             Group group;
             if (groups.iterator().hasNext()) {
                 group = groups.single();
@@ -314,7 +314,7 @@ public class OktaConnectorTests extends AbstractConnectorTests {
             LOG.info("Created User with id {0} on Okta", handler.getObjects().get(0).getUid());
 
             //Add default group everyone
-            GroupList groups = conn.getClient().listGroups("Everyone", null);
+            GroupList groups = conn.getClient().listGroups("Everyone", null, null);
             Group group;
             if (groups.iterator().hasNext()) {
                 group = groups.single();

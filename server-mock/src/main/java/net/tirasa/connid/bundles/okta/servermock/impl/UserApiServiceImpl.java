@@ -13,17 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.gfs.ebz.syncope.api.impl;
+package net.tirasa.connid.bundles.okta.servermock.impl;
 
 import io.swagger.api.UserApi;
+import io.swagger.model.AssignRoleRequest;
 import io.swagger.model.ChangePasswordRequest;
 import io.swagger.model.Group;
+import io.swagger.model.IdentityProvider;
 import io.swagger.model.PasswordCredential;
-import io.swagger.model.Role;
 import io.swagger.model.User;
 import io.swagger.model.UserCredentials;
 import io.swagger.model.UserStatus;
-import io.swagger.model.Idps;
 import java.lang.reflect.InvocationTargetException;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -44,10 +44,26 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
-public class UserImpl extends AbstractApi<User> implements UserApi {
+/**
+ * Okta API
+ *
+ * <p>
+ * Allows customers to easily access the Okta API
+ *
+ */
+public class UserApiServiceImpl extends AbstractServiceImpl implements UserApi {
 
+    /**
+     * Activate User
+     *
+     * Activates a user. This operation can only be performed on users with a &#x60;STAGED&#x60; status. Activation of a
+     * user is an asynchronous operation. The user will have the &#x60;transitioningToStatus&#x60; property with a value
+     * of &#x60;ACTIVE&#x60; during activation to indicate that the user hasn&#x27;t completed the asynchronous
+     * operation. The user will have a status of &#x60;ACTIVE&#x60; when the activation process is complete.
+     *
+     */
     @Override
-    public Response activateUser(final String userId, final Boolean sendEmail) {
+    public Response activateUser(String userId, Boolean sendEmail) {
         Optional<User> found = USER_REPOSITORY.stream()
                 .filter(user -> StringUtils.equals(userId, user.getId()))
                 .findFirst();
@@ -64,20 +80,68 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
     }
 
     @Override
-    public Response addGroupTargetToRole(final String userId, final String roleId, final String groupId) {
-        throw new UnsupportedOperationException(ERROR_MESSAGE);
+    public Response addAllAppsAsTargetToRole(String userId, String roleId) {
+        // TODO: Implement...
+
+        return Response.ok().entity("magic!").build();
     }
 
     @Override
-    public Response addRoleToUser(final Role role, final String userId) {
-        throw new UnsupportedOperationException(ERROR_MESSAGE);
+    public Response addApplicationTargetToAdminRoleForUser(String userId, String roleId, String appName) {
+        // TODO: Implement...
+
+        return Response.ok().entity("magic!").build();
+    }
+
+    /**
+     * Add App Instance Target to App Administrator Role given to a User
+     *
+     * Add App Instance Target to App Administrator Role given to a User
+     *
+     */
+    @Override
+    public Response addApplicationTargetToAppAdminRoleForUser(String userId, String roleId, String appName,
+            String applicationId) {
+        // TODO: Implement...
+
+        return Response.ok().entity("magic!").build();
     }
 
     @Override
-    public Response changePassword(
-            final ChangePasswordRequest changePasswordRequest,
-            final String userId,
-            final Boolean strict) {
+    public Response addGroupTargetToRole(String userId, String roleId, String groupId) {
+        // TODO: Implement...
+
+        return Response.ok().entity("magic!").build();
+    }
+
+    /**
+     * Forgot Password
+     *
+     */
+    @Override
+    public Response apiV1UsersUserIdCredentialsForgotPasswordPost(String userId) {
+        // TODO: Implement...
+
+        return Response.ok().entity("magic!").build();
+    }
+
+    @Override
+    public Response assignRoleToUser(AssignRoleRequest body, String userId, String disableNotifications) {
+        // TODO: Implement...
+
+        return Response.ok().entity("magic!").build();
+    }
+
+    /**
+     * Change Password
+     *
+     * Changes a user&#x27;s password by validating the user&#x27;s current password. This operation can only be
+     * performed on users in &#x60;STAGED&#x60;, &#x60;ACTIVE&#x60;, &#x60;PASSWORD_EXPIRED&#x60;, or
+     * &#x60;RECOVERY&#x60; status that have a valid password credential
+     *
+     */
+    @Override
+    public Response changePassword(ChangePasswordRequest changePasswordRequest, String userId, Boolean strict) {
         Optional<User> found = USER_REPOSITORY.stream()
                 .filter(user -> StringUtils.equals(userId, user.getId()))
                 .findFirst();
@@ -118,19 +182,26 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
         }
     }
 
-    private Map<String, Object> buildErrorResponse(final String errorId, final String message) {
-        Map<String, Object> error = new LinkedHashMap<>();
-        error.put("errorCode", "E0000014");
-        error.put("errorSummary", "Update of credentials failed");
-        error.put("errorLink", "E0000014");
-        error.put("errorId", errorId);
-        error.put("errorCauses", Collections.singletonList(Collections.singletonMap("errorSummary", message)));
-        return error;
+    /**
+     * Change Recovery Question
+     *
+     * Changes a user&#x27;s recovery question &amp; answer credential by validating the user&#x27;s current password.
+     * This operation can only be performed on users in **STAGED**, **ACTIVE** or **RECOVERY** &#x60;status&#x60; that
+     * have a valid password credential
+     *
+     */
+    @Override
+    public Response changeRecoveryQuestion(UserCredentials body, String userId) {
+        // TODO: Implement...
+
+        return Response.ok().entity("magic!").build();
     }
 
     @Override
-    public Response changeRecoveryQuestion(final UserCredentials userCredentials, final String userId) {
-        throw new UnsupportedOperationException(ERROR_MESSAGE);
+    public Response clearUserSessions(String userId, Boolean oauthTokens) {
+        // TODO: Implement...
+
+        return Response.ok().entity("magic!").build();
     }
 
     @Override
@@ -139,6 +210,7 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
             final Boolean activate,
             final Boolean provider,
             final String nextLogin) {
+
         if (body.getId() == null) {
             if (Boolean.TRUE.equals(activate)) {
                 body.setStatus(UserStatus.ACTIVE);
@@ -180,8 +252,15 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
         }
     }
 
+    /**
+     * Delete User
+     *
+     * Deletes a user permanently. This operation can only be performed on users that have a &#x60;DEPROVISIONED&#x60;
+     * status. **This action cannot be recovered!**
+     *
+     */
     @Override
-    public Response deactivateOrDeleteUser(final String userId, final Boolean sendEmail) {
+    public Response deactivateOrDeleteUser(String userId, Boolean sendEmail) {
         Optional<User> found = USER_REPOSITORY.stream()
                 .filter(user -> StringUtils.equals(userId, user.getId()))
                 .findFirst();
@@ -201,8 +280,18 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
         }
     }
 
+    /**
+     * Deactivate User
+     *
+     * Deactivates a user. This operation can only be performed on users that do not have a &#x60;DEPROVISIONED&#x60;
+     * status. Deactivation of a user is an asynchronous operation. The user will have the
+     * &#x60;transitioningToStatus&#x60; property with a value of &#x60;DEPROVISIONED&#x60; during deactivation to
+     * indicate that the user hasn&#x27;t completed the asynchronous operation. The user will have a status of
+     * &#x60;DEPROVISIONED&#x60; when the deactivation process is complete.
+     *
+     */
     @Override
-    public Response deactivateUser(final String userId, final Boolean sendEmail) {
+    public Response deactivateUser(String userId, Boolean sendEmail) {
         return USER_REPOSITORY.stream()
                 .filter(user -> StringUtils.equals(userId, user.getId()) && user.getStatus() != UserStatus.DEPROVISIONED).
                 map(user -> {
@@ -215,30 +304,57 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
                 orElse(Response.status(Response.Status.NOT_FOUND).build());
     }
 
+    /**
+     * Expire Password
+     *
+     * This operation transitions the user to the status of &#x60;PASSWORD_EXPIRED&#x60; so that the user is required to
+     * change their password at their next login.
+     *
+     */
     @Override
-    public Response endAllUserSessions(final String userId, final Boolean oauthTokens) {
-        throw new UnsupportedOperationException(ERROR_MESSAGE);
+    public Response expirePassword(String userId) {
+        // TODO: Implement...
+
+        return Response.ok().entity("magic!").build();
+    }
+
+    /**
+     * Expire Password
+     *
+     * This operation transitions the user to the status of &#x60;PASSWORD_EXPIRED&#x60; and the user&#x27;s password is
+     * reset to a temporary password that is returned.
+     *
+     */
+    @Override
+    public Response expirePasswordAndGetTemporaryPassword(String userId) {
+        // TODO: Implement...
+
+        return Response.ok().entity("magic!").build();
     }
 
     @Override
-    public Response expirePassword(final String userId, final Boolean tempPassword) {
-        throw new UnsupportedOperationException(ERROR_MESSAGE);
+    public Response getLinkedObjectsForUser(String userId, String relationshipName, String after, Integer limit) {
+        // TODO: Implement...
+
+        return Response.ok().entity("magic!").build();
     }
 
     @Override
-    public Response forgotPassword(
-            final String userId,
-            final UserCredentials userCredentials,
-            final Boolean sendEmail) {
+    public Response getRefreshTokenForUserAndClient(String userId, String clientId, String tokenId, String expand,
+            Integer limit, String after) {
+        // TODO: Implement...
 
-        List<String> passwords = new ArrayList<>();
-        passwords.add(userCredentials.getPassword().getValue());
-        USER_PASSWORD_REPOSITORY.put(userId, passwords);
-        return Response.noContent().build();
+        return Response.ok().entity("magic!").build();
     }
 
+    /**
+     * Get User
+     *
+     * Fetches a user from your Okta organization.
+     *
+     */
     @Override
-    public Response getUser(final String userId) {
+    public Response getUser(String userId) {
         Optional<User> found = USER_REPOSITORY.stream()
                 .filter(user -> StringUtils.equals(userId, user.getId())
                 || StringUtils.equals(userId, user.getProfile().getLogin()))
@@ -251,26 +367,85 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
     }
 
     @Override
-    public Response listAppLinks(final String userId, final Boolean showAll) {
-        throw new UnsupportedOperationException(ERROR_MESSAGE);
+    public Response getUserGrant(String userId, String grantId, String expand) {
+        // TODO: Implement...
+
+        return Response.ok().entity("magic!").build();
+    }
+
+    /**
+     * Get Assigned App Links
+     *
+     * Fetches appLinks for all direct or indirect (via group membership) assigned applications.
+     *
+     */
+    @Override
+    public Response listAppLinks(String userId) {
+        // TODO: Implement...
+
+        return Response.ok().entity("magic!").build();
     }
 
     @Override
-    public Response listAssignedRoles(final String userId, final String expand) {
-        throw new UnsupportedOperationException(ERROR_MESSAGE);
+    public Response listApplicationTargetsForApplicationAdministratorRoleForUser(String userId, String roleId,
+            String after, Integer limit) {
+        // TODO: Implement...
+
+        return Response.ok().entity("magic!").build();
     }
 
     @Override
-    public Response listGroupTargetsForRole(
-            final String userId,
-            final String roleId,
-            final String after,
-            final Integer limit) {
-        throw new UnsupportedOperationException(ERROR_MESSAGE);
+    public Response listAssignedRolesForUser(String userId, String expand) {
+        // TODO: Implement...
+
+        return Response.ok().entity("magic!").build();
     }
 
     @Override
-    public Response listUserGroups(final String userId, final String after, final Integer limit) {
+    public Response listGrantsForUserAndClient(String userId, String clientId, String expand, String after,
+            Integer limit) {
+        // TODO: Implement...
+
+        return Response.ok().entity("magic!").build();
+    }
+
+    @Override
+    public Response listGroupTargetsForRole(String userId, String roleId, String after, Integer limit) {
+        // TODO: Implement...
+
+        return Response.ok().entity("magic!").build();
+    }
+
+    @Override
+    public Response listRefreshTokensForUserAndClient(String userId, String clientId, String expand, String after,
+            Integer limit) {
+        // TODO: Implement...
+
+        return Response.ok().entity("magic!").build();
+    }
+
+    @Override
+    public Response listUserClients(String userId) {
+        // TODO: Implement...
+
+        return Response.ok().entity("magic!").build();
+    }
+
+    @Override
+    public Response listUserGrants(String userId, String scopeId, String expand, String after, Integer limit) {
+        // TODO: Implement...
+
+        return Response.ok().entity("magic!").build();
+    }
+
+    /**
+     * Get Member Groups
+     *
+     * Fetches the groups of which the user is a member.
+     *
+     */
+    @Override
+    public Response listUserGroups(String userId) {
         List<Pair<String, String>> foundUserGroups = GROUP_USER_REPOSITORY.stream().
                 filter(pair -> StringUtils.equals(userId, pair.getRight())).
                 collect(Collectors.toList());
@@ -279,34 +454,46 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
                 filter(group -> StringUtils.equals(group.getId(), pair.getLeft())).
                 collect(Collectors.toList())));
         return Response.ok().entity(groups.stream().
-                limit(limit == null ? DEFAULT_LIMIT : limit.longValue()).
                 collect(Collectors.toList())).build();
     }
 
-    public List<User> searchUsers(final List<User> users, final String filter) {
-        String[] split = filter.split(" ");
-        return users.stream().
-                filter(user -> {
-                    try {
-                        return user.getStatus() != UserStatus.DEPROVISIONED
-                                && StringUtils.equals(
-                                        StringUtils.remove(split[2], "\""),
-                                        BeanUtils.getProperty(user, split[0]));
-                    } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
-                        return false;
-                    }
-                }).collect(Collectors.toList());
+    /**
+     * Listing IdPs associated with a user
+     *
+     * Lists the IdPs associated with the user.
+     *
+     */
+    @Override
+    public Response listUserIdentityProviders(String userId) {
+        Set<String> userIdps = USER_IDP_REPOSITORY.get(userId);
+        if (userIdps != null) {
+            return Response.ok(
+                    userIdps.isEmpty()
+                    ? Collections.emptyList()
+                    : userIdps.stream().map(item -> new IdentityProvider().
+                    id("6e77c44bf27d4750a10f1489ce4100df").
+                    type(IdentityProvider.TypeEnum.SAML2).
+                    name("CAS 5 IDP")).collect(Collectors.toList())).build();
+        }
+        return Response.status(Response.Status.NOT_FOUND).build();
     }
 
+    /**
+     * List Users
+     *
+     * Lists users in your organization with pagination in most cases. A subset of users can be returned that match a
+     * supported filter expression or search criteria.
+     *
+     */
     @Override
     public Response listUsers(
             final String q,
             final String after,
             final Integer limit,
             final String filter,
-            final String format,
             final String search,
-            final String expand) {
+            final String sortBy,
+            final String sortOrder) {
 
         if (search != null) {
             return Response.ok().entity(searchUsers(USER_REPOSITORY, search)).build();
@@ -345,22 +532,105 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
     }
 
     @Override
-    public Response removeGroupTargetFromRole(final String userId, final String roleId, final String groupId) {
-        throw new UnsupportedOperationException(ERROR_MESSAGE);
+    public Response partialUpdateUser(User body, String userId, Boolean strict) {
+        // TODO: Implement...
+
+        return Response.ok().entity("magic!").build();
+    }
+
+    /**
+     * Reactivate User
+     *
+     * Reactivates a user. This operation can only be performed on users with a &#x60;PROVISIONED&#x60; status. This
+     * operation restarts the activation workflow if for some reason the user activation was not completed when using
+     * the activationToken from [Activate User](#activate-user).
+     *
+     */
+    @Override
+    public Response reactivateUser(String userId, Boolean sendEmail) {
+        return USER_REPOSITORY.stream().
+                filter(user -> StringUtils.equals(userId, user.getId())).
+                findFirst().
+                map(user -> {
+                    if (user.getStatus() == UserStatus.PROVISIONED) {
+                        user.setStatus(UserStatus.RECOVERY);
+                        user.setStatusChanged(Date.from(Instant.now()));
+                        createLogEvent("user.lifecycle.reactivate", userId);
+                        return Response.ok().entity("{}").build();
+                    } else {
+                        return Response.status(Response.Status.FORBIDDEN).build();
+                    }
+                }).
+                orElseGet(() -> Response.status(Response.Status.NOT_FOUND).build());
+    }
+
+    /**
+     * Remove App Instance Target to App Administrator Role given to a User
+     *
+     * Remove App Instance Target to App Administrator Role given to a User
+     *
+     */
+    @Override
+    public Response removeApplicationTargetFromAdministratorRoleForUser(String userId, String roleId, String appName,
+            String applicationId) {
+        // TODO: Implement...
+
+        return Response.ok().entity("magic!").build();
     }
 
     @Override
-    public Response removeRoleFromUser(final String userId, final String roleId) {
-        throw new UnsupportedOperationException(ERROR_MESSAGE);
+    public Response removeApplicationTargetFromApplicationAdministratorRoleForUser(String userId, String roleId,
+            String appName) {
+        // TODO: Implement...
+
+        return Response.ok().entity("magic!").build();
     }
 
     @Override
-    public Response resetAllFactors(final String userId) {
-        throw new UnsupportedOperationException(ERROR_MESSAGE);
+    public Response removeGroupTargetFromRole(String userId, String roleId, String groupId) {
+        // TODO: Implement...
+
+        return Response.ok().entity("magic!").build();
     }
 
     @Override
-    public Response resetPassword(final String userId, final String provider, final Boolean sendEmail) {
+    public Response removeLinkedObjectForUser(String userId, String relationshipName) {
+        // TODO: Implement...
+
+        return Response.ok().entity("magic!").build();
+    }
+
+    @Override
+    public Response removeRoleFromUser(String userId, String roleId) {
+        // TODO: Implement...
+
+        return Response.ok().entity("magic!").build();
+    }
+
+    /**
+     * Reset Factors
+     *
+     * This operation resets all factors for the specified user. All MFA factor enrollments returned to the unenrolled
+     * state. The user&#x27;s status remains ACTIVE. This link is present only if the user is currently enrolled in one
+     * or more MFA factors.
+     *
+     */
+    @Override
+    public Response resetFactors(String userId) {
+        // TODO: Implement...
+
+        return Response.ok().entity("magic!").build();
+    }
+
+    /**
+     * Reset Password
+     *
+     * Generates a one-time token (OTT) that can be used to reset a user&#x27;s password. The OTT link can be
+     * automatically emailed to the user or returned to the API caller and distributed using a custom flow.
+     *
+     */
+    @Override
+    public Response resetPassword(String userId, Boolean sendEmail) {
         Optional<User> found = USER_REPOSITORY.stream()
                 .filter(user -> StringUtils.equals(userId, user.getId()))
                 .findFirst();
@@ -380,25 +650,56 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
     }
 
     @Override
-    public Response reactivateUser(final String userId, final Boolean sendEmail) {
-        return USER_REPOSITORY.stream().
-                filter(user -> StringUtils.equals(userId, user.getId())).
-                findFirst().
-                map(user -> {
-                    if (user.getStatus() == UserStatus.PROVISIONED) {
-                        user.setStatus(UserStatus.RECOVERY);
-                        user.setStatusChanged(Date.from(Instant.now()));
-                        createLogEvent("user.lifecycle.reactivate", userId);
-                        return Response.ok().entity("{}").build();
-                    } else {
-                        return Response.status(Response.Status.FORBIDDEN).build();
-                    }
-                }).
-                orElseGet(() -> Response.status(Response.Status.NOT_FOUND).build());
+    public Response revokeGrantsForUserAndClient(String userId, String clientId) {
+        // TODO: Implement...
+
+        return Response.ok().entity("magic!").build();
     }
 
     @Override
-    public Response suspendUser(final String userId) {
+    public Response revokeTokenForUserAndClient(String userId, String clientId, String tokenId) {
+        // TODO: Implement...
+
+        return Response.ok().entity("magic!").build();
+    }
+
+    @Override
+    public Response revokeTokensForUserAndClient(String userId, String clientId) {
+        // TODO: Implement...
+
+        return Response.ok().entity("magic!").build();
+    }
+
+    @Override
+    public Response revokeUserGrant(String userId, String grantId) {
+        // TODO: Implement...
+
+        return Response.ok().entity("magic!").build();
+    }
+
+    @Override
+    public Response revokeUserGrants(String userId) {
+        // TODO: Implement...
+
+        return Response.ok().entity("magic!").build();
+    }
+
+    @Override
+    public Response setLinkedObjectForUser(String associatedUserId, String primaryRelationshipName, String primaryUserId) {
+        // TODO: Implement...
+
+        return Response.ok().entity("magic!").build();
+    }
+
+    /**
+     * Suspend User
+     *
+     * Suspends a user. This operation can only be performed on users with an &#x60;ACTIVE&#x60; status. The user will
+     * have a status of &#x60;SUSPENDED&#x60; when the process is complete.
+     *
+     */
+    @Override
+    public Response suspendUser(String userId) {
         Optional<User> found = USER_REPOSITORY.stream()
                 .filter(user -> StringUtils.equals(userId, user.getId()))
                 .findFirst();
@@ -412,13 +713,29 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
         }
     }
 
+    /**
+     * Unlock User
+     *
+     * Unlocks a user with a &#x60;LOCKED_OUT&#x60; status and returns them to &#x60;ACTIVE&#x60; status. Users will be
+     * able to login with their current password.
+     *
+     */
     @Override
-    public Response unlockUser(final String userId) {
-        throw new UnsupportedOperationException(ERROR_MESSAGE);
+    public Response unlockUser(String userId) {
+        // TODO: Implement...
+
+        return Response.ok().entity("magic!").build();
     }
 
+    /**
+     * Unsuspend User
+     *
+     * Unsuspends a user and returns them to the &#x60;ACTIVE&#x60; state. This operation can only be performed on users
+     * that have a &#x60;SUSPENDED&#x60; status.
+     *
+     */
     @Override
-    public Response unsuspendUser(final String userId) {
+    public Response unsuspendUser(String userId) {
         Optional<User> found = USER_REPOSITORY.stream()
                 .filter(user -> StringUtils.equals(userId, user.getId()))
                 .findFirst();
@@ -432,8 +749,14 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
         }
     }
 
+    /**
+     * Update User
+     *
+     * Update a user&#x27;s profile and/or credentials using strict-update semantics.
+     *
+     */
     @Override
-    public Response updateUser(final User user, final String userId, final Boolean strict) {
+    public Response updateUser(User user, String userId, Boolean strict) {
         Optional<User> found = USER_REPOSITORY.stream()
                 .filter(u -> StringUtils.equals(userId, u.getId()))
                 .findFirst();
@@ -468,23 +791,32 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
         }
     }
 
-    @Override
-    public Response listUserIdps(final String userId, final String after, final Integer limit) {
-        Set<String> userIdps = USER_IDP_REPOSITORY.get(userId);
-        if (userIdps != null) {
-            return Response.ok(
-                    userIdps.isEmpty()
-                    ? Collections.emptyList()
-                    : userIdps.stream().map(item -> {
-                        return new Idps().
-                                id("6e77c44bf27d4750a10f1489ce4100df").type("SAML2").name("CAS 5 IDP");
-                    }).collect(Collectors.toList())).build();
-        }
-        return Response.status(Response.Status.NOT_FOUND).build();
+    private Map<String, Object> buildErrorResponse(final String errorId, final String message) {
+        Map<String, Object> error = new LinkedHashMap<>();
+        error.put("errorCode", "E0000014");
+        error.put("errorSummary", "Update of credentials failed");
+        error.put("errorLink", "E0000014");
+        error.put("errorId", errorId);
+        error.put("errorCauses", Collections.singletonList(Collections.singletonMap("errorSummary", message)));
+        return error;
     }
 
-    @Override
-    protected String getNextPage(Integer limit, int after, List<User> repository) {
+    public List<User> searchUsers(final List<User> users, final String filter) {
+        String[] split = filter.split(" ");
+        return users.stream().
+                filter(user -> {
+                    try {
+                        return user.getStatus() != UserStatus.DEPROVISIONED
+                                && StringUtils.equals(
+                                        StringUtils.remove(split[2], "\""),
+                                        BeanUtils.getProperty(user, split[0]));
+                    } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
+                        return false;
+                    }
+                }).collect(Collectors.toList());
+    }
+
+    private String getNextPage(Integer limit, int after, List<User> repository) {
         if (limit != null && limit + after < repository.size()) {
             return "<" + uriInfo.getBaseUri().toString() + "api/v1/users?after=" + repository.get(limit + after).getId()
                     + "&limit=" + limit + ">; rel=\"next\"";

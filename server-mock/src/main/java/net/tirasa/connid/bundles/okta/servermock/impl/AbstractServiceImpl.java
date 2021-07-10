@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.gfs.ebz.syncope.api.impl;
+package net.tirasa.connid.bundles.okta.servermock.impl;
 
 import io.swagger.model.Application;
 import io.swagger.model.Group;
@@ -37,7 +37,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.UriInfo;
 import org.apache.commons.lang3.tuple.Pair;
 
-public abstract class AbstractApi<T extends Object> {
+public abstract class AbstractServiceImpl {
 
     @Context
     protected UriInfo uriInfo;
@@ -45,16 +45,12 @@ public abstract class AbstractApi<T extends Object> {
     protected static final long DEFAULT_LIMIT = 200;
 
     protected static final String EVERYONE = "Everyone";
-    
-    protected static final String EVERYONE_ID = "5602b236-6b6c-11ea-bc55-0242ac130003"; 
 
-    protected static final String ERROR_MESSAGE = "Not supported yet.";
+    protected static final String EVERYONE_ID = "5602b236-6b6c-11ea-bc55-0242ac130003";
 
-    protected static final List<Application> APPLICATION_REPOSITORY =
-            Collections.synchronizedList(new ArrayList<>());
+    protected static final List<User> USER_REPOSITORY = Collections.synchronizedList(new ArrayList<>());
 
-    protected static final List<Pair<String, String>> APPLICATION_USER_REPOSITORY =
-            Collections.synchronizedList(new ArrayList<>());
+    protected static final Map<String, List<String>> USER_PASSWORD_REPOSITORY = new ConcurrentHashMap<>();
 
     protected static final List<Group> GROUP_REPOSITORY =
             Collections.synchronizedList(new ArrayList<Group>(Arrays.asList(
@@ -64,16 +60,16 @@ public abstract class AbstractApi<T extends Object> {
     protected static final List<Pair<String, String>> GROUP_USER_REPOSITORY =
             Collections.synchronizedList(new ArrayList<>());
 
-    protected static final List<User> USER_REPOSITORY = Collections.synchronizedList(new ArrayList<>());
-
-    protected static final Map<String, List<String>> USER_PASSWORD_REPOSITORY = new ConcurrentHashMap<>();
+    protected static final Map<String, Set<String>> USER_IDP_REPOSITORY = new ConcurrentHashMap<>();
 
     protected static final SortedMap<Date, LogEvent> EVENT_REPOSITORY =
             Collections.synchronizedSortedMap(new TreeMap<Date, LogEvent>(Collections.reverseOrder()));
 
-    protected static final Map<String, Set<String>> USER_IDP_REPOSITORY = new ConcurrentHashMap<>();
+    protected static final List<Application> APPLICATION_REPOSITORY =
+            Collections.synchronizedList(new ArrayList<>());
 
-    protected abstract String getNextPage(final Integer limit, final int after, final List<T> repository);
+    protected static final List<Pair<String, String>> APPLICATION_USER_REPOSITORY =
+            Collections.synchronizedList(new ArrayList<>());
 
     protected static void createLogEvent(final String eventTypeName, final String id) {
         LogEvent event = new LogEvent();

@@ -696,8 +696,8 @@ public class OktaConnector implements Connector, PoolableConnector,
                 try {
                     GroupList groups = OktaAttribute.ID.equals(filter.getAttribute())
                             || OktaAttribute.NAME.equals(filter.getAttribute())
-                            ? client.listGroups(filter.getValue(), null)
-                            : client.listGroups(null, filter.toString());
+                            ? client.listGroups(filter.getValue(), null, null)
+                            : client.listGroups(null, filter.toString(), null);
                     for (Group group : groups) {
                         if (!handler.handle(fromGroup(group, attributesToGet))) {
                             LOG.ok("Stop processing of the result set");

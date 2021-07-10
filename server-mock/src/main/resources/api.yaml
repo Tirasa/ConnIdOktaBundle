@@ -44,6 +44,26 @@ securityDefinitions:
     name: Authorization
     type: apiKey
 paths:
+  /api/v1/meta/schemas/user/default:
+      get:
+        description: >-
+          The Okta System Log API provides read access to your organization’s
+          system log. This API provides more functionality than the Events API
+        operationId: getUserSchema
+        produces:
+          - application/json
+        responses:
+          '200':
+            description: Success
+            schema:
+              items:
+                $ref: '#/definitions/UserSchema'
+              type: array
+        security:
+          - api_token: []
+        summary: Fetch a list of events from your Okta organization system log.
+        tags:
+          - UserSchema
   /api/v1/apps:
     get:
       consumes:
@@ -6771,7 +6791,7 @@ definitions:
   AppAndInstanceConditionEvaluatorAppOrInstance:
     properties:
       id:
-        readOnly: true
+        #readOnly: true
         type: string
       name:
         type: string
@@ -6812,34 +6832,34 @@ definitions:
   AppLink:
     properties:
       appAssignmentId:
-        readOnly: true
+        #readOnly: true
         type: string
       appInstanceId:
-        readOnly: true
+        #readOnly: true
         type: string
       appName:
-        readOnly: true
+        #readOnly: true
         type: string
       credentialsSetup:
-        readOnly: true
+        #readOnly: true
         type: boolean
       hidden:
-        readOnly: true
+        #readOnly: true
         type: boolean
       id:
-        readOnly: true
+        #readOnly: true
         type: string
       label:
-        readOnly: true
+        #readOnly: true
         type: string
       linkUrl:
-        readOnly: true
+        #readOnly: true
         type: string
       logoUrl:
-        readOnly: true
+        #readOnly: true
         type: string
       sortOrder:
-        readOnly: true
+        #readOnly: true
         type: integer
     type: object
     x-okta-tags:
@@ -6849,35 +6869,35 @@ definitions:
       _embedded:
         additionalProperties:
           type: object
-        readOnly: true
+        #readOnly: true
         type: object
       _links:
         additionalProperties:
           type: object
-        readOnly: true
+        #readOnly: true
         type: object
       created:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       credentials:
         $ref: '#/definitions/AppUserCredentials'
       externalId:
-        readOnly: true
+        #readOnly: true
         type: string
       id:
         type: string
       lastSync:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       lastUpdated:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       passwordChanged:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       profile:
         additionalProperties:
@@ -6886,14 +6906,14 @@ definitions:
       scope:
         type: string
       status:
-        readOnly: true
+        #readOnly: true
         type: string
       statusChanged:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       syncState:
-        readOnly: true
+        #readOnly: true
         type: string
     type: object
     x-okta-crud:
@@ -6936,18 +6956,18 @@ definitions:
       _embedded:
         additionalProperties:
           type: object
-        readOnly: true
+        #readOnly: true
         type: object
       _links:
         additionalProperties:
           type: object
-        readOnly: true
+        #readOnly: true
         type: object
       accessibility:
         $ref: '#/definitions/ApplicationAccessibility'
       created:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       credentials:
         $ref: '#/definitions/ApplicationCredentials'
@@ -6956,18 +6976,18 @@ definitions:
           type: string
         type: array
       id:
-        readOnly: true
+        #readOnly: true
         type: string
       label:
         type: string
       lastUpdated:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       licensing:
         $ref: '#/definitions/ApplicationLicensing'
       name:
-        readOnly: true
+        #readOnly: true
         type: string
       profile:
         additionalProperties:
@@ -6982,7 +7002,7 @@ definitions:
           - ACTIVE
           - INACTIVE
           - DELETED
-        readOnly: true
+        #readOnly: true
         type: string
       visibility:
         $ref: '#/definitions/ApplicationVisibility'
@@ -7213,11 +7233,11 @@ definitions:
         type: string
       lastRotated:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       nextRotation:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       rotationMode:
         type: string
@@ -7248,19 +7268,19 @@ definitions:
       _embedded:
         additionalProperties:
           type: object
-        readOnly: true
+        #readOnly: true
         type: object
       _links:
         additionalProperties:
           type: object
-        readOnly: true
+        #readOnly: true
         type: object
       id:
-        readOnly: true
+        #readOnly: true
         type: string
       lastUpdated:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       priority:
         type: integer
@@ -7403,7 +7423,7 @@ definitions:
       _links:
         additionalProperties:
           type: object
-        readOnly: true
+        #readOnly: true
         type: object
       audiences:
         items:
@@ -7411,14 +7431,14 @@ definitions:
         type: array
       created:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       credentials:
         $ref: '#/definitions/AuthorizationServerCredentials'
       description:
         type: string
       id:
-        readOnly: true
+        #readOnly: true
         type: string
       issuer:
         type: string
@@ -7429,7 +7449,7 @@ definitions:
         type: string
       lastUpdated:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       name:
         type: string
@@ -7604,11 +7624,11 @@ definitions:
         type: string
       lastRotated:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       nextRotation:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       rotationMode:
         $ref: '#/definitions/AuthorizationServerCredentialsRotationMode'
@@ -7627,27 +7647,27 @@ definitions:
       _embedded:
         additionalProperties:
           type: object
-        readOnly: true
+        #readOnly: true
         type: object
       _links:
         additionalProperties:
           type: object
-        readOnly: true
+        #readOnly: true
         type: object
       conditions:
         $ref: '#/definitions/PolicyRuleConditions'
       created:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       description:
         type: string
       id:
-        readOnly: true
+        #readOnly: true
         type: string
       lastUpdated:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       name:
         type: string
@@ -7710,14 +7730,14 @@ definitions:
         $ref: '#/definitions/AuthorizationServerPolicyRuleConditions'
       created:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       id:
-        readOnly: true
+        #readOnly: true
         type: string
       lastUpdated:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       name:
         type: string
@@ -7912,7 +7932,7 @@ definitions:
       _links:
         additionalProperties:
           type: object
-        readOnly: true
+        #readOnly: true
         type: object
       category:
         type: string
@@ -7925,11 +7945,11 @@ definitions:
           type: string
         type: array
       id:
-        readOnly: true
+        #readOnly: true
         type: string
       lastUpdated:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       name:
         type: string
@@ -8004,16 +8024,16 @@ definitions:
     properties:
       created:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       csr:
-        readOnly: true
+        #readOnly: true
         type: string
       id:
-        readOnly: true
+        #readOnly: true
         type: string
       kty:
-        readOnly: true
+        #readOnly: true
         type: string
     type: object
     x-okta-tags:
@@ -8128,24 +8148,24 @@ definitions:
       _links:
         additionalProperties:
           type: object
-        readOnly: true
+        #readOnly: true
         type: object
       channel:
         $ref: '#/definitions/EventHookChannel'
       created:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       createdBy:
         type: string
       events:
         $ref: '#/definitions/EventSubscriptions'
       id:
-        readOnly: true
+        #readOnly: true
         type: string
       lastUpdated:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       name:
         type: string
@@ -8331,12 +8351,12 @@ definitions:
       _links:
         additionalProperties:
           type: object
-        readOnly: true
+        #readOnly: true
         type: object
       description:
         type: string
       id:
-        readOnly: true
+        #readOnly: true
         type: string
       name:
         type: string
@@ -8401,7 +8421,7 @@ definitions:
   ForgotPasswordResponse:
     properties:
       resetPasswordUrl:
-        readOnly: true
+        #readOnly: true
         type: string
     x-okta-tags:
       - User
@@ -8419,38 +8439,38 @@ definitions:
       _embedded:
         additionalProperties:
           type: object
-        readOnly: true
+        #readOnly: true
         type: object
       _links:
         additionalProperties:
           type: object
-        readOnly: true
+        #readOnly: true
         type: object
       created:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       id:
-        readOnly: true
+        #readOnly: true
         type: string
       lastMembershipUpdated:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       lastUpdated:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       objectClass:
         items:
           type: string
-        readOnly: true
+        #readOnly: true
         type: array
       profile:
         $ref: '#/definitions/GroupProfile'
       type:
         $ref: '#/definitions/GroupType'
-        readOnly: true
+        #readOnly: true
         type: string
     type: object
     x-okta-crud:
@@ -8531,20 +8551,20 @@ definitions:
         $ref: '#/definitions/GroupRuleConditions'
       created:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       id:
-        readOnly: true
+        #readOnly: true
         type: string
       lastUpdated:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       name:
         type: string
       status:
         $ref: '#/definitions/GroupRuleStatus'
-        readOnly: true
+        #readOnly: true
       type:
         type: string
     type: object
@@ -8677,14 +8697,14 @@ definitions:
       _links:
         additionalProperties:
           type: object
-        readOnly: true
+        #readOnly: true
         type: object
       created:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       id:
-        readOnly: true
+        #readOnly: true
         type: string
       issuerMode:
         enum:
@@ -8693,7 +8713,7 @@ definitions:
         type: string
       lastUpdated:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       name:
         type: string
@@ -8824,19 +8844,19 @@ definitions:
       _embedded:
         additionalProperties:
           type: object
-        readOnly: true
+        #readOnly: true
         type: object
       _links:
         additionalProperties:
           type: object
-        readOnly: true
+        #readOnly: true
         type: object
       created:
         type: string
       externalId:
         type: string
       id:
-        readOnly: true
+        #readOnly: true
         type: string
       lastUpdated:
         type: string
@@ -8936,20 +8956,20 @@ definitions:
       _links:
         additionalProperties:
           type: object
-        readOnly: true
+        #readOnly: true
         type: object
       channel:
         $ref: '#/definitions/InlineHookChannel'
       created:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       id:
-        readOnly: true
+        #readOnly: true
         type: string
       lastUpdated:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       name:
         type: string
@@ -9150,7 +9170,7 @@ definitions:
       value:
         items:
           $ref: '#/definitions/IonField'
-        readOnly: true
+        #readOnly: true
         type: array
     type: object
     x-okta-tags:
@@ -9160,45 +9180,45 @@ definitions:
       _links:
         additionalProperties:
           type: object
-        readOnly: true
+        #readOnly: true
         type: object
       alg:
-        readOnly: true
+        #readOnly: true
         type: string
       created:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       e:
-        readOnly: true
+        #readOnly: true
         type: string
       expiresAt:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       key_ops:
         items:
           type: string
-        readOnly: true
+        #readOnly: true
         type: array
       kid:
-        readOnly: true
+        #readOnly: true
         type: string
       kty:
-        readOnly: true
+        #readOnly: true
         type: string
       lastUpdated:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       'n':
-        readOnly: true
+        #readOnly: true
         type: string
       status:
-        readOnly: true
+        #readOnly: true
         type: string
       use:
-        readOnly: true
+        #readOnly: true
         type: string
       x5c:
         items:
@@ -9206,13 +9226,13 @@ definitions:
         readOnly: false
         type: array
       x5t:
-        readOnly: true
+        #readOnly: true
         type: string
       'x5t#S256':
-        readOnly: true
+        #readOnly: true
         type: string
       x5u:
-        readOnly: true
+        #readOnly: true
         type: string
     type: object
     x-okta-tags:
@@ -9241,7 +9261,7 @@ definitions:
       _links:
         additionalProperties:
           type: object
-        readOnly: true
+        #readOnly: true
         type: object
       name:
         type: string
@@ -9288,21 +9308,21 @@ definitions:
   LogActor:
     properties:
       alternateId:
-        readOnly: true
+        #readOnly: true
         type: string
       detail:
         additionalProperties:
           type: object
-        readOnly: true
+        #readOnly: true
         type: object
       displayName:
-        readOnly: true
+        #readOnly: true
         type: string
       id:
-        readOnly: true
+        #readOnly: true
         type: string
       type:
-        readOnly: true
+        #readOnly: true
         type: string
     type: object
     x-okta-tags:
@@ -9311,24 +9331,24 @@ definitions:
     properties:
       authenticationProvider:
         $ref: '#/definitions/LogAuthenticationProvider'
-        readOnly: true
+        #readOnly: true
         type: string
       authenticationStep:
-        readOnly: true
+        #readOnly: true
         type: integer
       credentialProvider:
         $ref: '#/definitions/LogCredentialProvider'
       credentialType:
         $ref: '#/definitions/LogCredentialType'
       externalSessionId:
-        readOnly: true
+        #readOnly: true
         type: string
       interface:
-        readOnly: true
+        #readOnly: true
         type: string
       issuer:
         $ref: '#/definitions/LogIssuer'
-        readOnly: true
+        #readOnly: true
     type: object
     x-okta-tags:
       - Log
@@ -9346,22 +9366,22 @@ definitions:
   LogClient:
     properties:
       device:
-        readOnly: true
+        #readOnly: true
         type: string
       geographicalContext:
         $ref: '#/definitions/LogGeographicalContext'
-        readOnly: true
+        #readOnly: true
       id:
-        readOnly: true
+        #readOnly: true
         type: string
       ipAddress:
-        readOnly: true
+        #readOnly: true
         type: string
       userAgent:
         $ref: '#/definitions/LogUserAgent'
-        readOnly: true
+        #readOnly: true
       zone:
-        readOnly: true
+        #readOnly: true
         type: string
     type: object
     x-okta-tags:
@@ -9395,7 +9415,7 @@ definitions:
       debugData:
         additionalProperties:
           type: object
-        readOnly: true
+        #readOnly: true
         type: object
     type: object
     x-okta-tags:
@@ -9404,54 +9424,54 @@ definitions:
     properties:
       actor:
         $ref: '#/definitions/LogActor'
-        readOnly: true
+        #readOnly: true
       authenticationContext:
         $ref: '#/definitions/LogAuthenticationContext'
-        readOnly: true
+        #readOnly: true
       client:
         $ref: '#/definitions/LogClient'
-        readOnly: true
+        #readOnly: true
       debugContext:
         $ref: '#/definitions/LogDebugContext'
-        readOnly: true
+        #readOnly: true
       displayMessage:
-        readOnly: true
+        #readOnly: true
         type: string
       eventType:
-        readOnly: true
+        #readOnly: true
         type: string
       legacyEventType:
-        readOnly: true
+        #readOnly: true
         type: string
       outcome:
         $ref: '#/definitions/LogOutcome'
-        readOnly: true
+        #readOnly: true
       published:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       request:
         $ref: '#/definitions/LogRequest'
-        readOnly: true
+        #readOnly: true
       securityContext:
         $ref: '#/definitions/LogSecurityContext'
-        readOnly: true
+        #readOnly: true
       severity:
         $ref: '#/definitions/LogSeverity'
-        readOnly: true
+        #readOnly: true
       target:
         items:
           $ref: '#/definitions/LogTarget'
-        readOnly: true
+        #readOnly: true
         type: array
       transaction:
         $ref: '#/definitions/LogTransaction'
-        readOnly: true
+        #readOnly: true
       uuid:
-        readOnly: true
+        #readOnly: true
         type: string
       version:
-        readOnly: true
+        #readOnly: true
         type: string
     type: object
     x-okta-tags:
@@ -9459,19 +9479,19 @@ definitions:
   LogGeographicalContext:
     properties:
       city:
-        readOnly: true
+        #readOnly: true
         type: string
       country:
-        readOnly: true
+        #readOnly: true
         type: string
       geolocation:
         $ref: '#/definitions/LogGeolocation'
-        readOnly: true
+        #readOnly: true
       postalCode:
-        readOnly: true
+        #readOnly: true
         type: string
       state:
-        readOnly: true
+        #readOnly: true
         type: string
     type: object
     x-okta-tags:
@@ -9480,11 +9500,11 @@ definitions:
     properties:
       lat:
         format: double
-        readOnly: true
+        #readOnly: true
         type: number
       lon:
         format: double
-        readOnly: true
+        #readOnly: true
         type: number
     type: object
     x-okta-tags:
@@ -9493,15 +9513,15 @@ definitions:
     properties:
       geographicalContext:
         $ref: '#/definitions/LogGeographicalContext'
-        readOnly: true
+        #readOnly: true
       ip:
-        readOnly: true
+        #readOnly: true
         type: string
       source:
-        readOnly: true
+        #readOnly: true
         type: string
       version:
-        readOnly: true
+        #readOnly: true
         type: string
     type: object
     x-okta-tags:
@@ -9509,10 +9529,10 @@ definitions:
   LogIssuer:
     properties:
       id:
-        readOnly: true
+        #readOnly: true
         type: string
       type:
-        readOnly: true
+        #readOnly: true
         type: string
     type: object
     x-okta-tags:
@@ -9520,10 +9540,10 @@ definitions:
   LogOutcome:
     properties:
       reason:
-        readOnly: true
+        #readOnly: true
         type: string
       result:
-        readOnly: true
+        #readOnly: true
         type: string
     type: object
     x-okta-tags:
@@ -9533,7 +9553,7 @@ definitions:
       ipChain:
         items:
           $ref: '#/definitions/LogIpAddress'
-        readOnly: true
+        #readOnly: true
         type: array
     type: object
     x-okta-tags:
@@ -9541,19 +9561,19 @@ definitions:
   LogSecurityContext:
     properties:
       asNumber:
-        readOnly: true
+        #readOnly: true
         type: integer
       asOrg:
-        readOnly: true
+        #readOnly: true
         type: string
       domain:
-        readOnly: true
+        #readOnly: true
         type: string
       isProxy:
-        readOnly: true
+        #readOnly: true
         type: boolean
       isp:
-        readOnly: true
+        #readOnly: true
         type: string
     type: object
     x-okta-tags:
@@ -9570,21 +9590,21 @@ definitions:
   LogTarget:
     properties:
       alternateId:
-        readOnly: true
+        #readOnly: true
         type: string
       detailEntry:
         additionalProperties:
           type: object
-        readOnly: true
+        #readOnly: true
         type: object
       displayName:
-        readOnly: true
+        #readOnly: true
         type: string
       id:
-        readOnly: true
+        #readOnly: true
         type: string
       type:
-        readOnly: true
+        #readOnly: true
         type: string
     type: object
     x-okta-tags:
@@ -9594,13 +9614,13 @@ definitions:
       detail:
         additionalProperties:
           type: object
-        readOnly: true
+        #readOnly: true
         type: object
       id:
-        readOnly: true
+        #readOnly: true
         type: string
       type:
-        readOnly: true
+        #readOnly: true
         type: string
     type: object
     x-okta-tags:
@@ -9608,13 +9628,13 @@ definitions:
   LogUserAgent:
     properties:
       browser:
-        readOnly: true
+        #readOnly: true
         type: string
       os:
-        readOnly: true
+        #readOnly: true
         type: string
       rawUserAgent:
-        readOnly: true
+        #readOnly: true
         type: string
     type: object
     x-okta-tags:
@@ -9644,7 +9664,7 @@ definitions:
   OAuth2Actor:
     properties:
       id:
-        readOnly: true
+        #readOnly: true
         type: string
       type:
         type: string
@@ -9656,7 +9676,7 @@ definitions:
       _links:
         additionalProperties:
           type: object
-        readOnly: true
+        #readOnly: true
         type: object
       alwaysIncludeInToken:
         type: boolean
@@ -9675,7 +9695,7 @@ definitions:
           - REGEX
         type: string
       id:
-        readOnly: true
+        #readOnly: true
         type: string
       name:
         type: string
@@ -9711,19 +9731,19 @@ definitions:
       _links:
         additionalProperties:
           type: object
-        readOnly: true
+        #readOnly: true
         type: object
       client_id:
-        readOnly: true
+        #readOnly: true
         type: string
       client_name:
-        readOnly: true
+        #readOnly: true
         type: string
       client_uri:
-        readOnly: true
+        #readOnly: true
         type: string
       logo_uri:
-        readOnly: true
+        #readOnly: true
         type: string
     type: object
     x-okta-tags:
@@ -9733,33 +9753,33 @@ definitions:
       _embedded:
         additionalProperties:
           type: object
-        readOnly: true
+        #readOnly: true
         type: object
       _links:
         additionalProperties:
           type: object
-        readOnly: true
+        #readOnly: true
         type: object
       clientId:
         type: string
       created:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       createdBy:
         $ref: '#/definitions/OAuth2Actor'
       expiresAt:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       id:
-        readOnly: true
+        #readOnly: true
         type: string
       issuer:
         type: string
       lastUpdated:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       scopes:
         items:
@@ -9790,7 +9810,7 @@ definitions:
       displayName:
         type: string
       id:
-        readOnly: true
+        #readOnly: true
         type: string
       metadataPublish:
         enum:
@@ -9809,29 +9829,29 @@ definitions:
       _embedded:
         additionalProperties:
           type: object
-        readOnly: true
+        #readOnly: true
         type: object
       _links:
         additionalProperties:
           type: object
-        readOnly: true
+        #readOnly: true
         type: object
       clientId:
         type: string
       created:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       createdBy:
         $ref: '#/definitions/OAuth2Actor'
       id:
-        readOnly: true
+        #readOnly: true
         type: string
       issuer:
         type: string
       lastUpdated:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       scopeId:
         type: string
@@ -9872,31 +9892,31 @@ definitions:
       _embedded:
         additionalProperties:
           type: object
-        readOnly: true
+        #readOnly: true
         type: object
       _links:
         additionalProperties:
           type: object
-        readOnly: true
+        #readOnly: true
         type: object
       clientId:
         type: string
       created:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       expiresAt:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       id:
-        readOnly: true
+        #readOnly: true
         type: string
       issuer:
         type: string
       lastUpdated:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       scopes:
         items:
@@ -10338,7 +10358,7 @@ definitions:
         enum:
           - ACTIVE
           - INACTIVE
-        readOnly: true
+        #readOnly: true
         type: string
     type: object
     x-okta-tags:
@@ -10386,12 +10406,12 @@ definitions:
     properties:
       properties:
         $ref: '#/definitions/PasswordPolicyRecoveryQuestionProperties'
-        readOnly: true
+        #readOnly: true
       status:
         enum:
           - ACTIVE
           - INACTIVE
-        readOnly: true
+        #readOnly: true
         type: string
     type: object
     x-okta-tags:
@@ -10399,7 +10419,7 @@ definitions:
   PasswordPolicyRecoveryQuestionComplexity:
     properties:
       minLength:
-        readOnly: true
+        #readOnly: true
         type: integer
     type: object
     x-okta-tags:
@@ -10408,7 +10428,7 @@ definitions:
     properties:
       complexity:
         $ref: '#/definitions/PasswordPolicyRecoveryQuestionComplexity'
-        readOnly: true
+        #readOnly: true
     type: object
     x-okta-tags:
       - Policy
@@ -10544,27 +10564,27 @@ definitions:
       _embedded:
         additionalProperties:
           type: object
-        readOnly: true
+        #readOnly: true
         type: object
       _links:
         additionalProperties:
           type: object
-        readOnly: true
+        #readOnly: true
         type: object
       conditions:
         $ref: '#/definitions/PolicyRuleConditions'
       created:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       description:
         type: string
       id:
-        readOnly: true
+        #readOnly: true
         type: string
       lastUpdated:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       name:
         type: string
@@ -10692,14 +10712,14 @@ definitions:
     properties:
       created:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       id:
-        readOnly: true
+        #readOnly: true
         type: string
       lastUpdated:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       priority:
         type: integer
@@ -11049,7 +11069,7 @@ definitions:
       expiresAt:
         format: date-time
         type: string
-        readOnly: true
+        #readOnly: true
       factorResult:
         $ref: '#/definitions/FactorResultType'
       profile:
@@ -11085,7 +11105,7 @@ definitions:
   ResetPasswordToken:
     properties:
       resetPasswordUrl:
-        readOnly: true
+        #readOnly: true
         type: string
     type: object
     x-okta-tags:
@@ -11117,35 +11137,35 @@ definitions:
       _embedded:
         additionalProperties:
           type: object
-        readOnly: true
+        #readOnly: true
         type: object
       _links:
         additionalProperties:
           type: object
-        readOnly: true
+        #readOnly: true
         type: object
       assignmentType:
         $ref: '#/definitions/RoleAssignmentType'
         type: string
       created:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       description:
         type: string
       id:
-        readOnly: true
+        #readOnly: true
         type: string
       label:
-        readOnly: true
+        #readOnly: true
         type: string
       lastUpdated:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       status:
         $ref: '#/definitions/RoleStatus'
-        readOnly: true
+        #readOnly: true
       type:
         $ref: '#/definitions/RoleType'
         type: string
@@ -11438,43 +11458,43 @@ definitions:
       _links:
         additionalProperties:
           type: object
-        readOnly: true
+        #readOnly: true
         type: object
       amr:
         items:
           $ref: '#/definitions/SessionAuthenticationMethod'
-        readOnly: true
+        #readOnly: true
         type: array
       createdAt:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       expiresAt:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       id:
-        readOnly: true
+        #readOnly: true
         type: string
       idp:
         $ref: '#/definitions/SessionIdentityProvider'
-        readOnly: true
+        #readOnly: true
       lastFactorVerification:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       lastPasswordVerification:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       login:
-        readOnly: true
+        #readOnly: true
         type: string
       status:
         $ref: '#/definitions/SessionStatus'
-        readOnly: true
+        #readOnly: true
       userId:
-        readOnly: true
+        #readOnly: true
         type: string
     type: object
     x-okta-crud:
@@ -11514,11 +11534,11 @@ definitions:
   SessionIdentityProvider:
     properties:
       id:
-        readOnly: true
+        #readOnly: true
         type: string
       type:
         $ref: '#/definitions/SessionIdentityProviderType'
-        readOnly: true
+        #readOnly: true
     type: object
     x-okta-tags:
       - Session
@@ -11544,14 +11564,14 @@ definitions:
     properties:
       created:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       id:
-        readOnly: true
+        #readOnly: true
         type: string
       lastUpdated:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       name:
         type: string
@@ -11621,10 +11641,10 @@ definitions:
     properties:
       expiresAt:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       id:
-        readOnly: true
+        #readOnly: true
         type: string
       scopes:
         items:
@@ -11715,7 +11735,7 @@ definitions:
   TempPassword:
     properties:
       tempPassword:
-        readOnly: true
+        #readOnly: true
         type: string
     x-okta-tags:
       - User
@@ -11761,20 +11781,20 @@ definitions:
       _links:
         additionalProperties:
           type: object
-        readOnly: true
+        #readOnly: true
         type: object
       created:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       createdBy:
         type: string
       id:
-        readOnly: true
+        #readOnly: true
         type: string
       lastUpdated:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       lastUpdatedBy:
         type: string
@@ -11830,50 +11850,50 @@ definitions:
       _embedded:
         additionalProperties:
           type: object
-        readOnly: true
+        #readOnly: true
         type: object
       _links:
         additionalProperties:
           type: object
-        readOnly: true
+        #readOnly: true
         type: object
       activated:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       created:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       credentials:
         $ref: '#/definitions/UserCredentials'
       id:
-        readOnly: true
+        #readOnly: true
         type: string
       lastLogin:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       lastUpdated:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       passwordChanged:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       profile:
         $ref: '#/definitions/UserProfile'
       status:
         $ref: '#/definitions/UserStatus'
-        readOnly: true
+        #readOnly: true
       statusChanged:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       transitioningToStatus:
         $ref: '#/definitions/UserStatus'
-        readOnly: true
+        #readOnly: true
       type:
         $ref: '#/definitions/UserType'
     type: object
@@ -12127,10 +12147,10 @@ definitions:
   UserActivationToken:
     properties:
       activationToken:
-        readOnly: true
+        #readOnly: true
         type: string
       activationUrl:
-        readOnly: true
+        #readOnly: true
         type: string
     type: object
     x-okta-tags:
@@ -12163,31 +12183,31 @@ definitions:
       _embedded:
         additionalProperties:
           type: object
-        readOnly: true
+        #readOnly: true
         type: object
       _links:
         additionalProperties:
           type: object
-        readOnly: true
+        #readOnly: true
         type: object
       created:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       factorType:
         $ref: '#/definitions/FactorType'
       id:
-        readOnly: true
+        #readOnly: true
         type: string
       lastUpdated:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       provider:
         $ref: '#/definitions/FactorProvider'
       status:
         $ref: '#/definitions/FactorStatus'
-        readOnly: true
+        #readOnly: true
         type: string
       verify:
         $ref: '#/definitions/VerifyFactorRequest'
@@ -12403,22 +12423,106 @@ definitions:
     type: object
     x-okta-tags:
       - Policy
+  UserSchema:
+    properties:
+      id:
+        type: string
+      '$schema':
+        type: string
+      name:
+        type: string
+      title:
+        type: string
+      description:
+        type: string
+      lastUpdated:
+        format: date-time
+        type: string
+      created:
+        format: date-time
+        type: string
+      definitions:
+        $ref: '#/definitions/UserSchemaDefinition'
+      type:
+        type: string
+      properties:
+        type: array
+        items:
+          type: string
+    x-okta-operations:
+      - alias: read
+        arguments: []
+        operationId: getUser
+    x-okta-tags:
+      - UserSchema
+  UserSchemaDefinition:
+    properties:
+      custom:
+        $ref: '#/definitions/UserSchemaBase'
+      base:
+        $ref: '#/definitions/UserSchemaBase'
+    x-okta-tags:
+      - UserSchema
+  UserSchemaBase:
+    properties:
+      id:
+        type: string
+      type:
+        type: string
+      properties:
+        additionalProperties:
+          $ref: '#/definitions/UserSchemaProperty'
+        type: object
+      required:
+        type: array
+        items:
+          type: string
+    x-okta-tags:
+      - UserSchema
+  UserSchemaProperty:
+    properties:
+      title:
+        type: string
+      type:
+        type: string
+      required:
+        type: boolean
+      mutability:
+        type: string
+      scope:
+        type: string
+      minLength:
+        type: integer
+      maxLength:
+        type: integer
+      permissions:
+        $ref: '#/definitions/UserSchemaPermission'
+    x-okta-tags:
+      - UserSchema
+  UserSchemaPermission:
+    properties:
+      principal:
+        type: string
+      action:
+        type: string
+    x-okta-tags:
+      - UserSchema      
   UserType:
     properties:
       _links:
         additionalProperties:
           type: object
-        readOnly: true
+        #readOnly: true
         type: object
       created:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       createdBy:
-        readOnly: true
+        #readOnly: true
         type: string
       default:
-        readOnly: true
+        #readOnly: true
         type: boolean
       description:
         type: string
@@ -12428,10 +12532,10 @@ definitions:
         type: string
       lastUpdated:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       lastUpdatedBy:
-        readOnly: true
+        #readOnly: true
         type: string
       name:
         type: string
@@ -12492,16 +12596,16 @@ definitions:
       _embedded:
         additionalProperties:
           type: object
-        readOnly: true
+        #readOnly: true
         type: object
       _links:
         additionalProperties:
           type: object
-        readOnly: true
+        #readOnly: true
         type: object
       expiresAt:
         format: date-time
-        readOnly: true
+        #readOnly: true
         type: string
       factorResult:
         enum:

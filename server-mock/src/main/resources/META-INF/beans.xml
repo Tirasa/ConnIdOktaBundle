@@ -31,19 +31,19 @@
   <import resource="classpath:META-INF/cxf/cxf.xml"/>
   <import resource="classpath:META-INF/cxf/cxf-servlet.xml"/>
 	  
-  <bean id="jacksonMapper" class="com.gfs.ebz.syncope.mapper.OktaObjectMapper"/>
+  <bean id="jacksonMapper" class="net.tirasa.connid.bundles.okta.servermock.OktaObjectMapper"/>
   
   <bean id="jsonProvider" class="com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider" p:mapper-ref="jacksonMapper"/>
   
   <jaxrs:server id="services" address="/">
     <jaxrs:serviceBeans>
-      <bean class="com.gfs.ebz.syncope.api.impl.UserImpl"/>
-      <bean class="com.gfs.ebz.syncope.api.impl.UserSchemaImpl"/>
-      <bean class="com.gfs.ebz.syncope.api.impl.GroupImpl"/>
-      <bean class="com.gfs.ebz.syncope.api.impl.ApplicationImpl"/>
-      <bean class="com.gfs.ebz.syncope.api.impl.LogImpl"/>
-      <bean class="com.gfs.ebz.syncope.api.impl.IdpImpl"/>
-      <bean class="com.gfs.ebz.syncope.oauth2.Keys"/>
+      <bean class="net.tirasa.connid.bundles.okta.servermock.impl.ApplicationApiServiceImpl"/>
+      <bean class="net.tirasa.connid.bundles.okta.servermock.impl.GroupApiServiceImpl"/>
+      <bean class="net.tirasa.connid.bundles.okta.servermock.impl.IdentityProviderApiServiceImpl"/>
+      <bean class="net.tirasa.connid.bundles.okta.servermock.impl.Keys"/>
+      <bean class="net.tirasa.connid.bundles.okta.servermock.impl.LogApiServiceImpl"/>
+      <bean class="net.tirasa.connid.bundles.okta.servermock.impl.UserApiServiceImpl"/>
+      <bean class="net.tirasa.connid.bundles.okta.servermock.impl.UserSchemaApiServiceImpl"/>
     </jaxrs:serviceBeans>
     <jaxrs:providers>
       <ref bean="jsonProvider"/>

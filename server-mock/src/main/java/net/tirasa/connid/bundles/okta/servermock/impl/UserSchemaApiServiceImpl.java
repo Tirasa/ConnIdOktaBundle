@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.gfs.ebz.syncope.api.impl;
+package net.tirasa.connid.bundles.okta.servermock.impl;
 
 import io.swagger.api.UserSchemaApi;
 import io.swagger.model.UserSchema;
@@ -28,7 +28,7 @@ import java.util.Date;
 import java.util.HashMap;
 import javax.ws.rs.core.Response;
 
-public class UserSchemaImpl implements UserSchemaApi {
+public class UserSchemaApiServiceImpl implements UserSchemaApi {
 
     @Override
     public Response getUserSchema() {
@@ -110,6 +110,7 @@ public class UserSchemaImpl implements UserSchemaApi {
             final int minLength,
             final int maxLength,
             final UserSchemaPermission permissions) {
+
         UserSchemaProperty property = new UserSchemaProperty();
         property.setTitle(title);
         property.setType(type);
@@ -122,5 +123,4 @@ public class UserSchemaImpl implements UserSchemaApi {
 
         return property;
     }
-
 }
