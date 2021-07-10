@@ -15,7 +15,6 @@
  */
 package net.tirasa.connid.bundles.okta;
 
-import static net.tirasa.connid.bundles.okta.OktaConnectorTests.newFacade;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
@@ -102,7 +101,7 @@ public abstract class AbstractConnectorTests {
             LOG.error(e, "While testing connector");
         }
         conn.schema();
-        connector = newFacade();
+        connector = OktaConnectorTests.newFacade();
 
         assertNotNull(conf);
         assertNotNull(conf.getDomain());

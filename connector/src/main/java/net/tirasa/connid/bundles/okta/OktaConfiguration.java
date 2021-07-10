@@ -30,8 +30,6 @@ public class OktaConfiguration extends AbstractConfiguration implements Stateful
 
     private String oktaApiToken;
 
-    private boolean importHashedPassword;
-
     private String[] userEvents = { "user.account.update_profile" };
 
     private String[] groupEvents = {};
@@ -66,18 +64,7 @@ public class OktaConfiguration extends AbstractConfiguration implements Stateful
         this.oktaApiToken = oktaApiToken;
     }
 
-    @ConfigurationProperty(order = 3, displayMessageKey = "importHashedPassword.display",
-            groupMessageKey = "basic.group", helpMessageKey = "importHashedPassword.help", required = false,
-            confidential = false)
-    public boolean isImportHashedPassword() {
-        return importHashedPassword;
-    }
-
-    public void setImportHashedPassword(final boolean importHashedPassword) {
-        this.importHashedPassword = importHashedPassword;
-    }
-
-    @ConfigurationProperty(order = 4,
+    @ConfigurationProperty(order = 3,
             displayMessageKey = "userEvents.display",
             groupMessageKey = "basic.group",
             helpMessageKey = "userEvents.help")
@@ -89,7 +76,7 @@ public class OktaConfiguration extends AbstractConfiguration implements Stateful
         this.userEvents = userEvents.clone();
     }
 
-    @ConfigurationProperty(order = 5,
+    @ConfigurationProperty(order = 4,
             displayMessageKey = "groupEvents.display",
             groupMessageKey = "basic.group",
             helpMessageKey = "groupEvents.help")
@@ -101,7 +88,7 @@ public class OktaConfiguration extends AbstractConfiguration implements Stateful
         this.groupEvents = groupEvents.clone();
     }
 
-    @ConfigurationProperty(order = 6,
+    @ConfigurationProperty(order = 5,
             displayMessageKey = "applicationEvents.display",
             groupMessageKey = "basic.group",
             helpMessageKey = "applicationEvents.help")
@@ -117,7 +104,7 @@ public class OktaConfiguration extends AbstractConfiguration implements Stateful
         this.rateLimitMaxRetries = rateLimitMaxRetries;
     }
 
-    @ConfigurationProperty(order = 7,
+    @ConfigurationProperty(order = 6,
             displayMessageKey = "rateLimitMaxRetries.display",
             groupMessageKey = "basic.group",
             helpMessageKey = "rateLimitMaxRetries.help")
@@ -129,7 +116,7 @@ public class OktaConfiguration extends AbstractConfiguration implements Stateful
         this.retryMaxElapsed = retryMaxElapsed;
     }
 
-    @ConfigurationProperty(order = 8,
+    @ConfigurationProperty(order = 7,
             displayMessageKey = "retryMaxElapsed.display",
             groupMessageKey = "basic.group",
             helpMessageKey = "retryMaxElapsed.help")
@@ -141,7 +128,7 @@ public class OktaConfiguration extends AbstractConfiguration implements Stateful
         this.requestTimeout = requestTimeout;
     }
 
-    @ConfigurationProperty(order = 9,
+    @ConfigurationProperty(order = 8,
             displayMessageKey = "requestTimeout.display",
             groupMessageKey = "basic.group",
             helpMessageKey = "requestTimeout.help")

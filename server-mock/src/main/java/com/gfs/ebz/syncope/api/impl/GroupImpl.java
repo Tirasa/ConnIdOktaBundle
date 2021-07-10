@@ -54,7 +54,9 @@ public class GroupImpl extends AbstractApi<Group> implements GroupApi {
 
     @Override
     public Response createGroup(final Group body) {
-        body.setId(UUID.randomUUID().toString());
+        if (body.getId() == null) {
+            body.setId(UUID.randomUUID().toString());
+        }
         body.setCreated(Date.from(Instant.now()));
         body.setLastMembershipUpdated(Date.from(Instant.now()));
         body.setLastUpdated(Date.from(Instant.now()));

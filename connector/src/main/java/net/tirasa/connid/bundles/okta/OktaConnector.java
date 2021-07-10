@@ -19,16 +19,19 @@ import com.okta.sdk.authc.credentials.TokenClientCredentials;
 import com.okta.sdk.client.Client;
 import com.okta.sdk.client.Clients;
 import com.okta.sdk.impl.resource.AbstractCollectionResource;
+import com.okta.sdk.impl.resource.DefaultUserBuilder;
 import com.okta.sdk.impl.resource.application.DefaultApplicationList;
 import com.okta.sdk.impl.resource.group.DefaultGroupList;
 import com.okta.sdk.impl.resource.user.DefaultUserList;
 import com.okta.sdk.resource.ExtensibleResource;
+import com.okta.sdk.resource.ResourceException;
 import com.okta.sdk.resource.application.Application;
 import com.okta.sdk.resource.application.ApplicationList;
 import com.okta.sdk.resource.group.Group;
 import com.okta.sdk.resource.group.GroupList;
 import com.okta.sdk.resource.log.LogEvent;
 import com.okta.sdk.resource.log.LogEventList;
+import com.okta.sdk.resource.user.ChangePasswordRequest;
 import com.okta.sdk.resource.user.PasswordCredential;
 import com.okta.sdk.resource.user.User;
 import com.okta.sdk.resource.user.UserBuilder;
@@ -205,7 +208,7 @@ public class OktaConnector implements Connector, PoolableConnector,
             Attribute status = accessor.find(OperationalAttributes.ENABLE_NAME);
             Attribute email = accessor.find(OktaAttribute.EMAIL);
             try {
-                final UserBuilder userBuilder = UserBuilder.instance();
+                UserBuilder userBuilder = new DefaultUserBuilder();
 
                 if (status == null || CollectionUtil.isEmpty(status.getValue())) {
                     LOG.warn("{0} attribute value not correct or not found, won't handle User status",
@@ -215,10 +218,10 @@ public class OktaConnector implements Connector, PoolableConnector,
                 }
 
                 GuardedString password = accessor.getPassword();
-                if (password != null && StringUtil.isNotBlank(SecurityUtil.decrypt(password))) {
+                if (password != null) {
                     String passwordValue = SecurityUtil.decrypt(password);
                     String passwordHashAlgorithm = accessor.findString(CIPHER_ALGORITHM);
-                    if (configuration.isImportHashedPassword() && StringUtil.isNotBlank(passwordHashAlgorithm)) {
+                    if (StringUtil.isNotBlank(passwordHashAlgorithm)) {
                         String salt = accessor.findString(SALT);
                         String saltOrder = accessor.findString(SALT_ORDER);
                         switch (CipherAlgorithm.valueOfLabel(passwordHashAlgorithm)) {
@@ -302,9 +305,15 @@ public class OktaConnector implements Connector, PoolableConnector,
             Uid returnUid = uid;
             User user = client.getUser(uid.getUidValue());
 
-            try {
-                GuardedString password = accessor.getPassword();
-                if (password != null && StringUtil.isNotBlank(SecurityUtil.decrypt(password))) {
+            GuardedString password = accessor.getPassword();
+            if (password != null && StringUtil.isNotBlank(SecurityUtil.decrypt(password))) {
+                Attribute currentPassword = accessor.find(OperationalAttributes.CURRENT_PASSWORD_NAME);
+                GuardedString currentPasswordValue =
+                        currentPassword == null ? null : AttributeUtil.getGuardedStringValue(currentPassword);
+                if (currentPasswordValue != null
+                        && StringUtil.isNotBlank(SecurityUtil.decrypt(currentPasswordValue))) {
+                    selfPasswordUpdate(user, currentPasswordValue, password);
+                } else {
                     try {
                         UserCredentials userCredentials = client.instantiate(UserCredentials.class);
                         PasswordCredential passwordCredentials = client.instantiate(PasswordCredential.class);
@@ -315,7 +324,8 @@ public class OktaConnector implements Connector, PoolableConnector,
                         OktaUtils.wrapGeneralError("Could not update password for User " + uid.getUidValue(), e);
                     }
                 }
-
+            }
+            try {
                 updateUserAttributes(user, replaceAttributes);
                 User updatedUser = user.update(true);
 
@@ -393,8 +403,8 @@ public class OktaConnector implements Connector, PoolableConnector,
         if (ObjectClass.ACCOUNT.equals(objectClass)) {
             try {
                 User user = client.getUser(uid.getUidValue());
-                user.deactivate();
-                user.delete();
+                user.delete(false);
+                user.delete(false);
             } catch (Exception e) {
                 OktaUtils.wrapGeneralError("Could not delete User " + uid.getUidValue(), e);
             }
@@ -957,6 +967,27 @@ public class OktaConnector implements Connector, PoolableConnector,
             } else if (updatedUser.getStatus() != UserStatus.DEPROVISIONED && !enabled) {
                 updatedUser.deactivate();
             }
+        }
+    }
+
+    private void selfPasswordUpdate(final User user, final GuardedString oldPassword, final GuardedString newPassword) {
+        try {
+            user.changePassword(client.instantiate(ChangePasswordRequest.class).
+                    setOldPassword(client.instantiate(PasswordCredential.class).
+                            setValue(SecurityUtil.decrypt(oldPassword).toCharArray())).
+                    setNewPassword(client.instantiate(PasswordCredential.class).
+                            setValue(SecurityUtil.decrypt(newPassword).toCharArray())));
+            LOG.ok("Self change passsowrd user {0}" + user.getId());
+        } catch (ResourceException e) {
+            LOG.error(e, e.getMessage());
+            if (!CollectionUtil.isEmpty(e.getCauses())) {
+                OktaUtils.handleGeneralError(e.getError().getCauses().get(0).getSummary());
+            } else {
+                OktaUtils.handleGeneralError(e.getMessage(), e);
+            }
+        } catch (Exception e) {
+            LOG.error(e, e.getMessage());
+            OktaUtils.handleGeneralError(e.getMessage(), e);
         }
     }
 

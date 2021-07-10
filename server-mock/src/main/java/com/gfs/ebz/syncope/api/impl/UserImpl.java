@@ -31,7 +31,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -40,7 +42,6 @@ import java.util.stream.Collectors;
 import javax.ws.rs.core.Response;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
 public class UserImpl extends AbstractApi<User> implements UserApi {
@@ -83,19 +84,48 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
         if (found.isPresent() && (found.get().getStatus().equals(UserStatus.ACTIVE)
                 || found.get().getStatus().equals(UserStatus.PASSWORD_EXPIRED)
                 || found.get().getStatus().equals(UserStatus.STAGED)
-                || found.get().getStatus().equals(UserStatus.RECOVERY))
-                && changePasswordRequest.getOldPassword().getValue().equals(USER_PASSWORD_REPOSITORY.
-                        get(userId).get(USER_PASSWORD_REPOSITORY.get(userId).size() - 1))
-                && !USER_PASSWORD_REPOSITORY.get(userId).contains(changePasswordRequest.
-                        getNewPassword().getValue())) {
-            USER_PASSWORD_REPOSITORY.get(userId).add(changePasswordRequest.getNewPassword().getValue());
-            found.get().setLastUpdated(Date.from(Instant.now()));
-            found.get().setPasswordChanged(Date.from(Instant.now()));
-            createLogEvent("user.account.update_password", userId);
-            return Response.ok().entity(found.get().getCredentials()).build();
+                || found.get().getStatus().equals(UserStatus.RECOVERY))) {
+            if (USER_PASSWORD_REPOSITORY.get(userId).isEmpty()
+                    || changePasswordRequest.getOldPassword().getValue().
+                            equals(USER_PASSWORD_REPOSITORY.get(userId).get(
+                                    USER_PASSWORD_REPOSITORY.get(userId).size() - 1))) {
+                if (!USER_PASSWORD_REPOSITORY.get(userId).
+                        contains(changePasswordRequest.getNewPassword().getValue())) {
+                    USER_PASSWORD_REPOSITORY.get(userId).add(changePasswordRequest.getNewPassword().getValue());
+                    found.get().setLastUpdated(Date.from(Instant.now()));
+                    found.get().setPasswordChanged(Date.from(Instant.now()));
+                    createLogEvent("user.account.update_password", userId);
+                    return Response.ok().entity(found.get().getCredentials()).build();
+                } else {
+                    return Response.status(Response.Status.FORBIDDEN).
+                            header("Okta-Request-Id", "E0000014").
+                            entity(buildErrorResponse("000123",
+                                    "Password requirements were not met. "
+                                    + "Password requirements: at least 8 characters, a lowercase letter, "
+                                    + "an uppercase letter, a number, "
+                                    + "no parts of your username. "
+                                    + "Your password cannot be any of your last 4 passwords.")).build();
+                }
+            } else {
+                return Response.status(Response.Status.FORBIDDEN).
+                        header("Okta-Request-Id", "E0000014").
+                        entity(buildErrorResponse("000123", "Old Password is not correct")).build();
+            }
         } else {
-            return Response.status(Response.Status.NOT_FOUND).build();
+            return Response.status(Response.Status.NOT_FOUND).
+                    header("Okta-Request-Id", "E0000014").
+                    entity(buildErrorResponse("000123", "User not found or status not valid")).build();
         }
+    }
+
+    private Map<String, Object> buildErrorResponse(final String errorId, final String message) {
+        Map<String, Object> error = new LinkedHashMap<>();
+        error.put("errorCode", "E0000014");
+        error.put("errorSummary", "Update of credentials failed");
+        error.put("errorLink", "E0000014");
+        error.put("errorId", errorId);
+        error.put("errorCauses", Collections.singletonList(Collections.singletonMap("errorSummary", message)));
+        return error;
     }
 
     @Override
@@ -125,6 +155,7 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
             body.setCreated(Date.from(Instant.now()));
             body.setLastUpdated(Date.from(Instant.now()));
             body.setStatusChanged(Date.from(Instant.now()));
+            List<String> passwords = new ArrayList<>();
             if (body.getCredentials() != null) {
                 body.setPasswordChanged(Date.from(Instant.now()));
                 if (body.getCredentials().getPassword().getHash() != null) {
@@ -132,13 +163,12 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
                             setValue(body.getCredentials().getPassword().getHash().getValue());
                     body.getCredentials().getPassword().setHash(null);
                 }
-                List<String> passwords = new ArrayList<>();
                 passwords.add(body.getCredentials().getPassword().getValue());
                 body.getCredentials().setPassword(null);
-                USER_PASSWORD_REPOSITORY.put(body.getId(), passwords);
             }
+            USER_PASSWORD_REPOSITORY.put(body.getId(), passwords);
 
-            GROUP_USER_REPOSITORY.add(new ImmutablePair<>(EVERYONE_ID, body.getId()));
+            GROUP_USER_REPOSITORY.add(Pair.of(EVERYONE_ID, body.getId()));
 
             USER_IDP_REPOSITORY.put(body.getId(), new HashSet<>(Arrays.asList("6e77c44bf27d4750a10f1489ce4100df")));
             USER_REPOSITORY.add(body);
@@ -200,7 +230,11 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
             final String userId,
             final UserCredentials userCredentials,
             final Boolean sendEmail) {
-        throw new UnsupportedOperationException(ERROR_MESSAGE);
+
+        List<String> passwords = new ArrayList<>();
+        passwords.add(userCredentials.getPassword().getValue());
+        USER_PASSWORD_REPOSITORY.put(userId, passwords);
+        return Response.noContent().build();
     }
 
     @Override
@@ -343,6 +377,24 @@ public class UserImpl extends AbstractApi<User> implements UserApi {
         } else {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
+    }
+
+    @Override
+    public Response reactivateUser(final String userId, final Boolean sendEmail) {
+        return USER_REPOSITORY.stream().
+                filter(user -> StringUtils.equals(userId, user.getId())).
+                findFirst().
+                map(user -> {
+                    if (user.getStatus() == UserStatus.PROVISIONED) {
+                        user.setStatus(UserStatus.RECOVERY);
+                        user.setStatusChanged(Date.from(Instant.now()));
+                        createLogEvent("user.lifecycle.reactivate", userId);
+                        return Response.ok().entity("{}").build();
+                    } else {
+                        return Response.status(Response.Status.FORBIDDEN).build();
+                    }
+                }).
+                orElseGet(() -> Response.status(Response.Status.NOT_FOUND).build());
     }
 
     @Override

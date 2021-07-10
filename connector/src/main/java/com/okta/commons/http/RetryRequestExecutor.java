@@ -61,7 +61,6 @@ public final class RetryRequestExecutor implements RequestExecutor {
 
     @Override
     public Response executeRequest(Request request) throws HttpException {
-
         Assert.notNull(request, "Request argument cannot be null.");
 
         int retryCount = 0;
@@ -78,9 +77,7 @@ public final class RetryRequestExecutor implements RequestExecutor {
         originalHeaders.putAll(request.getHeaders());
 
         while (true) {
-
             try {
-
                 if (retryCount > 0) {
                     request.setQueryString(originalQuery);
                     request.setHeaders(originalHeaders);
@@ -99,11 +96,7 @@ public final class RetryRequestExecutor implements RequestExecutor {
                         // if we cannot pause, then return the original response
                         pauseBeforeRetry(retryCount, response, timer.split());
                     } catch (HttpException e) {
-                        if (LOG.isOk()) {
-                            LOG.ok("Unable to pause for retry: {}", e.getMessage(), e);
-                        } else {
-                            LOG.warn("Unable to pause for retry: {}", e.getMessage());
-                        }
+                        LOG.warn(e, "Unable to pause for retry: {0}", e.getMessage());
 
                         // First attempt failed, and we were not able to retry
                         if (response == null) {
@@ -130,7 +123,7 @@ public final class RetryRequestExecutor implements RequestExecutor {
                 if (!shouldRetry(retryCount, timer.split())) {
                     throw new HttpException("Unable to execute HTTP request: " + e.getMessage(), e);
                 }
-                LOG.ok("Retrying on {}: {}", e.getClass().getName(), e.getMessage());
+                LOG.ok("Retrying on {0}: {1}", e.getClass().getName(), e.getMessage());
             } catch (HttpException e) {
                 // exceptions from delegate marked as retrHttpClientRequestExecutoryable
                 if (!e.isRetryable() || !shouldRetry(retryCount, timer.split())) {
@@ -168,7 +161,7 @@ public final class RetryRequestExecutor implements RequestExecutor {
             if (!shouldRetry(retries, timeElapsed + delay)) {
                 throw failedToRetry();
             }
-            LOG.ok("429 detected, will retry in {}ms, attempt number: {}", delay, retries);
+            LOG.ok("429 detected, will retry in {0}ms, attempt number: {1}", delay, retries);
         }
 
         // default / fallback strategy (backwards compatible implementation)
@@ -181,7 +174,7 @@ public final class RetryRequestExecutor implements RequestExecutor {
             throw failedToRetry();
         }
 
-        LOG.ok("Retryable condition detected, will retry in {}ms, attempt number: {}", delay, retries);
+        LOG.ok("Retryable condition detected, will retry in {0}ms, attempt number: {1}", delay, retries);
 
         try {
             Thread.sleep(delay);
@@ -208,7 +201,7 @@ public final class RetryRequestExecutor implements RequestExecutor {
         long waitUntil = resetLimit * 1000L;
         long requestTime = requestDate.getTime();
         long delay = Math.max(waitUntil - requestTime + 1000, 1000);
-        LOG.ok("429 wait: Math.max({} - {} + 1s), 1s = {})", waitUntil, requestTime, delay);
+        LOG.ok("429 wait: Math.max({0} - {1} + 1s), 1s = {2})", waitUntil, requestTime, delay);
 
         return delay;
     }
