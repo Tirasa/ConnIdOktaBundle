@@ -22,7 +22,6 @@ import com.okta.sdk.client.Client;
 import com.okta.sdk.resource.application.Application;
 import com.okta.sdk.resource.application.WsFederationApplication;
 import com.okta.sdk.resource.application.WsFederationApplicationSettings;
-import com.okta.sdk.resource.application.WsFederationApplicationSettingsApplication;
 import com.okta.sdk.resource.group.Group;
 import com.okta.sdk.resource.group.GroupBuilder;
 import com.okta.sdk.resource.user.User;
@@ -100,7 +99,9 @@ public abstract class AbstractConnectorTests {
         } catch (Exception e) {
             LOG.error(e, "While testing connector");
         }
+
         conn.schema();
+
         connector = OktaConnectorTests.newFacade();
 
         assertNotNull(conf);
@@ -177,24 +178,8 @@ public abstract class AbstractConnectorTests {
     }
 
     protected static Application createApplication(final Client client) {
-
-        WsFederationApplication app =
-                client.instantiate(WsFederationApplication.class)
-                        .setSettings(client.instantiate(WsFederationApplicationSettings.class)
-                                .setApp(client.instantiate(WsFederationApplicationSettingsApplication.class)
-                                        .setAudienceRestriction("urn:example:app")
-                                        .setGroupName(null)
-                                        .setGroupValueFormat("windowsDomainQualifiedName")
-                                        .setRealm("urn:example:app")
-                                        .setWReplyURL("https://example.com/")
-                                        .setAttributeStatements(null)
-                                        .setNameIDFormat("urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified")
-                                        .setAuthnContextClassRef(
-                                                "urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport")
-                                        .setSiteURL("https://example.com")
-                                        .setWReplyOverride(false)
-                                        .setGroupFilter(null)
-                                        .setUsernameAttribute("username")));
+        WsFederationApplication app = client.instantiate(WsFederationApplication.class)
+                .setSettings(client.instantiate(WsFederationApplicationSettings.class));
         app.setLabel(UUID.randomUUID().toString());
         return client.createApplication(app);
     }

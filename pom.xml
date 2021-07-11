@@ -28,7 +28,7 @@
     
   <groupId>net.tirasa.connid.bundles.okta</groupId>
   <artifactId>okta</artifactId>
-  <version>1.0.4-SNAPSHOT</version>        
+  <version>2.0.0-SNAPSHOT</version>        
 
   <name>ConnId Bundles: Okta</name>
   
@@ -77,9 +77,9 @@
 
   <properties>
     <connid.version>1.4.5.1</connid.version>
-    <okta.version>1.6.0</okta.version>
+    <okta.version>3.1.0</okta.version>
     
-    <swagger-codegen.plugin.version>3.0.19</swagger-codegen.plugin.version>
+    <swagger-codegen.plugin.version>3.0.27</swagger-codegen.plugin.version>
     <javax.servlet.version>3.1.0</javax.servlet.version>
     <spring.version>5.2.15.RELEASE</spring.version>
     <jackson.version>2.11.4</jackson.version>
@@ -95,7 +95,7 @@
     <cargo.log>${log.directory}/cargo.log</cargo.log>
     <cargo.output>${log.directory}/cargo-output.log</cargo.output>
 
-    <tomcat.version>9.0.46</tomcat.version>
+    <tomcat.version>9.0.50</tomcat.version>
     
     <java.version>1.8</java.version>
     <rootpom.basedir>${basedir}</rootpom.basedir>

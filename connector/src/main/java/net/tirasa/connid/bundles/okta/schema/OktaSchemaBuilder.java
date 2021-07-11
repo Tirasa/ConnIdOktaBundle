@@ -15,7 +15,6 @@
  */
 package net.tirasa.connid.bundles.okta.schema;
 
-
 import com.okta.sdk.client.Client;
 import com.okta.sdk.resource.ExtensibleResource;
 import java.util.ArrayList;
@@ -23,7 +22,6 @@ import java.util.Collection;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import net.tirasa.connid.bundles.okta.OktaConnector;
 import net.tirasa.connid.bundles.okta.utils.OktaAttribute;
 import org.identityconnectors.common.logging.Log;
@@ -78,7 +76,7 @@ class OktaSchemaBuilder {
     }
 
     private void buildSchema() {
-        final SchemaBuilder schemaBld = new SchemaBuilder(OktaConnector.class);
+        SchemaBuilder schemaBld = new SchemaBuilder(OktaConnector.class);
         buildAccount(ObjectClass.ACCOUNT_NAME, schemaBld);
         buildGroup(ObjectClass.GROUP_NAME, schemaBld);
         buildApplication(OktaConnector.APPLICATION_NAME, schemaBld);
@@ -110,24 +108,22 @@ class OktaSchemaBuilder {
     @SuppressWarnings({ "unchecked" })
     private Collection<AttributeInfo> buildAccountAttrInfos() {
         LOG.ok("Retrieve User schema profile");
-        final List<AttributeInfo> attributeInfos = new ArrayList<>();
-        ExtensibleResource userSchema =
-                client.getDataStore().http().get(OktaConnector.SCHEMA_USER_EDITOR_PROFILE_API_URL, ExtensibleResource.class);
+        List<AttributeInfo> attributeInfos = new ArrayList<>();
+        ExtensibleResource userSchema = client.getDataStore().http().
+                get(OktaConnector.SCHEMA_USER_EDITOR_PROFILE_API_URL, ExtensibleResource.class);
         Map<String, Object> definitions = Map.class.cast(userSchema.get(SCHEMA_DEFINITIONS));
         ATTRS_TYPE.stream().forEach(item -> {
             List<String> requiredAttrs = ((Map<String, List<String>>) definitions.get(item)).get(REQUIRED);
             Map<String, Object> schemas = (Map<String, Object>) definitions.get(item);
-            ((Map<String, Object>) schemas.get(PROPERTIES)).entrySet().stream().forEach(
-                    schemaDef -> {
-                        final Set<AttributeInfo.Flags> flags = EnumSet.noneOf(Flags.class);
-                        final AttributeInfoBuilder attributeInfo = new AttributeInfoBuilder();
-                        attributeInfo.setRequired(requiredAttrs != null && requiredAttrs.contains(schemaDef.getKey()));
-                        attributeInfos.add(AttributeInfoBuilder.build(schemaDef.getKey(),
-                                OktaAttribute.getType(((Map<String, String>) schemaDef.getValue()).get(TYPE))));
-                    });
+            ((Map<String, Object>) schemas.get(PROPERTIES)).entrySet().stream().forEach(schemaDef -> {
+                AttributeInfoBuilder attributeInfo = new AttributeInfoBuilder();
+                attributeInfo.setRequired(requiredAttrs != null && requiredAttrs.contains(schemaDef.getKey()));
+                attributeInfos.add(AttributeInfoBuilder.build(schemaDef.getKey(),
+                        OktaAttribute.getType(((Map<String, String>) schemaDef.getValue()).get(TYPE))));
+            });
         });
 
-        final AttributeInfoBuilder attributeInfo = new AttributeInfoBuilder();
+        AttributeInfoBuilder attributeInfo = new AttributeInfoBuilder();
         attributeInfo.setRequired(true);
         attributeInfos.add(AttributeInfoBuilder.build(OktaAttribute.ID, String.class));
         return attributeInfos;
@@ -135,7 +131,7 @@ class OktaSchemaBuilder {
 
     private Collection<AttributeInfo> buildGroupAttrInfos() {
         LOG.ok("Retrieve Group schema profile");
-        final List<AttributeInfo> attributeInfos = new ArrayList<>();
+        List<AttributeInfo> attributeInfos = new ArrayList<>();
         attributeInfos.add(AttributeInfoBuilder.build(OktaAttribute.ID, String.class));
         attributeInfos.add(AttributeInfoBuilder.build(OktaAttribute.NAME, String.class, EnumSet.of(Flags.REQUIRED)));
         attributeInfos.add(AttributeInfoBuilder.build(OktaAttribute.DESCRIPTION, String.class));
@@ -144,7 +140,7 @@ class OktaSchemaBuilder {
 
     private Collection<AttributeInfo> buildApplicationAttrInfos() {
         LOG.ok("Retrieve Application schema profile");
-        final List<AttributeInfo> attributeInfos = new ArrayList<>();
+        List<AttributeInfo> attributeInfos = new ArrayList<>();
         attributeInfos.add(AttributeInfoBuilder.build(OktaAttribute.ID, String.class));
         attributeInfos.add(AttributeInfoBuilder.build(OktaAttribute.NAME, String.class, EnumSet.of(Flags.REQUIRED)));
         attributeInfos.add(AttributeInfoBuilder.build(OktaAttribute.LABEL, String.class));

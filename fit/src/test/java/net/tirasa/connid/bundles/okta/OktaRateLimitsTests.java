@@ -20,24 +20,13 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
 import java.util.stream.IntStream;
-import org.identityconnectors.framework.api.APIConfiguration;
-import org.identityconnectors.framework.api.ConnectorFacade;
-import org.identityconnectors.framework.api.ConnectorFacadeFactory;
 import org.identityconnectors.framework.common.objects.ObjectClass;
 import org.identityconnectors.framework.common.objects.OperationOptionsBuilder;
 import org.identityconnectors.framework.common.objects.SearchResult;
-import org.identityconnectors.test.common.TestHelpers;
 import org.identityconnectors.test.common.ToListResultsHandler;
 import org.junit.Test;
 
 public class OktaRateLimitsTests extends AbstractConnectorTests {
-
-    protected static ConnectorFacade newFacade() {
-        ConnectorFacadeFactory factory = ConnectorFacadeFactory.getInstance();
-        APIConfiguration impl = TestHelpers.createTestConfiguration(OktaConnector.class, conf);
-        impl.getResultsHandlerConfiguration().setFilteredResultsHandlerInValidationMode(true);
-        return factory.newInstance(impl);
-    }
 
     @Test
     public void checkRateLimits() {
@@ -55,8 +44,8 @@ public class OktaRateLimitsTests extends AbstractConnectorTests {
                 ObjectClass.ACCOUNT, null, handler, new OperationOptionsBuilder().build());
         assertNotNull(result);
 
-        result = connector.
-                search(ObjectClass.ACCOUNT, null, handler, new OperationOptionsBuilder().setPageSize(1).build());
+        result = connector.search(
+                ObjectClass.ACCOUNT, null, handler, new OperationOptionsBuilder().setPageSize(1).build());
         assertNotNull(result);
     }
 }

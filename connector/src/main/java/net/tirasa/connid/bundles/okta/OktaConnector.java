@@ -40,6 +40,7 @@ import com.okta.sdk.resource.user.UserList;
 import com.okta.sdk.resource.user.UserStatus;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -128,8 +129,6 @@ public class OktaConnector implements Connector, PoolableConnector,
 
     public static final String SALT_ORDER = "saltOrder";
 
-    public static final String SORT_ORDER = "sortOrder";
-
     public static final String WORK_FACTOR = "workFactor";
 
     private static final Set<String> NOT_FOR_PROFILE = CollectionUtil.newReadOnlySet(
@@ -200,7 +199,7 @@ public class OktaConnector implements Connector, PoolableConnector,
             OktaUtils.handleGeneralError("Set of Attributes value is null or empty");
         }
 
-        final AttributesAccessor accessor = new AttributesAccessor(createAttributes);
+        AttributesAccessor accessor = new AttributesAccessor(createAttributes);
 
         if (ObjectClass.ACCOUNT.equals(objectClass)) {
             User result = null;
@@ -583,8 +582,10 @@ public class OktaConnector implements Connector, PoolableConnector,
                     OktaUtils.wrapGeneralError("While getting Users!", e);
                 }
 
-                for (User user : userList) {
-                    handler.handle(fromUser(user, attributesToGet));
+                if (userList != null) {
+                    for (User user : userList) {
+                        handler.handle(fromUser(user, attributesToGet));
+                    }
                 }
 
                 if (handler instanceof SearchResultsHandler) {
@@ -598,7 +599,7 @@ public class OktaConnector implements Connector, PoolableConnector,
                         User user = client.getUser(filter.getValue());
                         handler.handle(fromUser(user, attributesToGet));
                     } else {
-                        UserList users = client.listUsers(null, null, null, filter.toString(), null);
+                        UserList users = client.listUsers(null, null, filter.toString(), null, null);
                         for (User user : users) {
                             if (!handler.handle(fromUser(user, attributesToGet))) {
                                 LOG.ok("Stop processing of the result set");
@@ -632,8 +633,10 @@ public class OktaConnector implements Connector, PoolableConnector,
                     OktaUtils.wrapGeneralError("While getting Applications!", e);
                 }
 
-                for (Application application : applicationList) {
-                    handler.handle(fromApplication(application, attributesToGet));
+                if (applicationList != null) {
+                    for (Application application : applicationList) {
+                        handler.handle(fromApplication(application, attributesToGet));
+                    }
                 }
 
                 if (handler instanceof SearchResultsHandler) {
@@ -678,8 +681,10 @@ public class OktaConnector implements Connector, PoolableConnector,
                     OktaUtils.wrapGeneralError("While getting Applications!", e);
                 }
 
-                for (Group group : groupList) {
-                    handler.handle(fromGroup(group, attributesToGet));
+                if (groupList != null) {
+                    for (Group group : groupList) {
+                        handler.handle(fromGroup(group, attributesToGet));
+                    }
                 }
 
                 if (handler instanceof SearchResultsHandler) {
@@ -718,13 +723,13 @@ public class OktaConnector implements Connector, PoolableConnector,
         return events != null && events.stream().count() > 0 ? events.single().getPublished().getTime() : 0L;
     }
 
-    private LogEventList getEvents(final ObjectClass objectClass, final String from) {
+    private LogEventList getEvents(final ObjectClass objectClass, final Date from) {
         String filter = buildFilterByObjectClass(objectClass);
         if (StringUtil.isBlank(filter)) {
             LOG.info("Provide envenType for Sync {0}", objectClass);
             return null;
         }
-        return client.getLogs(null, from, filter, null, "ASCENDING");
+        return client.getLogs(from, null, filter, null, "ASCENDING");
     }
 
     private String buildFilterByObjectClass(final ObjectClass objectClass) {
@@ -876,6 +881,21 @@ public class OktaConnector implements Connector, PoolableConnector,
                         } else if (Integer.class.isInstance(attributeInfo.getType())) {
                             userBuilder.putProfileProperty(attrName,
                                     AttributeUtil.getIntegerValue(accessor.find(attrName)));
+                        } else if (Long.class.isInstance(attributeInfo.getType())) {
+                            userBuilder.putProfileProperty(attrName,
+                                    AttributeUtil.getLongValue(accessor.find(attrName)));
+                        } else if (Float.class.isInstance(attributeInfo.getType())) {
+                            userBuilder.putProfileProperty(attrName,
+                                    AttributeUtil.getFloatValue(accessor.find(attrName)));
+                        } else if (Double.class.isInstance(attributeInfo.getType())) {
+                            userBuilder.putProfileProperty(attrName,
+                                    AttributeUtil.getDoubleValue(accessor.find(attrName)));
+                        } else if (Date.class.isInstance(attributeInfo.getType())) {
+                            userBuilder.putProfileProperty(attrName,
+                                    AttributeUtil.getDateValue(accessor.find(attrName)));
+                        } else if (Byte[].class.isInstance(attributeInfo.getType())) {
+                            userBuilder.putProfileProperty(attrName,
+                                    AttributeUtil.getByteArrayValue(accessor.find(attrName)));
                         } else if (String.class.isInstance(attributeInfo.getType())) {
                             userBuilder.putProfileProperty(attrName,
                                     AttributeUtil.getStringValue(accessor.find(attrName)));

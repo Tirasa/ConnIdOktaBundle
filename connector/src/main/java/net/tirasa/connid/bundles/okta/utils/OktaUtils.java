@@ -15,7 +15,6 @@
  */
 package net.tirasa.connid.bundles.okta.utils;
 
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
 import org.identityconnectors.common.logging.Log;
@@ -26,12 +25,6 @@ public class OktaUtils {
     private static final Log LOG = Log.getLog(OktaUtils.class);
 
     public static final TimeZone UTC_TIMEZONE = TimeZone.getTimeZone("UTC");
-
-    private static final ThreadLocal<SimpleDateFormat> DATE_FORMAT = ThreadLocal.withInitial(() -> {
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-        df.setTimeZone(UTC_TIMEZONE);
-        return df;
-    });
 
     public static void handleGeneralError(final String message) {
         LOG.error("General error : {0}", message);
@@ -56,13 +49,13 @@ public class OktaUtils {
         query.append("\"");
         return query.toString();
     }
-    
-    public static String convertToDate(final String source) {
+
+    public static Date convertToDate(final String source) {
         try {
-            return DATE_FORMAT.get().format(new Date(Long.valueOf(source)));
-        } catch (Exception ex) {   
-            LOG.info("Format exception for {0} ", source);
+            return new Date(Long.valueOf(source));
+        } catch (Exception e) {
+            LOG.info(e, "While converting {0} to date", source);
         }
-        return source;
+        return null;
     }
 }
