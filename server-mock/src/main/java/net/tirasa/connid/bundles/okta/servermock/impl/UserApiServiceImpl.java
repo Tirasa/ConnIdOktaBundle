@@ -807,13 +807,16 @@ public class UserApiServiceImpl extends AbstractServiceImpl implements UserApi {
             user.setStatusChanged(found.get().getStatusChanged());
 
             if (user.getCredentials() != null && user.getCredentials().getPassword() != null) {
-                if (user.getCredentials().getPassword().getValue() != null && !USER_PASSWORD_REPOSITORY.
-                        get(userId).contains(user.getCredentials().getPassword().getValue())) {
+                if (user.getCredentials().getPassword().getValue() != null
+                        && !USER_PASSWORD_REPOSITORY.get(userId).
+                                contains(user.getCredentials().getPassword().getValue())) {
+
                     USER_PASSWORD_REPOSITORY.get(userId).add(user.getCredentials().getPassword().getValue());
-                } else if (user.getCredentials().getPassword().getHash() != null && !USER_PASSWORD_REPOSITORY.
-                        get(userId).contains(user.getCredentials().getPassword().getHash().getValue())) {
-                    USER_PASSWORD_REPOSITORY.get(userId).add(user.getCredentials().getPassword().
-                            getHash().getValue());
+                } else if (user.getCredentials().getPassword().getHash() != null
+                        && !USER_PASSWORD_REPOSITORY.get(userId).
+                                contains(user.getCredentials().getPassword().getHash().getValue())) {
+
+                    USER_PASSWORD_REPOSITORY.get(userId).add(user.getCredentials().getPassword().getHash().getValue());
                 } else {
                     return Response.status(Response.Status.CONFLICT).build();
                 }
