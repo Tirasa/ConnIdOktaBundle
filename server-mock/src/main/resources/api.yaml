@@ -12390,6 +12390,8 @@ definitions:
         type: string
       zipCode:
         type: string
+    additionalProperties:
+      type: string
     type: object
     x-okta-extensible: true
     x-okta-tags:

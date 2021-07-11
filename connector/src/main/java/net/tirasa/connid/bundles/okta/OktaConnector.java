@@ -199,7 +199,7 @@ public class OktaConnector implements Connector, PoolableConnector,
             OktaUtils.handleGeneralError("Set of Attributes value is null or empty");
         }
 
-        final AttributesAccessor accessor = new AttributesAccessor(createAttributes);
+        AttributesAccessor accessor = new AttributesAccessor(createAttributes);
 
         if (ObjectClass.ACCOUNT.equals(objectClass)) {
             User result = null;
@@ -881,6 +881,21 @@ public class OktaConnector implements Connector, PoolableConnector,
                         } else if (Integer.class.isInstance(attributeInfo.getType())) {
                             userBuilder.putProfileProperty(attrName,
                                     AttributeUtil.getIntegerValue(accessor.find(attrName)));
+                        } else if (Long.class.isInstance(attributeInfo.getType())) {
+                            userBuilder.putProfileProperty(attrName,
+                                    AttributeUtil.getLongValue(accessor.find(attrName)));
+                        } else if (Float.class.isInstance(attributeInfo.getType())) {
+                            userBuilder.putProfileProperty(attrName,
+                                    AttributeUtil.getFloatValue(accessor.find(attrName)));
+                        } else if (Double.class.isInstance(attributeInfo.getType())) {
+                            userBuilder.putProfileProperty(attrName,
+                                    AttributeUtil.getDoubleValue(accessor.find(attrName)));
+                        } else if (Date.class.isInstance(attributeInfo.getType())) {
+                            userBuilder.putProfileProperty(attrName,
+                                    AttributeUtil.getDateValue(accessor.find(attrName)));
+                        } else if (Byte[].class.isInstance(attributeInfo.getType())) {
+                            userBuilder.putProfileProperty(attrName,
+                                    AttributeUtil.getByteArrayValue(accessor.find(attrName)));
                         } else if (String.class.isInstance(attributeInfo.getType())) {
                             userBuilder.putProfileProperty(attrName,
                                     AttributeUtil.getStringValue(accessor.find(attrName)));
