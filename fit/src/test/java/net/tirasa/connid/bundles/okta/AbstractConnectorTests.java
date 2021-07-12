@@ -212,11 +212,11 @@ public abstract class AbstractConnectorTests {
 
     public static class TestSyncResultsHandler implements SyncResultsHandler {
 
-        SyncToken latestReceivedToken = null;
+        private final List<SyncDelta> updated = new ArrayList<>();
 
-        final List<SyncDelta> updated = new ArrayList<>();
+        private final List<SyncDelta> deleted = new ArrayList<>();
 
-        final List<SyncDelta> deleted = new ArrayList<>();
+        private SyncToken latestReceivedToken = null;
 
         @Override
         public boolean handle(final SyncDelta sd) {

@@ -422,7 +422,7 @@ public class OktaConnectorTests extends AbstractConnectorTests {
 
     @Test
     public void sync() {
-        final TestSyncResultsHandler handler = new TestSyncResultsHandler();
+        TestSyncResultsHandler handler = new TestSyncResultsHandler();
 
         OperationOptionsBuilder operationOptionBuilder =
                 new OperationOptionsBuilder().setAttributesToGet(

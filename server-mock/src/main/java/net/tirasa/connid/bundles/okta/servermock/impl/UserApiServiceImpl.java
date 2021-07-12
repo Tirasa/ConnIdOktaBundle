@@ -18,6 +18,7 @@ package net.tirasa.connid.bundles.okta.servermock.impl;
 import io.swagger.api.UserApi;
 import io.swagger.model.AssignRoleRequest;
 import io.swagger.model.ChangePasswordRequest;
+import io.swagger.model.CreateUserRequest;
 import io.swagger.model.Group;
 import io.swagger.model.IdentityProvider;
 import io.swagger.model.PasswordCredential;
@@ -26,7 +27,6 @@ import io.swagger.model.UserCredentials;
 import io.swagger.model.UserProfile;
 import io.swagger.model.UserStatus;
 import java.lang.reflect.InvocationTargetException;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -70,9 +70,9 @@ public class UserApiServiceImpl extends AbstractServiceImpl implements UserApi {
                 .findFirst();
         if (found.isPresent() && found.get().getStatus() != UserStatus.ACTIVE) {
             found.get().setStatus(UserStatus.ACTIVE);
-            found.get().setActivated(Date.from(Instant.now()));
-            found.get().setLastUpdated(Date.from(Instant.now()));
-            found.get().setStatusChanged(Date.from(Instant.now()));
+            found.get().setActivated(new Date());
+            found.get().setLastUpdated(new Date());
+            found.get().setStatusChanged(new Date());
             createLogEvent("user.lifecycle.activate", userId);
             return Response.ok().entity(found.get()).build();
         } else {
@@ -157,8 +157,8 @@ public class UserApiServiceImpl extends AbstractServiceImpl implements UserApi {
                 if (!USER_PASSWORD_REPOSITORY.get(userId).
                         contains(changePasswordRequest.getNewPassword().getValue())) {
                     USER_PASSWORD_REPOSITORY.get(userId).add(changePasswordRequest.getNewPassword().getValue());
-                    found.get().setLastUpdated(Date.from(Instant.now()));
-                    found.get().setPasswordChanged(Date.from(Instant.now()));
+                    found.get().setLastUpdated(new Date());
+                    found.get().setPasswordChanged(new Date());
                     createLogEvent("user.account.update_password", userId);
                     return Response.ok().entity(found.get().getCredentials()).build();
                 } else {
@@ -241,52 +241,55 @@ public class UserApiServiceImpl extends AbstractServiceImpl implements UserApi {
 
     @Override
     public Response createUser(
-            final User body,
+            final CreateUserRequest req,
             final Boolean activate,
             final Boolean provider,
             final String nextLogin) {
 
+        User body = new User();
+        body.setCredentials(req.getCredentials());
+        body.setProfile(req.getProfile());
+        body.setType(req.getType());
+
         workaround(body.getProfile());
 
-        if (body.getId() == null) {
-            if (Boolean.TRUE.equals(activate)) {
-                body.setStatus(UserStatus.ACTIVE);
-                body.setActivated(Date.from(Instant.now()));
-                if (!StringUtils.isEmpty(nextLogin) && StringUtils.equals(nextLogin, "changePassword")) {
-                    PasswordCredential expired = new PasswordCredential();
-                    expired.setValue("EXPIRED");
-                    body.getCredentials().setPassword(expired);
-                }
-            } else {
-                body.setStatus(UserStatus.STAGED);
+        if (Boolean.TRUE.equals(activate)) {
+            body.setStatus(UserStatus.ACTIVE);
+            body.setActivated(new Date());
+            if (!StringUtils.isEmpty(nextLogin) && StringUtils.equals(nextLogin, "changePassword")) {
+                PasswordCredential expired = new PasswordCredential();
+                expired.setValue("EXPIRED");
+                body.getCredentials().setPassword(expired);
             }
-            body.setId(UUID.randomUUID().toString());
-            body.setCreated(Date.from(Instant.now()));
-            body.setLastUpdated(Date.from(Instant.now()));
-            body.setStatusChanged(Date.from(Instant.now()));
-            List<String> passwords = new ArrayList<>();
-            if (body.getCredentials() != null) {
-                body.setPasswordChanged(Date.from(Instant.now()));
-                if (body.getCredentials().getPassword().getHash() != null) {
-                    body.getCredentials().getPassword().
-                            setValue(body.getCredentials().getPassword().getHash().getValue());
-                    body.getCredentials().getPassword().setHash(null);
-                }
-                passwords.add(body.getCredentials().getPassword().getValue());
-                body.getCredentials().setPassword(null);
-            }
-            USER_PASSWORD_REPOSITORY.put(body.getId(), passwords);
-
-            GROUP_USER_REPOSITORY.add(Pair.of(EVERYONE_ID, body.getId()));
-
-            USER_IDP_REPOSITORY.put(body.getId(), new HashSet<>(Arrays.asList("6e77c44bf27d4750a10f1489ce4100df")));
-            USER_REPOSITORY.add(body);
-            createLogEvent("user.lifecycle.create", body.getId());
-            return Response.status(Response.Status.CREATED).entity(body).build();
         } else {
-            createLogEvent("user.lifecycle.update", body.getId());
-            return updateUser(body, body.getId(), false);
+            body.setStatus(UserStatus.STAGED);
         }
+        body.setId(UUID.randomUUID().toString());
+        body.setCreated(new Date());
+        body.setLastUpdated(new Date());
+        body.setStatusChanged(new Date());
+        List<String> passwords = new ArrayList<>();
+        if (body.getCredentials() != null) {
+            body.setPasswordChanged(new Date());
+            if (body.getCredentials().getPassword().getHash() != null) {
+                body.getCredentials().getPassword().
+                        setValue(body.getCredentials().getPassword().getHash().getValue());
+                body.getCredentials().getPassword().setHash(null);
+            }
+            passwords.add(body.getCredentials().getPassword().getValue());
+            body.getCredentials().setPassword(null);
+        }
+        USER_PASSWORD_REPOSITORY.put(body.getId(), passwords);
+
+        Optional.ofNullable(req.getGroupIds()).
+                ifPresent(groupIds -> groupIds.stream().filter(g -> !EVERYONE_ID.equals(g)).
+                forEach(g -> GROUP_USER_REPOSITORY.add(Pair.of(g, body.getId()))));
+        GROUP_USER_REPOSITORY.add(Pair.of(EVERYONE_ID, body.getId()));
+
+        USER_IDP_REPOSITORY.put(body.getId(), new HashSet<>(Arrays.asList("6e77c44bf27d4750a10f1489ce4100df")));
+        USER_REPOSITORY.add(body);
+        createLogEvent("user.lifecycle.create", body.getId());
+        return Response.status(Response.Status.CREATED).entity(body).build();
     }
 
     /**
@@ -310,8 +313,8 @@ public class UserApiServiceImpl extends AbstractServiceImpl implements UserApi {
             return Response.noContent().build();
         } else {
             found.get().setStatus(UserStatus.DEPROVISIONED);
-            found.get().setLastUpdated(Date.from(Instant.now()));
-            found.get().setStatusChanged(Date.from(Instant.now()));
+            found.get().setLastUpdated(new Date());
+            found.get().setStatusChanged(new Date());
             createLogEvent("user.lifecycle.deactivate", userId);
             return Response.ok().entity(found.get()).build();
         }
@@ -333,8 +336,8 @@ public class UserApiServiceImpl extends AbstractServiceImpl implements UserApi {
                 .filter(user -> StringUtils.equals(userId, user.getId()) && user.getStatus() != UserStatus.DEPROVISIONED).
                 map(user -> {
                     user.setStatus(UserStatus.DEPROVISIONED);
-                    user.setLastUpdated(Date.from(Instant.now()));
-                    user.setStatusChanged(Date.from(Instant.now()));
+                    user.setLastUpdated(new Date());
+                    user.setStatusChanged(new Date());
                     createLogEvent("user.lifecycle.deactivate", userId);
                     return Response.ok().entity(user).build();
                 }).findFirst().
@@ -591,7 +594,7 @@ public class UserApiServiceImpl extends AbstractServiceImpl implements UserApi {
                 map(user -> {
                     if (user.getStatus() == UserStatus.PROVISIONED) {
                         user.setStatus(UserStatus.RECOVERY);
-                        user.setStatusChanged(Date.from(Instant.now()));
+                        user.setStatusChanged(new Date());
                         createLogEvent("user.lifecycle.reactivate", userId);
                         return Response.ok().entity("{}").build();
                     } else {
@@ -675,7 +678,7 @@ public class UserApiServiceImpl extends AbstractServiceImpl implements UserApi {
             User user = found.get();
             if (user.getStatus() == UserStatus.ACTIVE) {
                 found.get().setStatus(UserStatus.RECOVERY);
-                found.get().setStatusChanged(Date.from(Instant.now()));
+                found.get().setStatusChanged(new Date());
                 createLogEvent("user.lifecycle.reset_password", userId);
                 return Response.ok().entity("{}").build();
             } else {
@@ -742,7 +745,7 @@ public class UserApiServiceImpl extends AbstractServiceImpl implements UserApi {
                 .findFirst();
         if (found.isPresent() && found.get().getStatus() == UserStatus.ACTIVE) {
             found.get().setStatus(UserStatus.SUSPENDED);
-            found.get().setStatusChanged(Date.from(Instant.now()));
+            found.get().setStatusChanged(new Date());
             createLogEvent("user.lifecycle.suspend", userId);
             return Response.ok().entity(found.get()).build();
         } else {
@@ -778,7 +781,7 @@ public class UserApiServiceImpl extends AbstractServiceImpl implements UserApi {
                 .findFirst();
         if (found.isPresent() && found.get().getStatus() == UserStatus.SUSPENDED) {
             found.get().setStatus(UserStatus.ACTIVE);
-            found.get().setStatusChanged(Date.from(Instant.now()));
+            found.get().setStatusChanged(new Date());
             createLogEvent("user.lifecycle.unsuspend", userId);
             return Response.ok().entity(found.get()).build();
         } else {
@@ -825,7 +828,7 @@ public class UserApiServiceImpl extends AbstractServiceImpl implements UserApi {
 
             USER_REPOSITORY.remove(found.get());
             USER_REPOSITORY.add(user);
-            user.setLastUpdated(Date.from(Instant.now()));
+            user.setLastUpdated(new Date());
             createLogEvent("user.lifecycle.update", userId);
             return Response.ok().entity(user).build();
         } else {

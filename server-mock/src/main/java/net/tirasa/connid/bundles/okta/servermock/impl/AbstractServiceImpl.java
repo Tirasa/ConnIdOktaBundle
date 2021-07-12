@@ -72,10 +72,10 @@ public abstract class AbstractServiceImpl {
             Collections.synchronizedList(new ArrayList<>());
 
     protected static void createLogEvent(final String eventTypeName, final String id) {
+        Date now = Date.from(OffsetDateTime.now(ZoneOffset.UTC).toInstant());
+
         LogEvent event = new LogEvent();
-        OffsetDateTime utc = OffsetDateTime.now(ZoneOffset.UTC);
-        Date date = Date.from(utc.toInstant());
-        event.eventType(eventTypeName).target(Arrays.asList(new LogTarget().id(id))).setPublished(date);
-        EVENT_REPOSITORY.put(date, event);
+        event.eventType(eventTypeName).target(Arrays.asList(new LogTarget().id(id))).setPublished(now);
+        EVENT_REPOSITORY.put(now, event);
     }
 }

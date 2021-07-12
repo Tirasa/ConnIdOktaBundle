@@ -21,18 +21,15 @@ import java.text.ParseException;
 import java.util.Date;
 import javax.ws.rs.ext.ParamConverter;
 import javax.ws.rs.ext.ParamConverterProvider;
-import org.apache.commons.lang3.time.FastDateFormat;
 
 public class DateParamConverterProvider implements ParamConverterProvider {
-
-    private static final FastDateFormat DATE_FORMAT = FastDateFormat.getInstance("yyyy-MM-dd'T'HH:mm:ss.SSSZZ");
 
     private static class DateParamConverter implements ParamConverter<Date> {
 
         @Override
         public Date fromString(final String value) {
             try {
-                return DATE_FORMAT.parse(value);
+                return OktaObjectMapper.DATE_FORMAT.get().parse(value);
             } catch (ParseException e) {
                 throw new IllegalArgumentException("Unparsable date: " + value, e);
             }
@@ -40,7 +37,7 @@ public class DateParamConverterProvider implements ParamConverterProvider {
 
         @Override
         public String toString(final Date value) {
-            return DATE_FORMAT.format(value);
+            return OktaObjectMapper.DATE_FORMAT.get().format(value);
         }
     }
 

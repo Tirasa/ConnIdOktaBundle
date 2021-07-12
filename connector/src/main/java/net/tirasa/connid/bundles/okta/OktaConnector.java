@@ -264,12 +264,12 @@ public class OktaConnector implements Connector, PoolableConnector,
                 }
 
                 buildProfile(userBuilder, accessor, objectClass);
-                result = userBuilder.buildAndCreate(client);
 
                 //Assign User to Groups
-                User user = result;
                 Optional.ofNullable(accessor.findList(OktaAttribute.OKTA_GROUPS)).map(Collection::stream)
-                        .orElseGet(Stream::empty).map(Object::toString).forEach(item -> user.addToGroup(item));
+                        .orElseGet(Stream::empty).map(Object::toString).forEach(item -> userBuilder.addGroup(item));
+
+                result = userBuilder.buildAndCreate(client);
             } catch (Exception e) {
                 OktaUtils.wrapGeneralError("Could not create User : " + AttributeUtil.getAsStringValue(email), e);
             }
@@ -464,7 +464,7 @@ public class OktaConnector implements Connector, PoolableConnector,
             attributesToGet.add(OktaAttribute.LASTUPDATED);
         }
 
-        Object tokenValue = null;
+        Long tokenValue = null;
         if (token == null || token.getValue() == null) {
             LOG.info("Synchronization with empty token.");
         } else {
@@ -474,8 +474,9 @@ public class OktaConnector implements Connector, PoolableConnector,
         }
 
         LOG.info("Execute sync query {0} on {1}", tokenValue, objectClass);
-        LogEventList logEvents = getEvents(objectClass,
-                tokenValue != null ? OktaUtils.convertToDate(tokenValue.toString()) : null);
+        LogEventList logEvents = getEvents(
+                objectClass, 
+                tokenValue == null ? null : OktaUtils.convertToDate(tokenValue));
         if (logEvents != null) {
             logEvents.stream().forEach(item -> {
                 ConnectorObject connObj = null;
@@ -723,13 +724,13 @@ public class OktaConnector implements Connector, PoolableConnector,
         return events != null && events.stream().count() > 0 ? events.single().getPublished().getTime() : 0L;
     }
 
-    private LogEventList getEvents(final ObjectClass objectClass, final Date from) {
+    private LogEventList getEvents(final ObjectClass objectClass, final Date since) {
         String filter = buildFilterByObjectClass(objectClass);
         if (StringUtil.isBlank(filter)) {
             LOG.info("Provide envenType for Sync {0}", objectClass);
             return null;
         }
-        return client.getLogs(from, null, filter, null, "ASCENDING");
+        return client.getLogs(since, null, filter, null, "ASCENDING");
     }
 
     private String buildFilterByObjectClass(final ObjectClass objectClass) {

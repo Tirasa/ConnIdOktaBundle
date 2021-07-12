@@ -15,6 +15,7 @@
  */
 package net.tirasa.connid.bundles.okta.servermock;
 
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.text.SimpleDateFormat;
 import java.util.TimeZone;
@@ -24,11 +25,9 @@ public class OktaObjectMapper extends ObjectMapper {
     private static final long serialVersionUID = -8930787585752381161L;
 
     public static final TimeZone UTC_TIMEZONE = TimeZone.getTimeZone("UTC");
-    
-    public static final String PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
 
-    private static final ThreadLocal<SimpleDateFormat> DATE_FORMAT = ThreadLocal.withInitial(() -> {
-        SimpleDateFormat df = new SimpleDateFormat(PATTERN);
+    public static final ThreadLocal<SimpleDateFormat> DATE_FORMAT = ThreadLocal.withInitial(() -> {
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
         df.setTimeZone(UTC_TIMEZONE);
         return df;
     });
@@ -36,5 +35,6 @@ public class OktaObjectMapper extends ObjectMapper {
     public OktaObjectMapper() {
         super();
         this.setDateFormat(DATE_FORMAT.get());
+        this.setSerializationInclusion(Include.NON_NULL);
     }
 }

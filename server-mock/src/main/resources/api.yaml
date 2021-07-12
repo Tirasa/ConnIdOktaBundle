@@ -25,7 +25,7 @@ info:
   license:
     name: Apache-2.0
     url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
-  version: 2.2.1
+  version: 2.4.0
 externalDocs:
   description: Find more info here
   url: 'http://developer.okta.com/docs/api/getting_started/design_principles.html'
@@ -44,26 +44,6 @@ securityDefinitions:
     name: Authorization
     type: apiKey
 paths:
-  /api/v1/meta/schemas/user/default:
-      get:
-        description: >-
-          The Okta System Log API provides read access to your organization’s
-          system log. This API provides more functionality than the Events API
-        operationId: getUserSchema
-        produces:
-          - application/json
-        responses:
-          '200':
-            description: Success
-            schema:
-              items:
-                $ref: '#/definitions/UserSchema'
-              type: array
-        security:
-          - api_token: []
-        summary: Fetch a list of events from your Okta organization system log.
-        tags:
-          - UserSchema
   /api/v1/apps:
     get:
       consumes:
@@ -1672,6 +1652,54 @@ paths:
         - api_token: []
       tags:
         - AuthorizationServer
+  '/api/v1/authorizationServers/{authServerId}/policies/{policyId}/lifecycle/activate':
+    post:
+      consumes:
+        - application/json
+      description: Activate Authorization Server Policy
+      operationId: activateAuthorizationServerPolicy
+      parameters:
+        - in: path
+          name: authServerId
+          required: true
+          type: string
+        - in: path
+          name: policyId
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+      security:
+        - api_token: []
+      tags:
+        - AuthorizationServer
+  '/api/v1/authorizationServers/{authServerId}/policies/{policyId}/lifecycle/deactivate':
+    post:
+      consumes:
+        - application/json
+      description: Deactivate Authorization Server Policy
+      operationId: deactivateAuthorizationServerPolicy
+      parameters:
+        - in: path
+          name: authServerId
+          required: true
+          type: string
+        - in: path
+          name: policyId
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+      security:
+        - api_token: []
+      tags:
+        - AuthorizationServer
   '/api/v1/authorizationServers/{authServerId}/policies/{policyId}/rules':
     get:
       consumes:
@@ -1827,6 +1855,62 @@ paths:
           description: Success
           schema:
             $ref: '#/definitions/AuthorizationServerPolicyRule'
+      security:
+        - api_token: []
+      tags:
+        - AuthorizationServer
+  '/api/v1/authorizationServers/{authServerId}/policies/{policyId}/rules/{ruleId}/lifecycle/activate':
+    post:
+      consumes:
+        - application/json
+      description: Activate Authorization Server Policy Rule
+      operationId: activateAuthorizationServerPolicyRule
+      parameters:
+        - in: path
+          name: authServerId
+          required: true
+          type: string
+        - in: path
+          name: policyId
+          required: true
+          type: string
+        - in: path
+          name: ruleId
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+      security:
+        - api_token: []
+      tags:
+        - AuthorizationServer
+  '/api/v1/authorizationServers/{authServerId}/policies/{policyId}/rules/{ruleId}/lifecycle/deactivate':
+    post:
+      consumes:
+        - application/json
+      description: Deactivate Authorization Server Policy Rule
+      operationId: deactivateAuthorizationServerPolicyRule
+      parameters:
+        - in: path
+          name: authServerId
+          required: true
+          type: string
+        - in: path
+          name: policyId
+          required: true
+          type: string
+        - in: path
+          name: ruleId
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
       security:
         - api_token: []
       tags:
@@ -2286,7 +2370,7 @@ paths:
           type: string
         - description: Filter expression for groups
           in: query
-          name: filter
+          name: search
           type: string
         - description: Specifies the pagination cursor for the next page of groups
           in: query
@@ -4019,6 +4103,146 @@ paths:
       summary: Fetch a list of events from your Okta organization system log.
       tags:
         - Log
+  /api/v1/mappings:
+    get:
+      consumes:
+        - application/json
+      description: Enumerates Profile Mappings in your organization with pagination.
+      operationId: listProfileMappings
+      parameters:
+        - in: query
+          name: after
+          type: string
+        - default: -1
+          format: int32
+          in: query
+          name: limit
+          type: integer
+        - in: query
+          name: sourceId
+          type: string
+        - default: ''
+          in: query
+          name: targetId
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            items:
+              $ref: '#/definitions/ProfileMapping'
+            type: array
+      security:
+        - api_token: []
+      tags:
+        - ProfileMapping
+  '/api/v1/mappings/{mappingId}':
+    get:
+      consumes:
+        - application/json
+      description: Fetches a single Profile Mapping referenced by its ID.
+      operationId: getProfileMapping
+      parameters:
+        - in: path
+          name: mappingId
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/ProfileMapping'
+      security:
+        - api_token: []
+      summary: Get Profile Mapping
+      tags:
+        - ProfileMapping
+    post:
+      consumes:
+        - application/json
+      description: >-
+        Updates an existing Profile Mapping by adding, updating, or removing one
+        or many Property Mappings.
+      operationId: updateProfileMapping
+      parameters:
+        - in: path
+          name: mappingId
+          required: true
+          type: string
+        - in: body
+          name: profileMapping
+          required: true
+          schema:
+            $ref: '#/definitions/ProfileMapping'
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/ProfileMapping'
+      security:
+        - api_token: []
+      summary: Update Profile Mapping
+      tags:
+        - ProfileMapping
+  '/api/v1/meta/schemas/apps/{appInstanceId}/default':
+    get:
+      consumes:
+        - application/json
+      description: Fetches the Schema for an App User
+      operationId: getApplicationUserSchema
+      parameters:
+        - in: path
+          name: appInstanceId
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: successful operation
+          schema:
+            $ref: '#/definitions/UserSchema'
+      security:
+        - api_token: []
+      summary: Fetches the Schema for an App User
+      tags:
+        - UserSchema
+    post:
+      consumes:
+        - application/json
+      description: >-
+        Partial updates on the User Profile properties of the Application User
+        Schema.
+      operationId: updateApplicationUserProfile
+      parameters:
+        - in: path
+          name: appInstanceId
+          required: true
+          type: string
+        - in: body
+          name: body
+          schema:
+            $ref: '#/definitions/UserSchema'
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: successful operation
+          schema:
+            $ref: '#/definitions/UserSchema'
+      security:
+        - api_token: []
+      summary: >-
+        Partial updates on the User Profile properties of the Application User
+        Schema.
+      tags:
+        - UserSchema
   /api/v1/meta/schemas/user/linkedObjects:
     get:
       consumes:
@@ -4102,6 +4326,55 @@ paths:
         - api_token: []
       tags:
         - LinkedObject
+  '/api/v1/meta/schemas/user/{schemaId}':
+    get:
+      consumes:
+        - application/json
+      description: Fetches the schema for a Schema Id.
+      operationId: getUserSchema
+      parameters:
+        - in: path
+          name: schemaId
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/UserSchema'
+      security:
+        - api_token: []
+      summary: Fetches the schema for a Schema Id.
+      tags:
+        - UserSchema
+    post:
+      consumes:
+        - application/json
+      description: Partial updates on the User Profile properties of the user schema.
+      operationId: updateUserProfile
+      parameters:
+        - in: path
+          name: schemaId
+          required: true
+          type: string
+        - in: body
+          name: userSchema
+          required: true
+          schema:
+            $ref: '#/definitions/UserSchema'
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/UserSchema'
+      security:
+        - api_token: []
+      tags:
+        - UserSchema
   /api/v1/meta/types/user:
     get:
       consumes:
@@ -4829,6 +5102,46 @@ paths:
       summary: Update SMS Template
       tags:
         - Template
+  /api/v1/threats/configuration:
+    get:
+      consumes:
+        - application/json
+      description: Gets current ThreatInsight configuration
+      operationId: getCurrentConfiguration
+      parameters: []
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/ThreatInsightConfiguration'
+      security:
+        - api_token: []
+      tags:
+        - ThreatInsight
+    post:
+      consumes:
+        - application/json
+      description: Updates ThreatInsight configuration
+      operationId: updateConfiguration
+      parameters:
+        - in: body
+          name: ThreatInsightConfiguration
+          required: true
+          schema:
+            $ref: '#/definitions/ThreatInsightConfiguration'
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/ThreatInsightConfiguration'
+      security:
+        - api_token: []
+      tags:
+        - ThreatInsight
   /api/v1/trustedOrigins:
     get:
       consumes:
@@ -5062,7 +5375,7 @@ paths:
           name: body
           required: true
           schema:
-            $ref: '#/definitions/User'
+            $ref: '#/definitions/CreateUserRequest'
         - default: true
           description: Executes activation lifecycle operation when creating the user
           in: query
@@ -6765,6 +7078,183 @@ paths:
         - api_token: []
       tags:
         - User
+  /api/v1/zones:
+    get:
+      consumes:
+        - application/json
+      description: >-
+        Enumerates network zones added to your organization with pagination. A
+        subset of zones can be returned that match a supported filter expression
+        or query.
+      operationId: listNetworkZones
+      parameters:
+        - description: Specifies the pagination cursor for the next page of network zones
+          in: query
+          name: after
+          type: string
+        - default: -1
+          description: Specifies the number of results for a page
+          format: int32
+          in: query
+          name: limit
+          type: integer
+        - description: Filters zones by usage or id expression
+          in: query
+          name: filter
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            items:
+              $ref: '#/definitions/NetworkZone'
+            type: array
+      security:
+        - api_token: []
+      summary: List Network Zones
+      tags:
+        - NetworkZone
+    post:
+      consumes:
+        - application/json
+      description: Adds a new network zone to your Okta organization.
+      operationId: createNetworkZone
+      parameters:
+        - in: body
+          name: zone
+          required: true
+          schema:
+            $ref: '#/definitions/NetworkZone'
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/NetworkZone'
+      security:
+        - api_token: []
+      summary: Add Network Zone
+      tags:
+        - NetworkZone
+  '/api/v1/zones/{zoneId}':
+    delete:
+      consumes:
+        - application/json
+      description: Removes network zone.
+      operationId: deleteNetworkZone
+      parameters:
+        - in: path
+          name: zoneId
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+      security:
+        - api_token: []
+      summary: Delete Network Zone
+      tags:
+        - NetworkZone
+    get:
+      consumes:
+        - application/json
+      description: Fetches a network zone from your Okta organization by `id`.
+      operationId: getNetworkZone
+      parameters:
+        - in: path
+          name: zoneId
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/NetworkZone'
+      security:
+        - api_token: []
+      summary: Get Network Zone
+      tags:
+        - NetworkZone
+    put:
+      consumes:
+        - application/json
+      description: Updates a network zone in your organization.
+      operationId: updateNetworkZone
+      parameters:
+        - in: path
+          name: zoneId
+          required: true
+          type: string
+        - in: body
+          name: zone
+          required: true
+          schema:
+            $ref: '#/definitions/NetworkZone'
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/NetworkZone'
+      security:
+        - api_token: []
+      summary: Update Network Zone
+      tags:
+        - NetworkZone
+  '/api/v1/zones/{zoneId}/lifecycle/activate':
+    post:
+      consumes:
+        - application/json
+      description: Activate Network Zone
+      operationId: activateNetworkZone
+      parameters:
+        - in: path
+          name: zoneId
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/NetworkZone'
+      security:
+        - api_token: []
+      summary: Activate Network Zone
+      tags:
+        - NetworkZone
+  '/api/v1/zones/{zoneId}/lifecycle/deactivate':
+    post:
+      consumes:
+        - application/json
+      description: Deactivates a network zone.
+      operationId: deactivateNetworkZone
+      parameters:
+        - in: path
+          name: zoneId
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/NetworkZone'
+      security:
+        - api_token: []
+      summary: Deactivate Network Zone
+      tags:
+        - NetworkZone
 definitions:
   AcsEndpoint:
     properties:
@@ -7180,7 +7670,7 @@ definitions:
         BOOKMARK: '#/definitions/BookmarkApplication'
         BROWSER_PLUGIN: '#/definitions/BrowserPluginApplication'
         OPENID_CONNECT: '#/definitions/OpenIdConnectApplication'
-        SAML_1_1: '#/definitions/SamlApplicationV1'
+        SAML_1_1: '#/definitions/SamlApplication'
         SAML_2_0: '#/definitions/SamlApplication'
         SECURE_PASSWORD_STORE: '#/definitions/SecurePasswordStoreApplication'
         WS_FEDERATION: '#/definitions/WsFederationApplication'
@@ -7689,12 +8179,14 @@ definitions:
           - dest: policyId
             src: id
         operationId: getAuthorizationServerPolicy
-      - alias: updatePolicy
+      - alias: update
         arguments:
           - dest: policyId
             src: id
+          - dest: policy
+            self: true
         operationId: updateAuthorizationServerPolicy
-      - alias: deletePolicy
+      - alias: delete
         arguments:
           - dest: policyId
             src: id
@@ -7720,6 +8212,16 @@ definitions:
           - dest: policyId
             src: id
         operationId: deleteAuthorizationServerPolicyRule
+      - alias: activate
+        arguments:
+          - dest: policyId
+            src: id
+        operationId: activateAuthorizationServerPolicy
+      - alias: deactivate
+        arguments:
+          - dest: policyId
+            src: id
+        operationId: deactivateAuthorizationServerPolicy
     x-okta-tags:
       - AuthorizationServer
   AuthorizationServerPolicyRule:
@@ -7767,12 +8269,12 @@ definitions:
           - dest: policyId
             parentSrc: id
         operationId: updateAuthorizationServerPolicyRule
-      - alias: deletePolicyRule
+      - alias: delete
         arguments:
           - dest: ruleId
             src: id
           - dest: policyId
-            parentSrc: id
+            parentSrc: policyId
         operationId: deleteAuthorizationServerPolicyRule
     x-okta-operations:
       - alias: activate
@@ -7781,14 +8283,14 @@ definitions:
             src: id
           - dest: policyId
             parentSrc: policyId
-        operationId: activatePolicyRule
+        operationId: activateAuthorizationServerPolicyRule
       - alias: deactivate
         arguments:
           - dest: ruleId
             src: id
           - dest: policyId
             parentSrc: policyId
-        operationId: deactivatePolicyRule
+        operationId: deactivateAuthorizationServerPolicyRule
     x-okta-tags:
       - AuthorizationServerPolicy
   AuthorizationServerPolicyRuleActions:
@@ -8017,7 +8519,6 @@ definitions:
       type:
         $ref: '#/definitions/UserType'
     type: object
-    x-okta-parent: '#/definitions/User'
     x-okta-tags:
       - User
   Csr:
@@ -8105,11 +8606,20 @@ definitions:
     properties:
       supportedMDMFrameworks:
         items:
-          $ref: '#/definitions/MDMFrameworks'
+          enum:
+            - AFW
+            - SAFE
+            - NATIVE
+          type: string
         type: array
       types:
         items:
-          $ref: '#/definitions/Platforms'
+          enum:
+            - IOS
+            - ANDROID
+            - OSX
+            - WINDOWS
+          type: string
         type: array
     type: object
     x-okta-tags:
@@ -8276,6 +8786,7 @@ definitions:
     x-okta-tags:
       - EventHook
   EventSubscriptions:
+    discriminator: type
     properties:
       items:
         items:
@@ -8333,6 +8844,7 @@ definitions:
     enum:
       - call
       - email
+      - hotp
       - push
       - question
       - sms
@@ -9044,6 +9556,8 @@ definitions:
         items:
           $ref: '#/definitions/InlineHookChannelConfigHeaders'
         type: array
+      method:
+        type: string
       uri:
         type: string
     type: object
@@ -9183,42 +9697,42 @@ definitions:
         #readOnly: true
         type: object
       alg:
-        #readOnly: true
+        readOnly: false
         type: string
       created:
         format: date-time
-        #readOnly: true
+        readOnly: false
         type: string
       e:
-        #readOnly: true
+        readOnly: false
         type: string
       expiresAt:
         format: date-time
-        #readOnly: true
+        readOnly: false
         type: string
       key_ops:
         items:
           type: string
-        #readOnly: true
+        readOnly: false
         type: array
       kid:
-        #readOnly: true
+        readOnly: false
         type: string
       kty:
-        #readOnly: true
+        readOnly: false
         type: string
       lastUpdated:
         format: date-time
-        #readOnly: true
+        readOnly: false
         type: string
       'n':
-        #readOnly: true
+        readOnly: false
         type: string
       status:
-        #readOnly: true
+        readOnly: false
         type: string
       use:
-        #readOnly: true
+        readOnly: false
         type: string
       x5c:
         items:
@@ -9226,13 +9740,13 @@ definitions:
         readOnly: false
         type: array
       x5t:
-        #readOnly: true
+        readOnly: false
         type: string
       'x5t#S256':
-        #readOnly: true
+        readOnly: false
         type: string
       x5u:
-        #readOnly: true
+        readOnly: false
         type: string
     type: object
     x-okta-tags:
@@ -9263,8 +9777,6 @@ definitions:
           type: object
         #readOnly: true
         type: object
-      name:
-        type: string
       associated:
         $ref: '#/definitions/LinkedObjectDetails'
       primary:
@@ -9282,7 +9794,7 @@ definitions:
       - alias: delete
         arguments:
           - dest: linkedObjectName
-            src: name
+            self: true
         operationId: deleteLinkedObjectDefinition
     x-okta-tags:
       - LinkedObject
@@ -9389,6 +9901,7 @@ definitions:
   LogCredentialProvider:
     enum:
       - OKTA_AUTHENTICATION_PROVIDER
+      - OKTA_CREDENTIAL_PROVIDER
       - RSA
       - SYMANTEC
       - GOOGLE
@@ -9651,16 +10164,130 @@ definitions:
     type: object
     x-okta-tags:
       - Policy
-  MDMFrameworks:
+  NetworkZone:
+    properties:
+      _links:
+        additionalProperties:
+          type: object
+        #readOnly: true
+        type: object
+      asns:
+        items:
+          type: string
+        type: array
+      created:
+        format: date-time
+        #readOnly: true
+        type: string
+      gateways:
+        items:
+          $ref: '#/definitions/NetworkZoneAddress'
+        type: array
+      id:
+        #readOnly: true
+        type: string
+      lastUpdated:
+        format: date-time
+        #readOnly: true
+        type: string
+      locations:
+        items:
+          $ref: '#/definitions/NetworkZoneLocation'
+        type: array
+      name:
+        type: string
+      proxies:
+        items:
+          $ref: '#/definitions/NetworkZoneAddress'
+        type: array
+      proxyType:
+        type: string
+      status:
+        $ref: '#/definitions/NetworkZoneStatus'
+      system:
+        type: boolean
+      type:
+        $ref: '#/definitions/NetworkZoneType'
+      usage:
+        $ref: '#/definitions/NetworkZoneUsage'
+    type: object
+    x-okta-crud:
+      - alias: read
+        arguments:
+          - dest: zoneId
+            src: id
+        operationId: getNetworkZone
+      - alias: update
+        arguments:
+          - dest: zoneId
+            src: id
+          - dest: zone
+            self: true
+        operationId: updateNetworkZone
+      - alias: delete
+        arguments:
+          - dest: zoneId
+            src: id
+        operationId: deleteNetworkZone
+    x-okta-operations:
+      - alias: activate
+        arguments:
+          - dest: zoneId
+            src: id
+        operationId: activateNetworkZone
+      - alias: deactivate
+        arguments:
+          - dest: zoneId
+            src: id
+        operationId: deactivateNetworkZone
+    x-okta-tags:
+      - NetworkZone
+  NetworkZoneAddress:
+    properties:
+      type:
+        $ref: '#/definitions/NetworkZoneAddressType'
+      value:
+        type: string
+    type: object
+    x-okta-tags:
+      - NetworkZone
+  NetworkZoneAddressType:
     enum:
-      - authorization_code
-      - implicit
-      - password
-      - refresh_token
-      - client_credentials
+      - CIDR
+      - RANGE
     type: string
     x-okta-tags:
-      - Policy
+      - NetworkZone
+  NetworkZoneLocation:
+    properties:
+      country:
+        type: string
+      region:
+        type: string
+    type: object
+    x-okta-tags:
+      - NetworkZone
+  NetworkZoneStatus:
+    enum:
+      - ACTIVE
+      - INACTIVE
+    type: string
+    x-okta-tags:
+      - NetworkZone
+  NetworkZoneType:
+    enum:
+      - IP
+      - DYNAMIC
+    type: string
+    x-okta-tags:
+      - NetworkZone
+  NetworkZoneUsage:
+    enum:
+      - POLICY
+      - BLOCKLIST
+    type: string
+    x-okta-tags:
+      - NetworkZone
   OAuth2Actor:
     properties:
       id:
@@ -9983,7 +10610,7 @@ definitions:
     properties:
       people:
         $ref: '#/definitions/PolicyPeopleCondition'
-    x-okta-parent: '#/definition/PolicyRuleConditions'
+    x-okta-parent: '#/definitions/PolicyRuleConditions'
     x-okta-tags:
       - Policy
   OktaSignOnPolicyRule:
@@ -10001,6 +10628,7 @@ definitions:
     properties:
       signon:
         $ref: '#/definitions/OktaSignOnPolicyRuleSignonActions'
+    x-okta-parent: '#/definitions/PolicyRuleActions'
     x-okta-tags:
       - Policy
   OktaSignOnPolicyRuleConditions:
@@ -10011,6 +10639,7 @@ definitions:
         $ref: '#/definitions/PolicyNetworkCondition'
       people:
         $ref: '#/definitions/PolicyPeopleCondition'
+    x-okta-parent: '#/definitions/PolicyRuleConditions'
     x-okta-tags:
       - Policy
   OktaSignOnPolicyRuleSignonActions:
@@ -10073,6 +10702,17 @@ definitions:
     type: string
     x-okta-tags:
       - Application
+  OpenIdConnectApplicationIdpInitiatedLogin:
+    properties:
+      default_scope:
+        items:
+          type: string
+        type: array
+      mode:
+        type: string
+    type: object
+    x-okta-tags:
+      - Application
   OpenIdConnectApplicationIssuerMode:
     enum:
       - CUSTOM_URL
@@ -10099,6 +10739,8 @@ definitions:
         items:
           $ref: '#/definitions/OAuthGrantType'
         type: array
+      idp_initiated_login:
+        $ref: '#/definitions/OpenIdConnectApplicationIdpInitiatedLogin'
       initiate_login_uri:
         type: string
       issuer_mode:
@@ -10260,7 +10902,7 @@ definitions:
         $ref: '#/definitions/PasswordPolicyAuthenticationProviderCondition'
       people:
         $ref: '#/definitions/PolicyPeopleCondition'
-    x-okta-parent: '#/definition/PolicyRuleConditions'
+    x-okta-parent: '#/definitions/PolicyRuleConditions'
     x-okta-tags:
       - Policy
   PasswordPolicyDelegationSettings:
@@ -10472,6 +11114,7 @@ definitions:
         $ref: '#/definitions/PasswordPolicyRuleAction'
       selfServiceUnlock:
         $ref: '#/definitions/PasswordPolicyRuleAction'
+    x-okta-parent: '#/definitions/PolicyRuleActions'
     x-okta-tags:
       - Policy
   PasswordPolicyRuleConditions:
@@ -10480,6 +11123,7 @@ definitions:
         $ref: '#/definitions/PolicyNetworkCondition'
       people:
         $ref: '#/definitions/PolicyPeopleCondition'
+    x-okta-parent: '#/definitions/PolicyRuleConditions'
     x-okta-tags:
       - Policy
   PasswordPolicySettings:
@@ -10491,15 +11135,6 @@ definitions:
       recovery:
         $ref: '#/definitions/PasswordPolicyRecoverySettings'
     type: object
-    x-okta-tags:
-      - Policy
-  Platforms:
-    enum:
-      - IOS
-      - ANDROID
-      - OSX
-      - WINDOWS
-    type: string
     x-okta-tags:
       - Policy
   PlatformConditionEvaluatorPlatform:
@@ -10710,6 +11345,10 @@ definitions:
       - Policy
   PolicyRule:
     properties:
+      actions:
+        $ref: '#/definitions/PolicyRuleActions'
+      conditions:
+        $ref: '#/definitions/PolicyRuleConditions'
       created:
         format: date-time
         #readOnly: true
@@ -10720,6 +11359,8 @@ definitions:
       lastUpdated:
         format: date-time
         #readOnly: true
+        type: string
+      name:
         type: string
       priority:
         type: integer
@@ -10777,6 +11418,36 @@ definitions:
         PASSWORD: '#/definitions/PasswordPolicyRule'
         SIGN_ON: '#/definitions/OktaSignOnPolicyRule'
       propertyName: type
+  PolicyRuleActions:
+    properties:
+      enroll:
+        $ref: '#/definitions/PolicyRuleActionsEnroll'
+      passwordChange:
+        $ref: '#/definitions/PasswordPolicyRuleAction'
+      selfServicePasswordReset:
+        $ref: '#/definitions/PasswordPolicyRuleAction'
+      selfServiceUnlock:
+        $ref: '#/definitions/PasswordPolicyRuleAction'
+      signon:
+        $ref: '#/definitions/OktaSignOnPolicyRuleSignonActions'
+    type: object
+    x-okta-tags:
+      - Policy
+  PolicyRuleActionsEnroll:
+    properties:
+      self:
+        $ref: '#/definitions/PolicyRuleActionsEnrollSelf'
+    type: object
+    x-okta-tags:
+      - Policy
+  PolicyRuleActionsEnrollSelf:
+    enum:
+      - CHALLENGE
+      - LOGIN
+      - NEVER
+    type: string
+    x-okta-tags:
+      - Policy
   PolicyRuleAuthContextCondition:
     properties:
       authType:
@@ -10876,6 +11547,74 @@ definitions:
     type: object
     x-okta-tags:
       - Policy
+  ProfileMapping:
+    properties:
+      _links:
+        additionalProperties:
+          type: object
+        #readOnly: true
+        type: object
+      id:
+        #readOnly: true
+        type: string
+      properties:
+        additionalProperties:
+          $ref: '#/definitions/ProfileMappingProperty'
+        #readOnly: true
+        type: object
+      source:
+        $ref: '#/definitions/ProfileMappingSource'
+      target:
+        $ref: '#/definitions/ProfileMappingSource'
+    type: object
+    x-okta-crud:
+      - alias: read
+        arguments:
+          - dest: mappingId
+            src: id
+        operationId: getProfileMapping
+      - alias: update
+        arguments:
+          - dest: mappingId
+            src: id
+        operationId: updateProfileMapping
+    x-okta-tags:
+      - ProfileMapping
+  ProfileMappingProperty:
+    properties:
+      expression:
+        type: string
+      pushStatus:
+        $ref: '#/definitions/ProfileMappingPropertyPushStatus'
+    type: object
+    x-okta-tags:
+      - ProfileMapping
+  ProfileMappingPropertyPushStatus:
+    enum:
+      - PUSH
+      - DONT_PUSH
+    type: object
+    x-okta-tags:
+      - ProfileMapping
+  ProfileMappingSource:
+    properties:
+      _links:
+        additionalProperties:
+          type: object
+        #readOnly: true
+        type: object
+      id:
+        #readOnly: true
+        type: string
+      name:
+        #readOnly: true
+        type: string
+      type:
+        #readOnly: true
+        type: string
+    type: object
+    x-okta-tags:
+      - ProfileMapping
   Protocol:
     properties:
       algorithms:
@@ -11069,7 +11808,6 @@ definitions:
       expiresAt:
         format: date-time
         type: string
-        #readOnly: true
       factorResult:
         $ref: '#/definitions/FactorResultType'
       profile:
@@ -11250,13 +11988,6 @@ definitions:
     x-okta-parent: '#/definitions/Application'
     x-okta-tags:
       - Application
-  SamlApplicationV1:
-    properties:
-      settings:
-        $ref: '#/definitions/SamlApplicationSettings'
-    x-okta-parent: '#/definitions/Application'
-    x-okta-tags:
-      - Application
   SamlApplicationSettings:
     properties:
       signOn:
@@ -11306,6 +12037,10 @@ definitions:
         type: boolean
       signatureAlgorithm:
         type: string
+      slo:
+        $ref: '#/definitions/SingleLogout'
+      spCertificate:
+        $ref: '#/definitions/SpCertificate'
       spIssuer:
         type: string
       ssoAcsUrl:
@@ -11560,6 +12295,16 @@ definitions:
     type: string
     x-okta-tags:
       - Session
+  SingleLogout:
+    properties:
+      enabled:
+        type: boolean
+      issuer:
+        type: string
+      logoutUrl:
+        type: string
+    x-okta-tags:
+      - Application
   SmsTemplate:
     properties:
       created:
@@ -11662,6 +12407,15 @@ definitions:
     type: object
     x-okta-tags:
       - IdentityProvider
+  SpCertificate:
+    properties:
+      x5c:
+        items:
+          type: string
+        readOnly: false
+        type: array
+    x-okta-tags:
+      - Application
   SwaApplication:
     properties:
       name:
@@ -11739,6 +12493,38 @@ definitions:
         type: string
     x-okta-tags:
       - User
+  ThreatInsightConfiguration:
+    properties:
+      _links:
+        additionalProperties:
+          type: object
+        #readOnly: true
+        type: object
+      action:
+        type: string
+      created:
+        format: date-time
+        #readOnly: true
+        type: string
+      excludeZones:
+        items:
+          type: string
+        type: array
+      lastUpdated:
+        format: date-time
+        #readOnly: true
+        type: string
+    x-okta-crud:
+      - alias: read
+        arguments: []
+        operationId: getCurrentConfiguration
+      - alias: update
+        arguments:
+          - dest: threatInsightConfiguration
+            self: true
+        operationId: updateConfiguration
+    x-okta-tags:
+      - ThreatInsight
   TokenAuthorizationServerPolicyRuleAction:
     properties:
       accessTokenLifetimeMinutes:
@@ -12213,7 +12999,7 @@ definitions:
         $ref: '#/definitions/VerifyFactorRequest'
     type: object
     x-okta-crud:
-      - alias: deleteFactor
+      - alias: delete
         arguments:
           - dest: factorId
             src: id
@@ -12247,6 +13033,7 @@ definitions:
         sms: '#/definitions/SmsUserFactor'
         token: '#/definitions/TokenUserFactor'
         'token:hardware': '#/definitions/HardwareUserFactor'
+        'token:hotp': '#/definitions/CustomHotpUserFactor'
         'token:software:totp': '#/definitions/TotpUserFactor'
         u2f: '#/definitions/U2fUserFactor'
         web: '#/definitions/WebUserFactor'
@@ -12396,6 +13183,196 @@ definitions:
     x-okta-extensible: true
     x-okta-tags:
       - User
+  UserSchema:
+    properties:
+      $schema:
+        #readOnly: true
+        type: string
+      _links:
+        additionalProperties:
+          type: object
+        #readOnly: true
+        type: object
+      created:
+        #readOnly: true
+        type: string
+      definitions:
+        $ref: '#/definitions/UserSchemaDefinitions'
+      id:
+        #readOnly: true
+        type: string
+      lastUpdated:
+        #readOnly: true
+        type: string
+      name:
+        #readOnly: true
+        type: string
+      properties:
+        additionalProperties:
+          type: object
+        #readOnly: true
+        type: object
+      title:
+        type: string
+      type:
+        #readOnly: true
+        type: string
+    type: object
+    x-okta-tags:
+      - UserSchema
+  UserSchemaAttribute:
+    properties:
+      description:
+        type: string
+      master:
+        $ref: '#/definitions/UserSchemaAttributeMaster'
+      maxLength:
+        type: integer
+      minLength:
+        type: integer
+      mutability:
+        type: string
+      permissions:
+        items:
+          $ref: '#/definitions/UserSchemaAttributePermission'
+        type: array
+      required:
+        type: boolean
+      scope:
+        type: string
+      title:
+        type: string
+      type:
+        type: string
+    type: object
+    x-okta-tags:
+      - UserSchema
+  UserSchemaAttributeMaster:
+    properties:
+      type:
+        type: string
+    type: object
+    x-okta-tags:
+      - UserSchema
+  UserSchemaAttributePermission:
+    properties:
+      action:
+        type: string
+      principal:
+        type: string
+    type: object
+    x-okta-tags:
+      - UserSchema
+  UserSchemaBase:
+    properties:
+      id:
+        #readOnly: true
+        type: string
+      properties:
+        $ref: '#/definitions/UserSchemaBaseProperties'
+      required:
+        items:
+          type: string
+        type: array
+      type:
+        type: string
+    type: object
+    x-okta-tags:
+      - UserSchema
+  UserSchemaBaseProperties:
+    properties:
+      city:
+        $ref: '#/definitions/UserSchemaAttribute'
+      costCenter:
+        $ref: '#/definitions/UserSchemaAttribute'
+      countryCode:
+        $ref: '#/definitions/UserSchemaAttribute'
+      department:
+        $ref: '#/definitions/UserSchemaAttribute'
+      displayName:
+        $ref: '#/definitions/UserSchemaAttribute'
+      division:
+        $ref: '#/definitions/UserSchemaAttribute'
+      email:
+        $ref: '#/definitions/UserSchemaAttribute'
+      employeeNumber:
+        $ref: '#/definitions/UserSchemaAttribute'
+      firstName:
+        $ref: '#/definitions/UserSchemaAttribute'
+      honorificPrefix:
+        $ref: '#/definitions/UserSchemaAttribute'
+      honorificSuffix:
+        $ref: '#/definitions/UserSchemaAttribute'
+      lastName:
+        $ref: '#/definitions/UserSchemaAttribute'
+      locale:
+        $ref: '#/definitions/UserSchemaAttribute'
+      login:
+        $ref: '#/definitions/UserSchemaAttribute'
+      manager:
+        $ref: '#/definitions/UserSchemaAttribute'
+      managerId:
+        $ref: '#/definitions/UserSchemaAttribute'
+      middleName:
+        $ref: '#/definitions/UserSchemaAttribute'
+      mobilePhone:
+        $ref: '#/definitions/UserSchemaAttribute'
+      nickName:
+        $ref: '#/definitions/UserSchemaAttribute'
+      organization:
+        $ref: '#/definitions/UserSchemaAttribute'
+      postalAddress:
+        $ref: '#/definitions/UserSchemaAttribute'
+      preferredLanguage:
+        $ref: '#/definitions/UserSchemaAttribute'
+      primaryPhone:
+        $ref: '#/definitions/UserSchemaAttribute'
+      profileUrl:
+        $ref: '#/definitions/UserSchemaAttribute'
+      secondEmail:
+        $ref: '#/definitions/UserSchemaAttribute'
+      state:
+        $ref: '#/definitions/UserSchemaAttribute'
+      streetAddress:
+        $ref: '#/definitions/UserSchemaAttribute'
+      timezone:
+        $ref: '#/definitions/UserSchemaAttribute'
+      title:
+        $ref: '#/definitions/UserSchemaAttribute'
+      userType:
+        $ref: '#/definitions/UserSchemaAttribute'
+      zipCode:
+        $ref: '#/definitions/UserSchemaAttribute'
+    type: object
+    x-okta-tags:
+      - UserSchema
+  UserSchemaDefinitions:
+    properties:
+      base:
+        $ref: '#/definitions/UserSchemaBase'
+      custom:
+        $ref: '#/definitions/UserSchemaPublic'
+    type: object
+    x-okta-tags:
+      - UserSchema
+  UserSchemaPublic:
+    properties:
+      id:
+        #readOnly: true
+        type: string
+      properties:
+        additionalProperties:
+          type: object
+        type: object
+      required:
+        items:
+          type: string
+        type: array
+      type:
+        type: string
+    type: object
+    x-okta-tags:
+      - UserSchema
   UserStatus:
     enum:
       - ACTIVE
@@ -12425,90 +13402,6 @@ definitions:
     type: object
     x-okta-tags:
       - Policy
-  UserSchema:
-    properties:
-      id:
-        type: string
-      '$schema':
-        type: string
-      name:
-        type: string
-      title:
-        type: string
-      description:
-        type: string
-      lastUpdated:
-        format: date-time
-        type: string
-      created:
-        format: date-time
-        type: string
-      definitions:
-        $ref: '#/definitions/UserSchemaDefinition'
-      type:
-        type: string
-      properties:
-        type: array
-        items:
-          type: string
-    x-okta-operations:
-      - alias: read
-        arguments: []
-        operationId: getUser
-    x-okta-tags:
-      - UserSchema
-  UserSchemaDefinition:
-    properties:
-      custom:
-        $ref: '#/definitions/UserSchemaBase'
-      base:
-        $ref: '#/definitions/UserSchemaBase'
-    x-okta-tags:
-      - UserSchema
-  UserSchemaBase:
-    properties:
-      id:
-        type: string
-      type:
-        type: string
-      properties:
-        additionalProperties:
-          $ref: '#/definitions/UserSchemaProperty'
-        type: object
-      required:
-        type: array
-        items:
-          type: string
-    x-okta-tags:
-      - UserSchema
-  UserSchemaProperty:
-    properties:
-      title:
-        type: string
-      type:
-        type: string
-      required:
-        type: boolean
-      mutability:
-        type: string
-      scope:
-        type: string
-      minLength:
-        type: integer
-      maxLength:
-        type: integer
-      permissions:
-        $ref: '#/definitions/UserSchemaPermission'
-    x-okta-tags:
-      - UserSchema
-  UserSchemaPermission:
-    properties:
-      principal:
-        type: string
-      action:
-        type: string
-    x-okta-tags:
-      - UserSchema      
   UserType:
     properties:
       _links:
@@ -12572,7 +13465,7 @@ definitions:
             src: id
         operationId: replaceUserType
     x-okta-tags:
-      - User
+      - UserType
   VerifyFactorRequest:
     properties:
       activationToken:

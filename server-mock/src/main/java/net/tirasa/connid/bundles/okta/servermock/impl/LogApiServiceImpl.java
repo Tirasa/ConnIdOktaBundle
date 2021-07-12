@@ -22,7 +22,9 @@ import io.swagger.model.LogEvent;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.ws.rs.core.Response;
 
 /**
@@ -55,22 +57,19 @@ public class LogApiServiceImpl extends AbstractServiceImpl implements LogApi {
     }
 
     private List<LogEvent> searchEvents(final String filter, final Date since, final Integer limit) {
-        List<String> eventTypeNames = filter != null
-                ? Arrays.asList(filter.replaceAll("\\\\", "").split(" or ")).stream().map(
-                        item -> item.substring(item.indexOf("\"") + 1, item.lastIndexOf("\""))).collect(Collectors.
-                                toList())
-                : Collections.emptyList();
+        List<String> eventTypeNames = filter == null
+                ? Collections.emptyList()
+                : Arrays.asList(filter.replaceAll("\\\\", "").split(" or ")).stream().
+                        map(item -> item.substring(item.indexOf("\"") + 1, item.lastIndexOf("\""))).
+                        collect(Collectors.toList());
 
+        Stream<LogEvent> found = EVENT_REPOSITORY.entrySet().stream().filter(
+                event -> (since == null || event.getKey().after(since))
+                && eventTypeNames.contains(event.getValue().getEventType())).
+                map(Map.Entry::getValue);
         if (limit != null) {
-            return EVENT_REPOSITORY.entrySet().stream().filter(
-                    event -> (since == null || event.getValue().getPublished().after(since))
-                    && (!eventTypeNames.isEmpty() && eventTypeNames.contains(event.getValue().getEventType()))).map(
-                            event -> event.getValue()).limit(limit).collect(Collectors.toList());
-        } else {
-            return EVENT_REPOSITORY.entrySet().stream().filter(
-                    event -> (since == null || event.getValue().getPublished().after(since))
-                    && (!eventTypeNames.isEmpty() && eventTypeNames.contains(event.getValue().getEventType()))).map(
-                            event -> event.getValue()).collect(Collectors.toList());
+            found = found.limit(limit);
         }
+        return found.collect(Collectors.toList());
     }
 }

@@ -15,6 +15,7 @@
  */
 package net.tirasa.connid.bundles.okta.utils;
 
+import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 import org.identityconnectors.common.logging.Log;
@@ -50,12 +51,9 @@ public class OktaUtils {
         return query.toString();
     }
 
-    public static Date convertToDate(final String source) {
-        try {
-            return new Date(Long.valueOf(source));
-        } catch (Exception e) {
-            LOG.info(e, "While converting {0} to date", source);
-        }
-        return null;
+    public static Date convertToDate(final long source) {
+        Calendar cal = Calendar.getInstance(UTC_TIMEZONE);
+        cal.setTimeInMillis(source);
+        return cal.getTime();
     }
 }

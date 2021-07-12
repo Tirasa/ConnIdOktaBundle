@@ -18,6 +18,7 @@ package net.tirasa.connid.bundles.okta.schema;
 import com.okta.sdk.client.Client;
 import com.okta.sdk.resource.ExtensibleResource;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.List;
@@ -29,7 +30,6 @@ import org.identityconnectors.framework.common.objects.AttributeInfo;
 import org.identityconnectors.framework.common.objects.AttributeInfo.Flags;
 import org.identityconnectors.framework.common.objects.AttributeInfoBuilder;
 import org.identityconnectors.framework.common.objects.ObjectClass;
-import org.identityconnectors.framework.common.objects.ObjectClassInfo;
 import org.identityconnectors.framework.common.objects.ObjectClassInfoBuilder;
 import org.identityconnectors.framework.common.objects.Schema;
 import org.identityconnectors.framework.common.objects.SchemaBuilder;
@@ -50,15 +50,7 @@ class OktaSchemaBuilder {
 
     private static final String PROPERTIES = "properties";
 
-    public static final List<String> ATTRS_TYPE = new ArrayList<String>() {
-
-        private static final long serialVersionUID = 5636572627689425575L;
-
-        {
-            add(SCHEMA_BASE);
-            add(SCHEMA_CUSTOM);
-        }
-    };
+    public static final List<String> ATTRS_TYPE = Arrays.asList(SCHEMA_BASE, SCHEMA_CUSTOM);
 
     private final Client client;
 
@@ -77,32 +69,24 @@ class OktaSchemaBuilder {
 
     private void buildSchema() {
         SchemaBuilder schemaBld = new SchemaBuilder(OktaConnector.class);
-        buildAccount(ObjectClass.ACCOUNT_NAME, schemaBld);
-        buildGroup(ObjectClass.GROUP_NAME, schemaBld);
-        buildApplication(OktaConnector.APPLICATION_NAME, schemaBld);
+
+        schemaBld.defineObjectClass(build(ObjectClass.ACCOUNT_NAME).
+                addAllAttributeInfo(buildAccountAttrInfos()).build());
+
+        schemaBld.defineObjectClass(build(ObjectClass.GROUP_NAME).
+                addAllAttributeInfo(buildGroupAttrInfos()).build());
+
+        schemaBld.defineObjectClass(build(OktaConnector.APPLICATION_NAME).
+                addAllAttributeInfo(buildApplicationAttrInfos()).build());
+
         schema = schemaBld.build();
     }
 
     private ObjectClassInfoBuilder build(final String objectClassName) {
-        final ObjectClassInfoBuilder objClassBld = new ObjectClassInfoBuilder();
+        ObjectClassInfoBuilder objClassBld = new ObjectClassInfoBuilder();
         objClassBld.setType(objectClassName);
         objClassBld.setContainer(false);
         return objClassBld;
-    }
-
-    private void buildAccount(final String objectClassName, final SchemaBuilder schemaBld) {
-        ObjectClassInfo oci = build(objectClassName).addAllAttributeInfo(buildAccountAttrInfos()).build();
-        schemaBld.defineObjectClass(oci);
-    }
-
-    private void buildGroup(final String objectClassName, final SchemaBuilder schemaBld) {
-        ObjectClassInfo oci = build(objectClassName).addAllAttributeInfo(buildGroupAttrInfos()).build();
-        schemaBld.defineObjectClass(oci);
-    }
-
-    private void buildApplication(final String objectClassName, final SchemaBuilder schemaBld) {
-        ObjectClassInfo oci = build(objectClassName).addAllAttributeInfo(buildApplicationAttrInfos()).build();
-        schemaBld.defineObjectClass(oci);
     }
 
     @SuppressWarnings({ "unchecked" })
@@ -115,11 +99,11 @@ class OktaSchemaBuilder {
         ATTRS_TYPE.stream().forEach(item -> {
             List<String> requiredAttrs = ((Map<String, List<String>>) definitions.get(item)).get(REQUIRED);
             Map<String, Object> schemas = (Map<String, Object>) definitions.get(item);
-            ((Map<String, Object>) schemas.get(PROPERTIES)).entrySet().stream().forEach(schemaDef -> {
+            ((Map<String, Object>) schemas.get(PROPERTIES)).forEach((key, value) -> {
                 AttributeInfoBuilder attributeInfo = new AttributeInfoBuilder();
-                attributeInfo.setRequired(requiredAttrs != null && requiredAttrs.contains(schemaDef.getKey()));
-                attributeInfos.add(AttributeInfoBuilder.build(schemaDef.getKey(),
-                        OktaAttribute.getType(((Map<String, String>) schemaDef.getValue()).get(TYPE))));
+                attributeInfo.setRequired(requiredAttrs != null && requiredAttrs.contains(key));
+                attributeInfos.add(AttributeInfoBuilder.build(key,
+                        OktaAttribute.getType(((Map<String, String>) value).get(TYPE))));
             });
         });
 
