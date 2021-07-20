@@ -77,7 +77,7 @@
 
   <properties>
     <connid.version>1.4.5.1</connid.version>
-    <okta.version>4.1.0</okta.version>
+    <okta.version>4.1.1</okta.version>
     
     <swagger-codegen.plugin.version>3.0.27</swagger-codegen.plugin.version>
     <javax.servlet.version>3.1.0</javax.servlet.version>
