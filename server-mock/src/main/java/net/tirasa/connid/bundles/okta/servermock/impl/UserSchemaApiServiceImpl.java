@@ -19,19 +19,21 @@ import io.swagger.api.UserSchemaApi;
 import io.swagger.model.UserSchema;
 import io.swagger.model.UserSchemaAttribute;
 import io.swagger.model.UserSchemaAttributePermission;
+import io.swagger.model.UserSchemaAttributeScope;
+import io.swagger.model.UserSchemaAttributeType;
 import io.swagger.model.UserSchemaBase;
 import io.swagger.model.UserSchemaBaseProperties;
 import io.swagger.model.UserSchemaDefinitions;
+import io.swagger.model.UserSchemaProperties;
+import io.swagger.model.UserSchemaPropertiesProfile;
+import io.swagger.model.UserSchemaPropertiesProfileItem;
 import io.swagger.model.UserSchemaPublic;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import javax.ws.rs.core.Response;
 import net.tirasa.connid.bundles.okta.servermock.OktaObjectMapper;
-import org.apache.commons.lang3.tuple.Pair;
 
 public class UserSchemaApiServiceImpl implements UserSchemaApi {
 
@@ -89,11 +91,11 @@ public class UserSchemaApiServiceImpl implements UserSchemaApi {
         schema.setLastUpdated(schema.getCreated());
         schema.setType("object");
 
-        List<Pair<String, String>> allOf = new ArrayList<>();
-        allOf.add(Pair.of("$ref", "#/definitions/base"));
-        allOf.add(Pair.of("$ref", "#/definitions/custom"));
-        schema.setProperties(new HashMap<>());
-        schema.putPropertiesItem("profile", Pair.of("allOf", allOf));
+        schema.setProperties(new UserSchemaProperties());
+        schema.getProperties().setProfile(new UserSchemaPropertiesProfile());
+        schema.getProperties().getProfile().setAllOf(Arrays.asList(
+                new UserSchemaPropertiesProfileItem().$ref("#/definitions/base"),
+                new UserSchemaPropertiesProfileItem().$ref("#/definitions/custom")));
 
         UserSchemaBase base = new UserSchemaBase();
         base.setId("#base");
@@ -105,34 +107,34 @@ public class UserSchemaApiServiceImpl implements UserSchemaApi {
         permission.setAction("READ_WRITE");
 
         UserSchemaBaseProperties baseProperty = new UserSchemaBaseProperties();
-        baseProperty.setLogin(
-                userSchemaAttribute("Username", "string", "NONE", "READ_WRITE", true, 0, 0, permission));
-        baseProperty.setEmail(
-                userSchemaAttribute("Email", "string", "NONE", "READ_WRITE", true, 0, 0, permission));
-        baseProperty.setSecondEmail(
-                userSchemaAttribute("Second Email", "string", "NONE", "READ_WRITE", false, 0, 0, permission));
-        baseProperty.setFirstName(
-                userSchemaAttribute("First Name", "string", "NONE", "READ_WRITE", false, 0, 0, permission));
-        baseProperty.setLastName(
-                userSchemaAttribute("Last Name", "string", "NONE", "READ_WRITE", false, 0, 0, permission));
-        baseProperty.setDisplayName(
-                userSchemaAttribute("Display Name", "string", "NONE", "READ_WRITE", false, 0, 0, permission));
-        baseProperty.setMobilePhone(
-                userSchemaAttribute("Mobile Phone", "string", "NONE", "READ_WRITE", false, 0, 0, permission));
-        baseProperty.setPreferredLanguage(
-                userSchemaAttribute("Preferred Language", "string", "NONE", "READ_WRITE", false, 0, 0, permission));
+        baseProperty.setLogin(userSchemaAttribute("Username",
+                UserSchemaAttributeType.STRING, UserSchemaAttributeScope.NONE, "READ_WRITE", true, 0, 0, permission));
+        baseProperty.setEmail(userSchemaAttribute("Email",
+                UserSchemaAttributeType.STRING, UserSchemaAttributeScope.NONE, "READ_WRITE", true, 0, 0, permission));
+        baseProperty.setSecondEmail(userSchemaAttribute("Second Email",
+                UserSchemaAttributeType.STRING, UserSchemaAttributeScope.NONE, "READ_WRITE", false, 0, 0, permission));
+        baseProperty.setFirstName(userSchemaAttribute("First Name",
+                UserSchemaAttributeType.STRING, UserSchemaAttributeScope.NONE, "READ_WRITE", false, 0, 0, permission));
+        baseProperty.setLastName(userSchemaAttribute("Last Name",
+                UserSchemaAttributeType.STRING, UserSchemaAttributeScope.NONE, "READ_WRITE", false, 0, 0, permission));
+        baseProperty.setDisplayName(userSchemaAttribute("Display Name",
+                UserSchemaAttributeType.STRING, UserSchemaAttributeScope.NONE, "READ_WRITE", false, 0, 0, permission));
+        baseProperty.setMobilePhone(userSchemaAttribute("Mobile Phone",
+                UserSchemaAttributeType.STRING, UserSchemaAttributeScope.NONE, "READ_WRITE", false, 0, 0, permission));
+        baseProperty.setPreferredLanguage(userSchemaAttribute("Preferred Language",
+                UserSchemaAttributeType.STRING, UserSchemaAttributeScope.NONE, "READ_WRITE", false, 0, 0, permission));
         base.setProperties(baseProperty);
 
         UserSchemaPublic custom = new UserSchemaPublic();
         custom.setProperties(new HashMap<>());
-        custom.putPropertiesItem("guid",
-                userSchemaAttribute("guid", "string", "NONE", "READ_WRITE", true, 0, 0, permission));
-        custom.putPropertiesItem("contactID",
-                userSchemaAttribute("Contact ID", "string", "NONE", "READ_WRITE", false, 0, 0, permission));
-        custom.putPropertiesItem("primaryPhone",
-                userSchemaAttribute("Primary Phone", "string", "NONE", "READ_WRITE", false, 0, 0, permission));
-        custom.putPropertiesItem("entitlements",
-                userSchemaAttribute("Entitlements", "string", "NONE", "READ_WRITE", false, 0, 0, permission));
+        custom.putPropertiesItem("guid", userSchemaAttribute("guid",
+                UserSchemaAttributeType.STRING, UserSchemaAttributeScope.NONE, "READ_WRITE", true, 0, 0, permission));
+        custom.putPropertiesItem("contactID", userSchemaAttribute("Contact ID",
+                UserSchemaAttributeType.STRING, UserSchemaAttributeScope.NONE, "READ_WRITE", false, 0, 0, permission));
+        custom.putPropertiesItem("primaryPhone", userSchemaAttribute("Primary Phone",
+                UserSchemaAttributeType.STRING, UserSchemaAttributeScope.NONE, "READ_WRITE", false, 0, 0, permission));
+        custom.putPropertiesItem("entitlements", userSchemaAttribute("Entitlements",
+                UserSchemaAttributeType.STRING, UserSchemaAttributeScope.NONE, "READ_WRITE", false, 0, 0, permission));
 
         UserSchemaDefinitions definitions = new UserSchemaDefinitions();
         definitions.setBase(base);
@@ -144,8 +146,8 @@ public class UserSchemaApiServiceImpl implements UserSchemaApi {
 
     private UserSchemaAttribute userSchemaAttribute(
             final String title,
-            final String type,
-            final String scope,
+            final UserSchemaAttributeType type,
+            final UserSchemaAttributeScope scope,
             final String mutability,
             final boolean required,
             final int minLength,

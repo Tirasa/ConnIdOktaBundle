@@ -77,16 +77,16 @@
 
   <properties>
     <connid.version>1.4.5.1</connid.version>
-    <okta.version>4.1.1</okta.version>
+    <okta.version>5.0.0</okta.version>
     
     <swagger-codegen.plugin.version>3.0.27</swagger-codegen.plugin.version>
     <javax.servlet.version>3.1.0</javax.servlet.version>
     <spring.version>5.2.16.RELEASE</spring.version>
-    <jackson.version>2.11.4</jackson.version>
+    <jackson.version>2.12.5</jackson.version>
     <javax.validation.version>2.0.1.Final</javax.validation.version>
     <apache.cxf.version>3.3.11</apache.cxf.version>
-    <swagger-annotations.version>2.0.10</swagger-annotations.version>
-    
+    <swagger-annotations.version>2.1.10</swagger-annotations.version>
+
     <log.directory>${project.build.directory}/log</log.directory>
     
     <cargo.servlet.port>8443</cargo.servlet.port>
@@ -95,7 +95,7 @@
     <cargo.log>${log.directory}/cargo.log</cargo.log>
     <cargo.output>${log.directory}/cargo-output.log</cargo.output>
 
-    <tomcat.version>9.0.50</tomcat.version>
+    <tomcat.version>9.0.52</tomcat.version>
     
     <java.version>1.8</java.version>
     <rootpom.basedir>${basedir}</rootpom.basedir>
@@ -187,15 +187,15 @@
       <dependency>
         <groupId>org.apache.commons</groupId>
         <artifactId>commons-lang3</artifactId>
-        <version>3.10</version>
+        <version>3.12.0</version>
       </dependency>
-    
+
       <dependency>
         <groupId>commons-beanutils</groupId>
         <artifactId>commons-beanutils</artifactId>
         <version>1.9.4</version>
       </dependency>  
-        
+
       <!-- TEST -->        
       <dependency>
         <groupId>net.tirasa.connid</groupId>

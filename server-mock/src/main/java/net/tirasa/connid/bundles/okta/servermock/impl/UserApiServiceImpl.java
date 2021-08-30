@@ -24,7 +24,6 @@ import io.swagger.model.IdentityProvider;
 import io.swagger.model.PasswordCredential;
 import io.swagger.model.User;
 import io.swagger.model.UserCredentials;
-import io.swagger.model.UserProfile;
 import io.swagger.model.UserStatus;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -205,40 +204,6 @@ public class UserApiServiceImpl extends AbstractServiceImpl implements UserApi {
         return Response.ok().entity("magic!").build();
     }
 
-    // workaround for https://github.com/swagger-api/swagger-codegen/issues/5187
-    private void workaround(final UserProfile profile) {
-        profile.setCity(profile.get("city"));
-        profile.setCostCenter(profile.get("costCenter"));
-        profile.setCountryCode(profile.get("country"));
-        profile.setDepartment(profile.get("setDepartment"));
-        profile.setDisplayName(profile.get("displayName"));
-        profile.setDivision(profile.get("division"));
-        profile.setEmail(profile.get("email"));
-        profile.setEmployeeNumber(profile.get("employeeNumber"));
-        profile.setFirstName(profile.get("firstName"));
-        profile.setHonorificPrefix(profile.get("honorificPrefix"));
-        profile.setHonorificSuffix(profile.get("honorificSuffix"));
-        profile.setLastName(profile.get("lastName"));
-        profile.setLocale(profile.get("locale"));
-        profile.setLogin(profile.get("login"));
-        profile.setManager(profile.get("manager"));
-        profile.setManagerId(profile.get("managerId"));
-        profile.setMiddleName(profile.get("middleName"));
-        profile.setMobilePhone(profile.get("mobilePhone"));
-        profile.setNickName(profile.get("nickName"));
-        profile.setOrganization(profile.get("organization"));
-        profile.setPostalAddress(profile.get("postalAddress"));
-        profile.setPreferredLanguage(profile.get("preferredLanguage"));
-        profile.setPrimaryPhone(profile.get("primaryPhone"));
-        profile.setProfileUrl(profile.get("profileUrl"));
-        profile.setSecondEmail(profile.get("secondEmail"));
-        profile.setState(profile.get("state"));
-        profile.setStreetAddress(profile.get("streetAddress"));
-        profile.setTimezone(profile.get("timezone"));
-        profile.setTitle(profile.get("title"));
-        profile.setZipCode(profile.get("zipCode"));
-    }
-
     @Override
     public Response createUser(
             final CreateUserRequest req,
@@ -250,8 +215,6 @@ public class UserApiServiceImpl extends AbstractServiceImpl implements UserApi {
         body.setCredentials(req.getCredentials());
         body.setProfile(req.getProfile());
         body.setType(req.getType());
-
-        workaround(body.getProfile());
 
         if (Boolean.TRUE.equals(activate)) {
             body.setStatus(UserStatus.ACTIVE);
@@ -801,8 +764,6 @@ public class UserApiServiceImpl extends AbstractServiceImpl implements UserApi {
                 .filter(u -> StringUtils.equals(userId, u.getId()))
                 .findFirst();
         if (found.isPresent()) {
-            workaround(user.getProfile());
-
             user.setId(found.get().getId());
             user.setCreated(found.get().getCreated());
             user.setLastLogin(found.get().getLastLogin());

@@ -32,7 +32,6 @@ import java.util.stream.Collectors;
 import javax.ws.rs.core.Response;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
 /**
@@ -174,7 +173,7 @@ public class GroupApiServiceImpl extends AbstractServiceImpl implements GroupApi
      *
      */
     @Override
-    public Response deleteGroupRule(String ruleId) {
+    public Response deleteGroupRule(String ruleId, Boolean removeUsers) {
         // TODO: Implement...
 
         return Response.ok().entity("magic!").build();
