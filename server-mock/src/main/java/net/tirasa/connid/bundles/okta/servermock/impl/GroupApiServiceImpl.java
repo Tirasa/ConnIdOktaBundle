@@ -103,9 +103,10 @@ public class GroupApiServiceImpl extends AbstractServiceImpl implements GroupApi
     }
 
     @Override
-    public Response assignRoleToGroup(AssignRoleRequest body, String groupId, String disableNotifications) {
-        // TODO: Implement...
+    public Response assignRoleToGroup(
+            final AssignRoleRequest body, final String groupId, final Boolean disableNotifications) {
 
+        // TODO: Implement...
         return Response.ok().entity("magic!").build();
     }
 

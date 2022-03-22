@@ -102,6 +102,7 @@
               <language>jaxrs-cxf</language>
               <apiPackage>io.swagger.api</apiPackage>
               <modelPackage>io.swagger.model</modelPackage>
+              <generateAliasAsModel>true</generateAliasAsModel>
               <generateApiTests>false</generateApiTests>
               <generateModelTests>false</generateModelTests>
               <configOptions>

@@ -475,7 +475,7 @@ public class OktaConnector implements Connector, PoolableConnector,
 
         LOG.info("Execute sync query {0} on {1}", tokenValue, objectClass);
         LogEventList logEvents = getEvents(
-                objectClass, 
+                objectClass,
                 tokenValue == null ? null : OktaUtils.convertToDate(tokenValue));
         if (logEvents != null) {
             logEvents.stream().forEach(item -> {
@@ -595,8 +595,9 @@ public class OktaConnector implements Connector, PoolableConnector,
             } else {
                 try {
                     if (filter.getFilters() == null
-                            && OktaFilter.SEARCH_ATTRS.contains(filter.getAttribute())
+                            && OktaAttribute.ID.equals(filter.getAttribute())
                             && OktaFilterOp.EQUALS.equals(filter.getFilterOp())) {
+
                         User user = client.getUser(filter.getValue());
                         handler.handle(fromUser(user, attributesToGet));
                     } else {

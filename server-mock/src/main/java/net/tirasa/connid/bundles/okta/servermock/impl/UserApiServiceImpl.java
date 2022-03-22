@@ -126,7 +126,15 @@ public class UserApiServiceImpl extends AbstractServiceImpl implements UserApi {
     }
 
     @Override
-    public Response assignRoleToUser(AssignRoleRequest body, String userId, String disableNotifications) {
+    public Response assignRoleToUser(
+            final AssignRoleRequest body, final String userId, final Boolean disableNotifications) {
+
+        // TODO: Implement...
+        return Response.ok().entity("magic!").build();
+    }
+
+    @Override
+    public Response getUserRole(final String userId, final String roleId) {
         // TODO: Implement...
 
         return Response.ok().entity("magic!").build();
@@ -358,15 +366,12 @@ public class UserApiServiceImpl extends AbstractServiceImpl implements UserApi {
      */
     @Override
     public Response getUser(String userId) {
-        Optional<User> found = USER_REPOSITORY.stream()
+        return USER_REPOSITORY.stream()
                 .filter(user -> StringUtils.equals(userId, user.getId())
                 || StringUtils.equals(userId, user.getProfile().getLogin()))
-                .findFirst();
-        if (found.isPresent()) {
-            return Response.ok().entity(found.get()).build();
-        } else {
-            return Response.status(Response.Status.NOT_FOUND).build();
-        }
+                .findFirst()
+                .map(found -> Response.ok().entity(found).build())
+                .orElseGet(() -> Response.status(Response.Status.NOT_FOUND).build());
     }
 
     @Override
@@ -795,6 +800,20 @@ public class UserApiServiceImpl extends AbstractServiceImpl implements UserApi {
         } else {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
+    }
+
+    @Override
+    public Response listUserSubscriptions(final String userId) {
+        // TODO: Implement...
+
+        return Response.ok().entity("magic!").build();
+    }
+
+    @Override
+    public Response getUserSubscriptionByNotificationType(final String userId, final String notificationType) {
+        // TODO: Implement...
+
+        return Response.ok().entity("magic!").build();
     }
 
     private Map<String, Object> buildErrorResponse(final String errorId, final String message) {

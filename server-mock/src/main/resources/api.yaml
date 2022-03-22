@@ -17,18 +17,18 @@ swagger: '2.0'
 info:
   title: Okta API
   description: Allows customers to easily access the Okta API
-  termsOfService: 'http://developer.okta.com/terms/'
+  termsOfService: 'https://developer.okta.com/terms/'
   contact:
     name: Okta Developer Team
     email: devex-public@okta.com
-    url: 'http://developer.okta.com/'
+    url: 'https://developer.okta.com/'
   license:
     name: Apache-2.0
-    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
-  version: 2.6.0
+    url: 'https://www.apache.org/licenses/LICENSE-2.0.html'
+  version: 2.11.1
 externalDocs:
   description: Find more info here
-  url: 'http://developer.okta.com/docs/api/getting_started/design_principles.html'
+  url: 'https://developer.okta.com/docs/api/getting_started/design_principles.html'
 host: your-subdomain.okta.com
 basePath: /
 schemes:
@@ -198,6 +198,111 @@ paths:
       security:
         - api_token: []
       summary: Update Application
+      tags:
+        - Application
+  '/api/v1/apps/{appId}/connections/default':
+    get:
+      consumes:
+        - application/json
+      description: Get default Provisioning Connection for application
+      operationId: getDefaultProvisioningConnectionForApplication
+      parameters:
+        - in: path
+          name: appId
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/ProvisioningConnection'
+        '404':
+          description: Not Found
+      security:
+        - api_token: []
+      summary: Fetches the default Provisioning Connection for an application.
+      tags:
+        - Application
+    post:
+      consumes:
+        - application/json
+      description: Set default Provisioning Connection for application
+      operationId: setDefaultProvisioningConnectionForApplication
+      parameters:
+        - in: path
+          name: appId
+          required: true
+          type: string
+        - in: body
+          name: profile
+          required: true
+          schema:
+            $ref: '#/definitions/ProvisioningConnectionRequest'
+        - in: query
+          name: activate
+          type: boolean
+      produces:
+        - application/json
+      responses:
+        '201':
+          description: Created
+          schema:
+            $ref: '#/definitions/ProvisioningConnection'
+        '400':
+          description: Bad Request
+        '404':
+          description: Not Found
+      security:
+        - api_token: []
+      summary: Sets the default Provisioning Connection for an application.
+      tags:
+        - Application
+  '/api/v1/apps/{appId}/connections/default/lifecycle/activate':
+    post:
+      consumes:
+        - application/json
+      description: Activates the default Provisioning Connection for an application.
+      operationId: activateDefaultProvisioningConnectionForApplication
+      parameters:
+        - in: path
+          name: appId
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '204':
+          description: No Content
+        '404':
+          description: Not Found
+      security:
+        - api_token: []
+      summary: Activate default Provisioning Connection for application
+      tags:
+        - Application
+  '/api/v1/apps/{appId}/connections/default/lifecycle/deactivate':
+    post:
+      consumes:
+        - application/json
+      description: Deactivates the default Provisioning Connection for an application.
+      operationId: deactivateDefaultProvisioningConnectionForApplication
+      parameters:
+        - in: path
+          name: appId
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '204':
+          description: No Content
+        '404':
+          description: Not Found
+      security:
+        - api_token: []
+      summary: Deactivate default Provisioning Connection for application
       tags:
         - Application
   '/api/v1/apps/{appId}/credentials/csrs':
@@ -482,6 +587,95 @@ paths:
       summary: Clone Application Key Credential
       tags:
         - Application
+  '/api/v1/apps/{appId}/features':
+    get:
+      consumes:
+        - application/json
+      description: List Features for application
+      operationId: listFeaturesForApplication
+      parameters:
+        - in: path
+          name: appId
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            items:
+              $ref: '#/definitions/ApplicationFeature'
+            type: array
+        '404':
+          description: Not Found
+      security:
+        - api_token: []
+      summary: Fetches the Feature objects for an application.
+      tags:
+        - Application
+  '/api/v1/apps/{appId}/features/{name}':
+    get:
+      consumes:
+        - application/json
+      description: Fetches a Feature object for an application.
+      operationId: getFeatureForApplication
+      parameters:
+        - in: path
+          name: appId
+          required: true
+          type: string
+        - in: path
+          name: name
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/ApplicationFeature'
+        '404':
+          description: Not Found
+      security:
+        - api_token: []
+      summary: Fetches a Feature object for an application.
+      tags:
+        - Application
+    put:
+      consumes:
+        - application/json
+      description: Updates a Feature object for an application.
+      operationId: updateFeatureForApplication
+      parameters:
+        - in: body
+          name: capabilities
+          required: true
+          schema:
+            $ref: '#/definitions/CapabilitiesObject'
+        - in: path
+          name: appId
+          required: true
+          type: string
+        - in: path
+          name: name
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/ApplicationFeature'
+        '404':
+          description: Not Found
+      security:
+        - api_token: []
+      summary: Updates a Feature object for an application.
+      tags:
+        - Application
   '/api/v1/apps/{appId}/grants':
     get:
       consumes:
@@ -752,6 +946,38 @@ paths:
       security:
         - api_token: []
       summary: Deactivate Application
+      tags:
+        - Application
+  '/api/v1/apps/{appId}/logo':
+    post:
+      consumes:
+        - multipart/form-data
+      description: Update the logo for an application.
+      operationId: uploadApplicationLogo
+      parameters:
+        - in: path
+          name: appId
+          required: true
+          type: string
+        - in: formData
+          name: file
+          required: true
+          type: file
+      produces:
+        - application/json
+      responses:
+        '201':
+          description: Created
+        '400':
+          description: Bad Request
+        '404':
+          description: Not Found
+      security:
+        - api_token: []
+      summary: >-
+        The file must be in PNG, JPG, or GIF format, and less than 1 MB in size.
+        For best results use landscape orientation, a transparent background,
+        and a minimum size of 420px by 120px to prevent upscaling.
       tags:
         - Application
   '/api/v1/apps/{appId}/tokens':
@@ -1031,6 +1257,119 @@ paths:
       summary: Update Application Profile for Assigned User
       tags:
         - Application
+  /api/v1/authenticators:
+    get:
+      consumes:
+        - application/json
+      description: Success
+      operationId: listAuthenticators
+      parameters: []
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            items:
+              $ref: '#/definitions/Authenticator'
+            type: array
+      security:
+        - api_token: []
+      tags:
+        - Authenticator
+  '/api/v1/authenticators/{authenticatorId}':
+    get:
+      consumes:
+        - application/json
+      description: Success
+      operationId: getAuthenticator
+      parameters:
+        - in: path
+          name: authenticatorId
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/Authenticator'
+      security:
+        - api_token: []
+      tags:
+        - Authenticator
+    put:
+      consumes:
+        - application/json
+      description: Updates an authenticator
+      operationId: updateAuthenticator
+      parameters:
+        - in: path
+          name: authenticatorId
+          required: true
+          type: string
+        - in: body
+          name: authenticator
+          required: true
+          schema:
+            $ref: '#/definitions/Authenticator'
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/Authenticator'
+      security:
+        - api_token: []
+      summary: Update Authenticator
+      tags:
+        - Authenticator
+  '/api/v1/authenticators/{authenticatorId}/lifecycle/activate':
+    post:
+      consumes:
+        - application/json
+      description: Success
+      operationId: activateAuthenticator
+      parameters:
+        - in: path
+          name: authenticatorId
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/Authenticator'
+      security:
+        - api_token: []
+      tags:
+        - Authenticator
+  '/api/v1/authenticators/{authenticatorId}/lifecycle/deactivate':
+    post:
+      consumes:
+        - application/json
+      description: Success
+      operationId: deactivateAuthenticator
+      parameters:
+        - in: path
+          name: authenticatorId
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/Authenticator'
+      security:
+        - api_token: []
+      tags:
+        - Authenticator
   /api/v1/authorizationServers:
     get:
       consumes:
@@ -2060,6 +2399,723 @@ paths:
         - api_token: []
       tags:
         - AuthorizationServer
+  /api/v1/brands:
+    get:
+      consumes:
+        - application/json
+      description: List all the brands in your org.
+      operationId: listBrands
+      parameters: []
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            items:
+              $ref: '#/definitions/Brand'
+            type: array
+      security:
+        - api_token: []
+      summary: List Brands
+      tags:
+        - Brand
+  '/api/v1/brands/{brandId}':
+    get:
+      consumes:
+        - application/json
+      description: Fetches a brand by `brandId`
+      operationId: getBrand
+      parameters:
+        - in: path
+          name: brandId
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/Brand'
+        '404':
+          description: Not Found
+      security:
+        - api_token: []
+      summary: Get Brand
+      tags:
+        - Brand
+    put:
+      consumes:
+        - application/json
+      description: Updates a brand by `brandId`
+      operationId: updateBrand
+      parameters:
+        - in: path
+          name: brandId
+          required: true
+          type: string
+        - in: body
+          name: brand
+          required: true
+          schema:
+            $ref: '#/definitions/Brand'
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/Brand'
+        '400':
+          description: Bad Request
+      security:
+        - api_token: []
+      summary: Update Brand
+      tags:
+        - Brand
+  '/api/v1/brands/{brandId}/templates/email':
+    get:
+      consumes:
+        - application/json
+      description: List email templates in your organization with pagination.
+      operationId: listEmailTemplates
+      parameters:
+        - in: path
+          name: brandId
+          required: true
+          type: string
+        - description: >-
+            Specifies the pagination cursor for the next page of email
+            templates.
+          in: query
+          name: after
+          type: string
+        - default: 20
+          description: Specifies the number of results returned (maximum 200)
+          format: int32
+          in: query
+          name: limit
+          type: integer
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            items:
+              $ref: '#/definitions/EmailTemplate'
+            type: array
+      security:
+        - api_token: []
+      summary: List Email Templates
+      tags:
+        - Brand
+  '/api/v1/brands/{brandId}/templates/email/{templateName}':
+    get:
+      consumes:
+        - application/json
+      description: Fetch an email template by templateName
+      operationId: getEmailTemplate
+      parameters:
+        - in: path
+          name: brandId
+          required: true
+          type: string
+        - in: path
+          name: templateName
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/EmailTemplate'
+      security:
+        - api_token: []
+      summary: Get Email Template
+      tags:
+        - Brand
+  '/api/v1/brands/{brandId}/templates/email/{templateName}/customizations':
+    delete:
+      consumes:
+        - application/json
+      description: >-
+        Delete all customizations for an email template. Also known as “Reset to
+        Default”.
+      operationId: deleteEmailTemplateCustomizations
+      parameters:
+        - in: path
+          name: brandId
+          required: true
+          type: string
+        - in: path
+          name: templateName
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '204':
+          description: Success
+      security:
+        - api_token: []
+      summary: Delete Email Template Customization
+      tags:
+        - Brand
+    get:
+      consumes:
+        - application/json
+      description: List all email customizations for an email template
+      operationId: listEmailTemplateCustomizations
+      parameters:
+        - in: path
+          name: brandId
+          required: true
+          type: string
+        - in: path
+          name: templateName
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            items:
+              $ref: '#/definitions/EmailTemplateCustomization'
+            type: array
+      security:
+        - api_token: []
+      summary: List Email Template Customization
+      tags:
+        - Brand
+    post:
+      consumes:
+        - application/json
+      description: Create an email customization
+      operationId: createEmailTemplateCustomization
+      parameters:
+        - in: path
+          name: brandId
+          required: true
+          type: string
+        - in: path
+          name: templateName
+          required: true
+          type: string
+        - in: body
+          name: customization
+          required: true
+          schema:
+            $ref: '#/definitions/EmailTemplateCustomizationRequest'
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/EmailTemplateCustomization'
+        '409':
+          description: Conflict
+      security:
+        - api_token: []
+      summary: Create Email Template Customization
+      tags:
+        - Brand
+  '/api/v1/brands/{brandId}/templates/email/{templateName}/customizations/{customizationId}':
+    delete:
+      consumes:
+        - application/json
+      description: Delete an email customization
+      operationId: deleteEmailTemplateCustomization
+      parameters:
+        - in: path
+          name: brandId
+          required: true
+          type: string
+        - in: path
+          name: templateName
+          required: true
+          type: string
+        - in: path
+          name: customizationId
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '204':
+          description: No Content
+        '409':
+          description: Conflict
+      security:
+        - api_token: []
+      summary: Delete Email Customization
+      tags:
+        - Brand
+    get:
+      consumes:
+        - application/json
+      description: Fetch an email customization by id.
+      operationId: getEmailTemplateCustomization
+      parameters:
+        - in: path
+          name: brandId
+          required: true
+          type: string
+        - in: path
+          name: templateName
+          required: true
+          type: string
+        - in: path
+          name: customizationId
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/EmailTemplateCustomization'
+      security:
+        - api_token: []
+      summary: Get Email Template Customization
+      tags:
+        - Brand
+    put:
+      consumes:
+        - application/json
+      description: Update an email customization
+      operationId: updateEmailTemplateCustomization
+      parameters:
+        - in: path
+          name: brandId
+          required: true
+          type: string
+        - in: path
+          name: templateName
+          required: true
+          type: string
+        - in: path
+          name: customizationId
+          required: true
+          type: string
+        - in: body
+          name: customization
+          required: true
+          schema:
+            $ref: '#/definitions/EmailTemplateCustomizationRequest'
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/EmailTemplateCustomization'
+        '409':
+          description: Conflict
+      security:
+        - api_token: []
+      summary: Update Email Customization
+      tags:
+        - Brand
+  '/api/v1/brands/{brandId}/templates/email/{templateName}/customizations/{customizationId}/preview':
+    get:
+      consumes:
+        - application/json
+      description: Get a preview of an email template customization.
+      operationId: getEmailTemplateCustomizationPreview
+      parameters:
+        - in: path
+          name: brandId
+          required: true
+          type: string
+        - in: path
+          name: templateName
+          required: true
+          type: string
+        - in: path
+          name: customizationId
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/EmailTemplateContent'
+      security:
+        - api_token: []
+      summary: Get Preview Content of Email Customization
+      tags:
+        - Brand
+  '/api/v1/brands/{brandId}/templates/email/{templateName}/default-content':
+    get:
+      consumes:
+        - application/json
+      description: Fetch the default content for an email template.
+      operationId: getEmailTemplateDefaultContent
+      parameters:
+        - in: path
+          name: brandId
+          required: true
+          type: string
+        - in: path
+          name: templateName
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/EmailTemplateContent'
+      security:
+        - api_token: []
+      summary: Get Default Content of Email Template
+      tags:
+        - Brand
+  '/api/v1/brands/{brandId}/templates/email/{templateName}/default-content/preview':
+    get:
+      consumes:
+        - application/json
+      description: >-
+        Fetch a preview of an email template's default content by populating
+        velocity references with the current user's environment.
+      operationId: getEmailTemplateDefaultContentPreview
+      parameters:
+        - in: path
+          name: brandId
+          required: true
+          type: string
+        - in: path
+          name: templateName
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/EmailTemplateContent'
+      security:
+        - api_token: []
+      summary: Get Preview of Email Template Default Content
+      tags:
+        - Brand
+  '/api/v1/brands/{brandId}/templates/email/{templateName}/test':
+    post:
+      consumes:
+        - application/json
+      description: >-
+        Send a test email to the current users primary and secondary email
+        addresses. The email content is selected based on the following
+        priority: An email customization specifically for the users locale. The
+        default language of email customizations. The email templates default
+        content.
+      operationId: sendTestEmail
+      parameters:
+        - in: path
+          name: brandId
+          required: true
+          type: string
+        - in: path
+          name: templateName
+          required: true
+          type: string
+        - in: body
+          name: customization
+          required: true
+          schema:
+            $ref: '#/definitions/EmailTemplateTestRequest'
+      produces:
+        - application/json
+      responses:
+        '204':
+          description: No Content
+      security:
+        - api_token: []
+      summary: Get Preview of Email Template Default Content
+      tags:
+        - Brand
+  '/api/v1/brands/{brandId}/themes':
+    get:
+      consumes:
+        - application/json
+      description: List all the themes in your brand
+      operationId: listBrandThemes
+      parameters:
+        - in: path
+          name: brandId
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            items:
+              $ref: '#/definitions/ThemeResponse'
+            type: array
+      security:
+        - api_token: []
+      summary: Get Brand Themes
+      tags:
+        - Brand
+  '/api/v1/brands/{brandId}/themes/{themeId}':
+    get:
+      consumes:
+        - application/json
+      description: Fetches a theme for a brand
+      operationId: getBrandTheme
+      parameters:
+        - in: path
+          name: brandId
+          required: true
+          type: string
+        - in: path
+          name: themeId
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/ThemeResponse'
+      security:
+        - api_token: []
+      summary: Get a theme for a brand
+      tags:
+        - Brand
+    put:
+      consumes:
+        - application/json
+      description: Updates a theme for a brand
+      operationId: updateBrandTheme
+      parameters:
+        - in: path
+          name: brandId
+          required: true
+          type: string
+        - in: path
+          name: themeId
+          required: true
+          type: string
+        - in: body
+          name: theme
+          required: true
+          schema:
+            $ref: '#/definitions/Theme'
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/ThemeResponse'
+        '400':
+          description: Bad Request
+        '404':
+          description: Not Found
+      security:
+        - api_token: []
+      summary: Update a theme for a brand
+      tags:
+        - Brand
+  '/api/v1/brands/{brandId}/themes/{themeId}/background-image':
+    delete:
+      consumes:
+        - application/json
+      description: Deletes a Theme background image
+      operationId: deleteBrandThemeBackgroundImage
+      parameters:
+        - in: path
+          name: brandId
+          required: true
+          type: string
+        - in: path
+          name: themeId
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '204':
+          description: No Content
+        '404':
+          description: Not Found
+      security:
+        - api_token: []
+      summary: Deletes a Theme background image
+      tags:
+        - Brand
+    post:
+      consumes:
+        - multipart/form-data
+      description: Updates the background image for your Theme
+      operationId: uploadBrandThemeBackgroundImage
+      parameters:
+        - in: path
+          name: brandId
+          required: true
+          type: string
+        - in: path
+          name: themeId
+          required: true
+          type: string
+        - in: formData
+          name: file
+          required: true
+          type: file
+      produces:
+        - application/json
+      responses:
+        '201':
+          description: Created
+          schema:
+            $ref: '#/definitions/ImageUploadResponse'
+        '400':
+          description: Bad Request
+        '404':
+          description: Not Found
+      security:
+        - api_token: []
+      summary: Updates the background image for your Theme
+      tags:
+        - Brand
+  '/api/v1/brands/{brandId}/themes/{themeId}/favicon':
+    delete:
+      consumes:
+        - application/json
+      description: Deletes a Theme favicon. The org then uses the Okta default favicon.
+      operationId: deleteBrandThemeFavicon
+      parameters:
+        - in: path
+          name: brandId
+          required: true
+          type: string
+        - in: path
+          name: themeId
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '204':
+          description: No Content
+        '404':
+          description: Not Found
+      security:
+        - api_token: []
+      summary: Deletes a Theme favicon. The org then uses the Okta default favicon.
+      tags:
+        - Brand
+    post:
+      consumes:
+        - multipart/form-data
+      description: Updates the favicon for your theme
+      operationId: uploadBrandThemeFavicon
+      parameters:
+        - in: path
+          name: brandId
+          required: true
+          type: string
+        - in: path
+          name: themeId
+          required: true
+          type: string
+        - in: formData
+          name: file
+          required: true
+          type: file
+      produces:
+        - application/json
+      responses:
+        '201':
+          description: Created
+          schema:
+            $ref: '#/definitions/ImageUploadResponse'
+        '400':
+          description: Bad Request
+        '404':
+          description: Not Found
+      security:
+        - api_token: []
+      summary: Updates the favicon for your theme
+      tags:
+        - Brand
+  '/api/v1/brands/{brandId}/themes/{themeId}/logo':
+    delete:
+      consumes:
+        - application/json
+      description: Deletes a Theme logo. The org then uses the Okta default logo.
+      operationId: deleteBrandThemeLogo
+      parameters:
+        - in: path
+          name: brandId
+          required: true
+          type: string
+        - in: path
+          name: themeId
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '204':
+          description: No Content
+        '404':
+          description: Not Found
+      security:
+        - api_token: []
+      summary: Deletes a Theme logo. The org then uses the Okta default logo.
+      tags:
+        - Brand
+    post:
+      consumes:
+        - multipart/form-data
+      description: Updates the logo for your Theme
+      operationId: uploadBrandThemeLogo
+      parameters:
+        - in: path
+          name: brandId
+          required: true
+          type: string
+        - in: path
+          name: themeId
+          required: true
+          type: string
+        - in: formData
+          name: file
+          required: true
+          type: file
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/ImageUploadResponse'
+        '400':
+          description: Bad Request
+        '404':
+          description: Not Found
+      security:
+        - api_token: []
+      summary: Update a themes logo
+      tags:
+        - Brand
   /api/v1/domains:
     get:
       consumes:
@@ -2073,9 +3129,7 @@ paths:
         '200':
           description: Success
           schema:
-            items:
-              $ref: '#/definitions/Domain'
-            type: array
+            $ref: '#/definitions/DomainListResponse'
       security:
         - api_token: []
       summary: List Domains
@@ -2897,7 +3951,7 @@ paths:
           type: string
         - in: query
           name: disableNotifications
-          type: string
+          type: boolean
       produces:
         - application/json
       responses:
@@ -4385,6 +5439,51 @@ paths:
         Schema.
       tags:
         - UserSchema
+  /api/v1/meta/schemas/group/default:
+    get:
+      consumes:
+        - application/json
+      description: Fetches the group schema
+      operationId: getGroupSchema
+      parameters: []
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: successful operation
+          schema:
+            $ref: '#/definitions/GroupSchema'
+      security:
+        - api_token: []
+      summary: Fetches the group schema
+      tags:
+        - GroupSchema
+    post:
+      consumes:
+        - application/json
+      description: >-
+        Updates, adds ore removes one or more custom Group Profile properties in
+        the schema
+      operationId: updateGroupSchema
+      parameters:
+        - in: body
+          name: body
+          schema:
+            $ref: '#/definitions/GroupSchema'
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: successful operation
+          schema:
+            $ref: '#/definitions/GroupSchema'
+      security:
+        - api_token: []
+      summary: >-
+        Updates, adds ore removes one or more custom Group Profile properties in
+        the schema
+      tags:
+        - GroupSchema
   /api/v1/meta/schemas/user/linkedObjects:
     get:
       consumes:
@@ -4659,6 +5758,359 @@ paths:
         - api_token: []
       tags:
         - UserType
+  /api/v1/org:
+    get:
+      consumes:
+        - application/json
+      description: Get settings of your organization.
+      operationId: getOrgSettings
+      parameters: []
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/OrgSetting'
+      security:
+        - api_token: []
+      summary: Get org settings
+      tags:
+        - Org
+    post:
+      consumes:
+        - application/json
+      description: Partial update settings of your organization.
+      operationId: partialUpdateOrgSetting
+      parameters:
+        - in: body
+          name: orgSetting
+          required: true
+          schema:
+            $ref: '#/definitions/OrgSetting'
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/OrgSetting'
+      security:
+        - api_token: []
+      summary: Partial update Org setting
+      tags:
+        - Org
+    put:
+      consumes:
+        - application/json
+      description: Update settings of your organization.
+      operationId: updateOrgSetting
+      parameters:
+        - in: body
+          name: orgSetting
+          required: true
+          schema:
+            $ref: '#/definitions/OrgSetting'
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/OrgSetting'
+      security:
+        - api_token: []
+      summary: Update Org setting
+      tags:
+        - Org
+  /api/v1/org/contacts:
+    get:
+      consumes:
+        - application/json
+      description: Gets Contact Types of your organization.
+      operationId: getOrgContactTypes
+      parameters: []
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            items:
+              $ref: '#/definitions/OrgContactTypeObj'
+            type: array
+      security:
+        - api_token: []
+      summary: Get org contact types
+      tags:
+        - Org
+  '/api/v1/org/contacts/{contactType}':
+    get:
+      consumes:
+        - application/json
+      description: >-
+        Retrieves the URL of the User associated with the specified Contact
+        Type.
+      operationId: getOrgContactUser
+      parameters:
+        - in: path
+          name: contactType
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/OrgContactUser'
+      security:
+        - api_token: []
+      summary: Get org contact user
+      tags:
+        - Org
+    put:
+      consumes:
+        - application/json
+      description: Updates the User associated with the specified Contact Type.
+      operationId: updateOrgContactUser
+      parameters:
+        - in: path
+          name: contactType
+          required: true
+          type: string
+        - in: body
+          name: userId
+          required: true
+          schema:
+            $ref: '#/definitions/UserIdString'
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/OrgContactUser'
+      security:
+        - api_token: []
+      summary: Update org contact user
+      tags:
+        - Org
+  /api/v1/org/logo:
+    post:
+      consumes:
+        - multipart/form-data
+      description: Updates the logo for your organization.
+      operationId: updateOrgLogo
+      parameters:
+        - in: formData
+          name: file
+          required: true
+          type: file
+      produces:
+        - application/json
+      responses:
+        '201':
+          description: Created
+      security:
+        - api_token: []
+      summary: Update org logo
+      tags:
+        - Org
+  /api/v1/org/preferences:
+    get:
+      consumes:
+        - application/json
+      description: Gets preferences of your organization.
+      operationId: getOrgPreferences
+      parameters: []
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/OrgPreferences'
+      security:
+        - api_token: []
+      summary: Get org preferences
+      tags:
+        - Org
+  /api/v1/org/preferences/hideEndUserFooter:
+    post:
+      consumes:
+        - application/json
+      description: Hide the Okta UI footer for all end users of your organization.
+      operationId: hideOktaUIFooter
+      parameters: []
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/OrgPreferences'
+      security:
+        - api_token: []
+      summary: Show Okta UI Footer
+      tags:
+        - Org
+  /api/v1/org/preferences/showEndUserFooter:
+    post:
+      consumes:
+        - application/json
+      description: Makes the Okta UI footer visible for all end users of your organization.
+      operationId: showOktaUIFooter
+      parameters: []
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/OrgPreferences'
+      security:
+        - api_token: []
+      summary: Show Okta UI Footer
+      tags:
+        - Org
+  /api/v1/org/privacy/oktaCommunication:
+    get:
+      consumes:
+        - application/json
+      description: Gets Okta Communication Settings of your organization.
+      operationId: getOktaCommunicationSettings
+      parameters: []
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/OrgOktaCommunicationSetting'
+      security:
+        - api_token: []
+      summary: Get Okta Communication Settings
+      tags:
+        - Org
+  /api/v1/org/privacy/oktaCommunication/optIn:
+    post:
+      consumes:
+        - application/json
+      description: Opts in all users of this org to Okta Communication emails.
+      operationId: optInUsersToOktaCommunicationEmails
+      parameters: []
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/OrgOktaCommunicationSetting'
+      security:
+        - api_token: []
+      summary: Opt in all users to Okta Communication emails
+      tags:
+        - Org
+  /api/v1/org/privacy/oktaCommunication/optOut:
+    post:
+      consumes:
+        - application/json
+      description: Opts out all users of this org from Okta Communication emails.
+      operationId: optOutUsersFromOktaCommunicationEmails
+      parameters: []
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/OrgOktaCommunicationSetting'
+      security:
+        - api_token: []
+      summary: Opt out all users from Okta Communication emails
+      tags:
+        - Org
+  /api/v1/org/privacy/oktaSupport:
+    get:
+      consumes:
+        - application/json
+      description: Gets Okta Support Settings of your organization.
+      operationId: getOrgOktaSupportSettings
+      parameters: []
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/OrgOktaSupportSettingsObj'
+      security:
+        - api_token: []
+      summary: Get Okta Support settings
+      tags:
+        - Org
+  /api/v1/org/privacy/oktaSupport/extend:
+    post:
+      consumes:
+        - application/json
+      description: >-
+        Extends the length of time that Okta Support can access your org by 24
+        hours. This means that 24 hours are added to the remaining access time.
+      operationId: extendOktaSupport
+      parameters: []
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/OrgOktaSupportSettingsObj'
+      security:
+        - api_token: []
+      summary: Extend Okta Support
+      tags:
+        - Org
+  /api/v1/org/privacy/oktaSupport/grant:
+    post:
+      consumes:
+        - application/json
+      description: >-
+        Enables you to temporarily allow Okta Support to access your org as an
+        administrator for eight hours.
+      operationId: grantOktaSupport
+      parameters: []
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/OrgOktaSupportSettingsObj'
+      security:
+        - api_token: []
+      summary: Grant Okta Support
+      tags:
+        - Org
+  /api/v1/org/privacy/oktaSupport/revoke:
+    post:
+      consumes:
+        - application/json
+      description: Revokes Okta Support access to your organization.
+      operationId: revokeOktaSupport
+      parameters: []
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/OrgOktaSupportSettingsObj'
+      security:
+        - api_token: []
+      summary: Extend Okta Support
+      tags:
+        - Org
   /api/v1/policies:
     get:
       consumes:
@@ -5004,6 +6456,133 @@ paths:
         - api_token: []
       tags:
         - Policy
+  '/api/v1/roles/{roleTypeOrRoleId}/subscriptions':
+    get:
+      consumes:
+        - application/json
+      description: >-
+        When roleType List all subscriptions of a Role. Else when roleId List
+        subscriptions of a Custom Role
+      operationId: listRoleSubscriptions
+      parameters:
+        - in: path
+          name: roleTypeOrRoleId
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            items:
+              $ref: '#/definitions/Subscription'
+            type: array
+        '404':
+          description: Not Found
+      security:
+        - api_token: []
+      summary: List all subscriptions of a Custom Role
+      tags:
+        - Subscription
+  '/api/v1/roles/{roleTypeOrRoleId}/subscriptions/{notificationType}':
+    get:
+      consumes:
+        - application/json
+      description: >-
+        When roleType Get subscriptions of a Role with a specific notification
+        type. Else when roleId Get subscription of a Custom Role with a specific
+        notification type.
+      operationId: getRoleSubscriptionByNotificationType
+      parameters:
+        - in: path
+          name: roleTypeOrRoleId
+          required: true
+          type: string
+        - in: path
+          name: notificationType
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/Subscription'
+        '404':
+          description: Not Found
+      security:
+        - api_token: []
+      summary: Get subscriptions of a Custom Role with a specific notification type
+      tags:
+        - Subscription
+  '/api/v1/roles/{roleTypeOrRoleId}/subscriptions/{notificationType}/subscribe':
+    post:
+      consumes:
+        - application/json
+      description: >-
+        When roleType Subscribes a Role to a specific notification type. When
+        you change the subscription status of a Role, it overrides the
+        subscription of any individual user of that Role. Else when roleId
+        Subscribes a Custom Role to a specific notification type. When you
+        change the subscription status of a Custom Role, it overrides the
+        subscription of any individual user of that Custom Role.
+      operationId: subscribeRoleSubscriptionByNotificationType
+      parameters:
+        - in: path
+          name: roleTypeOrRoleId
+          required: true
+          type: string
+        - in: path
+          name: notificationType
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+        '404':
+          description: Not Found
+      security:
+        - api_token: []
+      summary: Subscribe a Custom Role to a specific notification type
+      tags:
+        - Subscription
+  '/api/v1/roles/{roleTypeOrRoleId}/subscriptions/{notificationType}/unsubscribe':
+    post:
+      consumes:
+        - application/json
+      description: >-
+        When roleType Unsubscribes a Role from a specific notification type.
+        When you change the subscription status of a Role, it overrides the
+        subscription of any individual user of that Role. Else when roleId
+        Unsubscribes a Custom Role from a specific notification type. When you
+        change the subscription status of a Custom Role, it overrides the
+        subscription of any individual user of that Custom Role.
+      operationId: unsubscribeRoleSubscriptionByNotificationType
+      parameters:
+        - in: path
+          name: roleTypeOrRoleId
+          required: true
+          type: string
+        - in: path
+          name: notificationType
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+        '404':
+          description: Not Found
+      security:
+        - api_token: []
+      summary: Unsubscribe a Custom Role from a specific notification type
+      tags:
+        - Subscription
   /api/v1/sessions:
     post:
       consumes:
@@ -5027,6 +6606,8 @@ paths:
           description: Success
           schema:
             $ref: '#/definitions/Session'
+        '400':
+          description: Bad Request
       security:
         - api_token: []
       summary: Create Session with Session Token
@@ -5048,6 +6629,10 @@ paths:
       responses:
         '204':
           description: No Content
+        '400':
+          description: Bad Request
+        '404':
+          description: Not Found
       security:
         - api_token: []
       summary: Close Session
@@ -5092,6 +6677,8 @@ paths:
           description: Success
           schema:
             $ref: '#/definitions/Session'
+        '404':
+          description: Not Found
       security:
         - api_token: []
       summary: Refresh Session
@@ -6538,13 +8125,11 @@ paths:
       consumes:
         - application/json
       description: >-
-        Deactivates a user.  This operation can only be performed on users that
-        do not have a `DEPROVISIONED` status.  Deactivation of a user is an
-        asynchronous operation.  The user will have the `transitioningToStatus`
-        property with a value of `DEPROVISIONED` during deactivation to indicate
-        that the user hasn't completed the asynchronous operation.  The user
-        will have a status of `DEPROVISIONED` when the deactivation process is
-        complete.
+        Deactivates a user. This operation can only be performed on users that
+        do not have a `DEPROVISIONED` status. While the asynchronous operation
+        (triggered by HTTP header `Prefer: respond-async`) is proceeding the
+        user's `transitioningToStatus` property is `DEPROVISIONED`. The user's
+        status is `DEPROVISIONED` when the deactivation process is complete.
       operationId: deactivateUser
       parameters:
         - in: path
@@ -6882,7 +8467,7 @@ paths:
           type: string
         - in: query
           name: disableNotifications
-          type: string
+          type: boolean
       produces:
         - application/json
       responses:
@@ -6914,6 +8499,31 @@ paths:
       responses:
         '204':
           description: No Content
+      security:
+        - api_token: []
+      tags:
+        - User
+    get:
+      consumes:
+        - application/json
+      description: Gets role that is assigne to user.
+      operationId: getUserRole
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          type: string
+        - in: path
+          name: roleId
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/Role'
       security:
         - api_token: []
       tags:
@@ -7220,6 +8830,129 @@ paths:
         - api_token: []
       tags:
         - User
+  '/api/v1/users/{userId}/subscriptions':
+    get:
+      consumes:
+        - application/json
+      description: >-
+        List subscriptions of a User. Only lists subscriptions for current user.
+        An AccessDeniedException message is sent if requests are made from other
+        users.
+      operationId: listUserSubscriptions
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            items:
+              $ref: '#/definitions/Subscription'
+            type: array
+        '404':
+          description: Not Found
+      security:
+        - api_token: []
+      summary: List subscriptions of a User
+      tags:
+        - User
+  '/api/v1/users/{userId}/subscriptions/{notificationType}':
+    get:
+      consumes:
+        - application/json
+      description: >-
+        Get the subscriptions of a User with a specific notification type. Only
+        gets subscriptions for current user. An AccessDeniedException message is
+        sent if requests are made from other users.
+      operationId: getUserSubscriptionByNotificationType
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          type: string
+        - in: path
+          name: notificationType
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/Subscription'
+        '404':
+          description: Not Found
+      security:
+        - api_token: []
+      summary: Get the subscription of a User with a specific notification type
+      tags:
+        - User
+  '/api/v1/users/{userId}/subscriptions/{notificationType}/subscribe':
+    post:
+      consumes:
+        - application/json
+      description: >-
+        Subscribes a User to a specific notification type. Only the current User
+        can subscribe to a specific notification type. An AccessDeniedException
+        message is sent if requests are made from other users.
+      operationId: subscribeUserSubscriptionByNotificationType
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          type: string
+        - in: path
+          name: notificationType
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+        '404':
+          description: Not Found
+      security:
+        - api_token: []
+      summary: Subscribe to a specific notification type
+      tags:
+        - Subscription
+  '/api/v1/users/{userId}/subscriptions/{notificationType}/unsubscribe':
+    post:
+      consumes:
+        - application/json
+      description: >-
+        Unsubscribes a User from a specific notification type. Only the current
+        User can unsubscribe from a specific notification type. An
+        AccessDeniedException message is sent if requests are made from other
+        users.
+      operationId: unsubscribeUserSubscriptionByNotificationType
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          type: string
+        - in: path
+          name: notificationType
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+        '404':
+          description: Not Found
+      security:
+        - api_token: []
+      summary: Unsubscribe from a specific notification type
+      tags:
+        - Subscription
   /api/v1/zones:
     get:
       consumes:
@@ -7398,6 +9131,80 @@ paths:
       tags:
         - NetworkZone
 definitions:
+  AccessPolicy:
+    x-okta-parent: '#/definitions/Policy'
+    x-okta-tags:
+      - Policy
+  AccessPolicyConstraint:
+    properties:
+      methods:
+        items:
+          type: string
+        type: array
+      reauthenticateIn:
+        type: string
+      types:
+        items:
+          type: string
+        type: array
+    type: object
+    x-okta-tags:
+      - Policy
+  AccessPolicyConstraints:
+    properties:
+      knowledge:
+        $ref: '#/definitions/KnowledgeConstraint'
+      possession:
+        $ref: '#/definitions/PossessionConstraint'
+    type: object
+    x-okta-tags:
+      - Policy
+  AccessPolicyRule:
+    properties:
+      actions:
+        $ref: '#/definitions/AccessPolicyRuleActions'
+      conditions:
+        $ref: '#/definitions/AccessPolicyRuleConditions'
+      name:
+        type: string
+    type: object
+    x-okta-parent: '#/definitions/PolicyRule'
+    x-okta-tags:
+      - Policy
+  AccessPolicyRuleActions:
+    properties:
+      appSignOn:
+        $ref: '#/definitions/AccessPolicyRuleApplicationSignOn'
+    type: object
+    x-okta-parent: '#/definitions/PolicyRuleActions'
+    x-okta-tags:
+      - Policy
+  AccessPolicyRuleApplicationSignOn:
+    properties:
+      access:
+        type: string
+      verificationMethod:
+        $ref: '#/definitions/VerificationMethod'
+    type: object
+    x-okta-tags:
+      - Policy
+  AccessPolicyRuleConditions:
+    properties:
+      device:
+        $ref: '#/definitions/DeviceAccessPolicyRuleCondition'
+      elCondition:
+        $ref: '#/definitions/AccessPolicyRuleCustomCondition'
+      userType:
+        $ref: '#/definitions/UserTypeCondition'
+    x-okta-parent: '#/definitions/PolicyRuleConditions'
+    x-okta-tags:
+      - Policy
+  AccessPolicyRuleCustomCondition:
+    properties:
+      condition:
+        type: string
+    x-okta-tags:
+      - Policy
   AcsEndpoint:
     properties:
       index:
@@ -7420,6 +9227,15 @@ definitions:
         type: string
     x-okta-tags:
       - UserFactor
+  AllowedForEnum:
+    enum:
+      - recovery
+      - sso
+      - any
+      - none
+    type: string
+    x-okta-tags:
+      - Authenticator
   AppAndInstanceConditionEvaluatorAppOrInstance:
     properties:
       id:
@@ -7803,6 +9619,18 @@ definitions:
           - dest: appId
             src: id
         operationId: getScopeConsentGrant
+      - alias: uploadApplicationLogo
+        operationId: uploadApplicationLogo
+      - alias: getFeatureForApplication
+        arguments:
+          - dest: appId
+            src: id
+        operationId: getFeatureForApplication
+      - alias: updateFeatureForApplication
+        arguments:
+          - dest: appId
+            src: id
+        operationId: updateFeatureForApplication
     x-okta-tags:
       - Application
     x-openapi-v3-discriminator:
@@ -7886,6 +9714,8 @@ definitions:
       - AuthorizationServer
   ApplicationCredentialsUsernameTemplate:
     properties:
+      pushStatus:
+        type: string
       suffix:
         type: string
       template:
@@ -7893,6 +9723,27 @@ definitions:
       type:
         type: string
     type: object
+    x-okta-tags:
+      - Application
+  ApplicationFeature:
+    properties:
+      _links:
+        additionalProperties:
+          type: object
+        #readOnly: true
+        type: object
+      capabilities:
+        $ref: '#/definitions/CapabilitiesObject'
+      description:
+        type: string
+      name:
+        type: string
+      status:
+        $ref: '#/definitions/EnabledStatus'
+    type: object
+    x-okta-operations:
+      - alias: listFeaturesForApplication
+        operationId: listFeaturesForApplication
     x-okta-tags:
       - Application
   ApplicationGroupAssignment:
@@ -8018,6 +9869,8 @@ definitions:
         additionalProperties:
           type: boolean
         type: object
+      autoLaunch:
+        type: boolean
       autoSubmitToolbar:
         type: boolean
       hide:
@@ -8061,6 +9914,125 @@ definitions:
     type: string
     x-okta-tags:
       - User
+  Authenticator:
+    properties:
+      _links:
+        additionalProperties:
+          type: object
+        #readOnly: true
+        type: object
+      created:
+        format: date-time
+        #readOnly: true
+        type: string
+      id:
+        #readOnly: true
+        type: string
+      key:
+        type: string
+      lastUpdated:
+        format: date-time
+        #readOnly: true
+        type: string
+      name:
+        type: string
+      provider:
+        $ref: '#/definitions/AuthenticatorProvider'
+      settings:
+        $ref: '#/definitions/AuthenticatorSettings'
+      status:
+        $ref: '#/definitions/AuthenticatorStatus'
+      type:
+        $ref: '#/definitions/AuthenticatorType'
+    type: object
+    x-okta-crud:
+      - alias: read
+        arguments: []
+        operationId: getAuthenticator
+      - alias: update
+        arguments:
+          - dest: authenticatorId
+            src: id
+          - dest: authenticator
+            self: true
+        operationId: updateAuthenticator
+    x-okta-operations:
+      - alias: activate
+        arguments:
+          - dest: authenticatorId
+            src: id
+        operationId: activateAuthenticator
+      - alias: deactivate
+        arguments:
+          - dest: authenticatorId
+            src: id
+        operationId: deactivateAuthenticator
+    x-okta-tags:
+      - Authenticator
+  AuthenticatorProvider:
+    properties:
+      configuration:
+        $ref: '#/definitions/AuthenticatorProviderConfiguration'
+      type:
+        type: string
+    x-okta-tags:
+      - Authenticator
+  AuthenticatorProviderConfiguration:
+    properties:
+      authPort:
+        type: integer
+      hostName:
+        type: string
+      instanceId:
+        type: string
+      sharedSecret:
+        type: string
+      userNameTemplate:
+        $ref: '#/definitions/AuthenticatorProviderConfigurationUserNamePlate'
+    x-okta-tags:
+      - Authenticator
+  AuthenticatorProviderConfigurationUserNamePlate:
+    properties:
+      template:
+        type: string
+    x-okta-tags:
+      - Authenticator
+  AuthenticatorSettings:
+    properties:
+      allowedFor:
+        $ref: '#/definitions/AllowedForEnum'
+      appInstanceId:
+        type: string
+      channelBinding:
+        $ref: '#/definitions/ChannelBinding'
+      compliance:
+        $ref: '#/definitions/Compliance'
+      tokenLifetimeInMinutes:
+        type: integer
+      userVerification:
+        $ref: '#/definitions/UserVerificationEnum'
+    type: object
+    x-okta-tags:
+      - Authenticator
+  AuthenticatorStatus:
+    enum:
+      - ACTIVE
+      - INACTIVE
+    type: string
+    x-okta-tags:
+      - Authenticator
+  AuthenticatorType:
+    enum:
+      - app
+      - password
+      - security_question
+      - phone
+      - email
+      - security_key
+      - federated
+    type: string
+    x-okta-tags:
+      - Authenticator
   AuthorizationServer:
     properties:
       _links:
@@ -8555,6 +10527,37 @@ definitions:
     x-okta-parent: '#/definitions/ApplicationSettingsApplication'
     x-okta-tags:
       - Application
+  Brand:
+    properties:
+      _links:
+        additionalProperties:
+          type: object
+        #readOnly: true
+        type: object
+      agreeToCustomPrivacyPolicy:
+        type: boolean
+      customPrivacyPolicyUrl:
+        type: string
+      id:
+        #readOnly: true
+        type: string
+      removePoweredByOkta:
+        type: boolean
+    x-okta-crud:
+      - alias: read
+        arguments:
+          - dest: brandId
+            src: id
+        operationId: getBrand
+      - alias: update
+        arguments:
+          - dest: brandId
+            src: id
+          - dest: brand
+            self: true
+        operationId: updateBrand
+    x-okta-tags:
+      - Brand
   BrowserPluginApplication:
     properties:
       credentials:
@@ -8582,6 +10585,33 @@ definitions:
         type: string
     x-okta-tags:
       - UserFactor
+  CapabilitiesCreateObject:
+    properties:
+      lifecycleCreate:
+        $ref: '#/definitions/LifecycleCreateSettingObject'
+    type: object
+    x-okta-tags:
+      - Application
+  CapabilitiesObject:
+    properties:
+      create:
+        $ref: '#/definitions/CapabilitiesCreateObject'
+      update:
+        $ref: '#/definitions/CapabilitiesUpdateObject'
+    type: object
+    x-okta-tags:
+      - Application
+  CapabilitiesUpdateObject:
+    properties:
+      lifecycleDeactivate:
+        $ref: '#/definitions/LifecycleDeactivateSettingObject'
+      password:
+        $ref: '#/definitions/PasswordSettingObject'
+      profile:
+        $ref: '#/definitions/ProfileSettingObject'
+    type: object
+    x-okta-tags:
+      - Application
   CatalogApplication:
     properties:
       _links:
@@ -8627,6 +10657,13 @@ definitions:
     type: string
     x-okta-tags:
       - Role
+  ChangeEnum:
+    enum:
+      - KEEP_EXISTING
+      - CHANGE
+    type: string
+    x-okta-tags:
+      - Application
   ChangePasswordRequest:
     properties:
       newPassword:
@@ -8636,6 +10673,15 @@ definitions:
     type: object
     x-okta-tags:
       - User
+  ChannelBinding:
+    properties:
+      required:
+        $ref: '#/definitions/RequiredEnum'
+      style:
+        type: string
+    type: object
+    x-okta-tags:
+      - Authenticator
   ClientPolicyCondition:
     properties:
       include:
@@ -8645,6 +10691,13 @@ definitions:
     type: object
     x-okta-tags:
       - Policy
+  Compliance:
+    properties:
+      fips:
+        $ref: '#/definitions/FipsEnum'
+    type: object
+    x-okta-tags:
+      - Authenticator
   ContextPolicyRuleCondition:
     properties:
       expression:
@@ -8760,6 +10813,15 @@ definitions:
     type: string
     x-okta-tags:
       - Domain
+  DeviceAccessPolicyRuleCondition:
+    properties:
+      managed:
+        type: boolean
+      registered:
+        type: boolean
+    x-okta-parent: '#/definitions/DevicePolicyRuleCondition'
+    x-okta-tags:
+      - Policy
   DevicePolicyRuleCondition:
     properties:
       migrated:
@@ -8858,6 +10920,14 @@ definitions:
     type: string
     x-okta-tags:
       - Domain
+  DomainListResponse:
+    properties:
+      domains:
+        items:
+          $ref: '#/definitions/Domain'
+        type: array
+    x-okta-tags:
+      - Domain
   DomainValidationStatus:
     enum:
       - NOT_STARTED
@@ -8876,6 +10946,116 @@ definitions:
     type: object
     x-okta-tags:
       - Policy
+  EmailTemplate:
+    properties:
+      _links:
+        additionalProperties:
+          type: object
+        #readOnly: true
+        type: object
+      name:
+        #readOnly: true
+        type: string
+    x-okta-crud:
+      - alias: read
+        operationId: getEmailTemplate
+    x-okta-operations:
+      - alias: getEmailTemplate
+        operationId: getEmailTemplate
+      - alias: deleteEmailTemplateCustomizations
+        operationId: deleteEmailTemplateCustomizations
+      - alias: listEmailTemplateCustomizations
+        operationId: listEmailTemplateCustomizations
+      - alias: createEmailTemplateCustomization
+        operationId: createEmailTemplateCustomization
+      - alias: deleteEmailTemplateCustomization
+        operationId: deleteEmailTemplateCustomization
+      - alias: getEmailTemplateCustomization
+        operationId: getEmailTemplateCustomization
+      - alias: updateEmailTemplateCustomization
+        operationId: updateEmailTemplateCustomization
+      - alias: getEmailTemplateCustomizationPreview
+        operationId: getEmailTemplateCustomizationPreview
+      - alias: getEmailTemplateDefaultContent
+        operationId: getEmailTemplateDefaultContent
+      - alias: getEmailTemplateDefaultContentPreview
+        operationId: getEmailTemplateDefaultContentPreview
+      - alias: sendTestEmail
+        operationId: sendTestEmail
+    x-okta-tags:
+      - Brands
+  EmailTemplateContent:
+    properties:
+      _links:
+        additionalProperties:
+          type: object
+        #readOnly: true
+        type: object
+      body:
+        type: string
+      fromAddress:
+        type: string
+      fromName:
+        type: string
+      subject:
+        type: string
+    x-okta-tags:
+      - Brands
+  EmailTemplateCustomization:
+    properties:
+      _links:
+        additionalProperties:
+          type: object
+        #readOnly: true
+        type: object
+      body:
+        type: string
+      created:
+        format: date-time
+        #readOnly: true
+        type: string
+      id:
+        #readOnly: true
+        type: string
+      isDefault:
+        type: boolean
+      language:
+        description: unique under each email template
+        type: string
+      lastUpdated:
+        format: date-time
+        #readOnly: true
+        type: string
+      subject:
+        type: string
+    x-okta-tags:
+      - Brands
+  EmailTemplateCustomizationRequest:
+    properties:
+      body:
+        type: string
+      isDefault:
+        type: boolean
+      language:
+        description: unique under each email template
+        type: string
+      subject:
+        type: string
+    x-okta-tags:
+      - Brands
+  EmailTemplateTestRequest:
+    properties:
+      customizationId:
+        type: string
+    x-okta-tags:
+      - Brands
+  EmailTemplateTouchPointVariant:
+    enum:
+      - OKTA_DEFAULT
+      - FULL_THEME
+    type: string
+    x-okta-tags:
+      - Brand
   EmailUserFactor:
     properties:
       profile:
@@ -8896,6 +11076,23 @@ definitions:
     type: string
     x-okta-tags:
       - Common
+  EndUserDashboardTouchPointVariant:
+    enum:
+      - OKTA_DEFAULT
+      - WHITE_LOGO_BACKGROUND
+      - FULL_THEME
+      - LOGO_ON_FULL_WHITE_BACKGROUND
+    type: string
+    x-okta-tags:
+      - Brand
+  ErrorPageTouchPointVariant:
+    enum:
+      - OKTA_DEFAULT
+      - BACKGROUND_SECONDARY_COLOR
+      - BACKGROUND_IMAGE
+    type: string
+    x-okta-tags:
+      - Brand
   EventHook:
     properties:
       _links:
@@ -9053,6 +11250,7 @@ definitions:
       - DUO
       - YUBICO
       - CUSTOM
+      - APPLE
     type: string
     x-okta-tags:
       - UserFactor
@@ -9173,6 +11371,13 @@ definitions:
     type: string
     x-okta-tags:
       - Feature
+  FipsEnum:
+    enum:
+      - REQUIRED
+      - OPTIONAL
+    type: string
+    x-okta-tags:
+      - Authenticator
   ForgotPasswordResponse:
     properties:
       resetPasswordUrl:
@@ -9296,6 +11501,7 @@ definitions:
       name:
         type: string
     type: object
+    x-okta-extensible: true
     x-okta-tags:
       - Group
   GroupRule:
@@ -9426,6 +11632,140 @@ definitions:
     type: object
     x-okta-tags:
       - GroupRule
+  GroupSchema:
+    properties:
+      $schema:
+        #readOnly: true
+        type: string
+      _links:
+        additionalProperties:
+          type: object
+        #readOnly: true
+        type: object
+      created:
+        #readOnly: true
+        type: string
+      definitions:
+        $ref: '#/definitions/GroupSchemaDefinitions'
+      description:
+        type: string
+      id:
+        #readOnly: true
+        type: string
+      lastUpdated:
+        #readOnly: true
+        type: string
+      name:
+        #readOnly: true
+        type: string
+      properties:
+        $ref: '#/definitions/UserSchemaProperties'
+        #readOnly: true
+      title:
+        type: string
+      type:
+        #readOnly: true
+        type: string
+    type: object
+    x-okta-tags:
+      - GroupSchema
+  GroupSchemaAttribute:
+    properties:
+      description:
+        type: string
+      enum:
+        items:
+          type: string
+        type: array
+      externalName:
+        type: string
+      externalNamespace:
+        type: string
+      items:
+        $ref: '#/definitions/UserSchemaAttributeItems'
+      master:
+        $ref: '#/definitions/UserSchemaAttributeMaster'
+      maxLength:
+        type: integer
+      minLength:
+        type: integer
+      mutability:
+        type: string
+      oneOf:
+        items:
+          $ref: '#/definitions/UserSchemaAttributeEnum'
+        type: array
+      permissions:
+        items:
+          $ref: '#/definitions/UserSchemaAttributePermission'
+        type: array
+      required:
+        type: boolean
+      scope:
+        $ref: '#/definitions/UserSchemaAttributeScope'
+      title:
+        type: string
+      type:
+        $ref: '#/definitions/UserSchemaAttributeType'
+      union:
+        $ref: '#/definitions/UserSchemaAttributeUnion'
+      unique:
+        type: string
+    type: object
+    x-okta-tags:
+      - GroupSchema
+  GroupSchemaBase:
+    properties:
+      id:
+        #readOnly: true
+        type: string
+      properties:
+        $ref: '#/definitions/GroupSchemaBaseProperties'
+      required:
+        items:
+          type: string
+        type: array
+      type:
+        type: string
+    type: object
+    x-okta-tags:
+      - GroupSchema
+  GroupSchemaBaseProperties:
+    properties:
+      description:
+        $ref: '#/definitions/GroupSchemaAttribute'
+      name:
+        $ref: '#/definitions/GroupSchemaAttribute'
+    type: object
+    x-okta-tags:
+      - GroupSchema
+  GroupSchemaCustom:
+    properties:
+      id:
+        #readOnly: true
+        type: string
+      properties:
+        additionalProperties:
+          $ref: '#/definitions/GroupSchemaAttribute'
+        type: object
+      required:
+        items:
+          type: string
+        type: array
+      type:
+        type: string
+    type: object
+    x-okta-tags:
+      - GroupSchema
+  GroupSchemaDefinitions:
+    properties:
+      base:
+        $ref: '#/definitions/GroupSchemaBase'
+      custom:
+        $ref: '#/definitions/GroupSchemaCustom'
+    type: object
+    x-okta-tags:
+      - GroupSchema
   GroupType:
     enum:
       - OKTA_GROUP
@@ -9464,7 +11804,7 @@ definitions:
       issuerMode:
         enum:
           - ORG_URL
-          - CUSTOM_URL_DOMAIN
+          - CUSTOM_URL
         type: string
       lastUpdated:
         format: date-time
@@ -9494,6 +11834,17 @@ definitions:
           - AgentlessDSSO
           - X509
         type: string
+        x-okta-known-values:
+          - SAML2
+          - GOOGLE
+          - FACEBOOK
+          - LINKEDIN
+          - MICROSOFT
+          - OIDC
+          - OKTA
+          - IWA
+          - AgentlessDSSO
+          - X509
     type: object
     x-okta-crud:
       - alias: create
@@ -9646,6 +11997,10 @@ definitions:
     properties:
       kid:
         type: string
+      privateKey:
+        type: string
+      teamId:
+        type: string
     type: object
     x-okta-tags:
       - IdentityProvider
@@ -9697,6 +12052,32 @@ definitions:
     type: object
     x-okta-tags:
       - Policy
+  IdpPolicyRuleAction:
+    properties:
+      providers:
+        items:
+          $ref: '#/definitions/IdpPolicyRuleActionProvider'
+        type: array
+    type: object
+    x-okta-tags:
+      - Policy
+  IdpPolicyRuleActionProvider:
+    properties:
+      id:
+        #readOnly: true
+        type: string
+      type:
+        type: string
+    type: object
+    x-okta-tags:
+      - Policy
+  ImageUploadResponse:
+    properties:
+      url:
+        #readOnly: true
+        type: string
+    x-okta-tags:
+      - Brand
   InactivityPolicyRuleCondition:
     properties:
       number:
@@ -10002,6 +12383,24 @@ definitions:
         type: string
     x-okta-tags:
       - Application
+  KnowledgeConstraint:
+    x-okta-parent: '#/definitions/AccessPolicyConstraint'
+    x-okta-tags:
+      - Policy
+  LifecycleCreateSettingObject:
+    properties:
+      status:
+        $ref: '#/definitions/EnabledStatus'
+    type: object
+    x-okta-tags:
+      - Application
+  LifecycleDeactivateSettingObject:
+    properties:
+      status:
+        $ref: '#/definitions/EnabledStatus'
+    type: object
+    x-okta-tags:
+      - Application
   LifecycleExpirationPolicyRuleCondition:
     properties:
       lifecycleStatus:
@@ -10150,6 +12549,7 @@ definitions:
       - GOOGLE
       - DUO
       - YUBIKEY
+      - APPLE
     type: string
     x-okta-tags:
       - Log
@@ -10531,6 +12931,23 @@ definitions:
     type: string
     x-okta-tags:
       - NetworkZone
+  NotificationType:
+    enum:
+      - CONNECTOR_AGENT
+      - USER_LOCKED_OUT
+      - APP_IMPORT
+      - LDAP_AGENT
+      - AD_AGENT
+      - OKTA_ANNOUNCEMENT
+      - OKTA_ISSUE
+      - OKTA_UPDATE
+      - IWA_AGENT
+      - USER_DEPROVISION
+      - REPORT_SUSPICIOUS_ACTIVITY
+      - RATELIMIT_NOTIFICATION
+    type: string
+    x-okta-tags:
+      - Subscription
   OAuth2Actor:
     properties:
       id:
@@ -11047,6 +13464,221 @@ definitions:
     type: string
     x-okta-tags:
       - Application
+  Org2OrgApplication:
+    properties:
+      name:
+        default: okta_org2org
+      settings:
+        $ref: '#/definitions/Org2OrgApplicationSettings'
+    x-okta-defined-as:
+      name: okta_org2org
+    x-okta-parent: '#/definitions/SamlApplication'
+    x-okta-tags:
+      - Application
+  Org2OrgApplicationSettings:
+    properties:
+      app:
+        $ref: '#/definitions/Org2OrgApplicationSettingsApp'
+    x-okta-parent: '#/definitions/SamlApplicationSettings'
+    x-okta-tags:
+      - Application
+  Org2OrgApplicationSettingsApp:
+    properties:
+      acsUrl:
+        type: string
+      audRestriction:
+        type: string
+      baseUrl:
+        type: string
+    x-okta-parent: '#/definitions/ApplicationSettingsApplication'
+    x-okta-tags:
+      - Application
+  OrgContactType:
+    enum:
+      - BILLING
+      - TECHNICAL
+    type: string
+    x-okta-tags:
+      - Org
+  OrgContactTypeObj:
+    properties:
+      _links:
+        additionalProperties:
+          type: object
+      contactType:
+        $ref: '#/definitions/OrgContactType'
+    type: object
+    x-okta-tags:
+      - Org
+  OrgContactUser:
+    properties:
+      _links:
+        additionalProperties:
+          type: object
+        #readOnly: true
+        type: object
+      userId:
+        type: string
+    type: object
+    x-okta-operations:
+      - alias: updateContactUser
+        arguments:
+          - dest: userId
+            src: userId
+        operationId: updateOrgContactUser
+    x-okta-tags:
+      - Org
+  OrgOktaCommunicationSetting:
+    properties:
+      _links:
+        additionalProperties:
+          type: object
+      optOutEmailUsers:
+        #readOnly: true
+        type: boolean
+    type: object
+    x-okta-operations:
+      - alias: optInUsersToOktaCommunicationEmails
+        operationId: optInUsersToOktaCommunicationEmails
+      - alias: optOutUsersFromOktaCommunicationEmails
+        operationId: optOutUsersFromOktaCommunicationEmails
+    x-okta-tags:
+      - Org
+  OrgOktaSupportSetting:
+    enum:
+      - DISABLED
+      - ENABLED
+    type: string
+    x-okta-tags:
+      - Org
+  OrgOktaSupportSettingsObj:
+    properties:
+      _links:
+        additionalProperties:
+          type: object
+      expiration:
+        format: date-time
+        #readOnly: true
+        type: string
+      support:
+        $ref: '#/definitions/OrgOktaSupportSetting'
+        #readOnly: true
+    type: object
+    x-okta-operations:
+      - alias: extendOktaSupport
+        operationId: extendOktaSupport
+      - alias: grantOktaSupport
+        operationId: grantOktaSupport
+      - alias: revokeOktaSupport
+        operationId: revokeOktaSupport
+    x-okta-tags:
+      - Org
+  OrgPreferences:
+    properties:
+      _links:
+        additionalProperties:
+          type: object
+      showEndUserFooter:
+        #readOnly: true
+        type: boolean
+    type: object
+    x-okta-operations:
+      - alias: hideEndUserFooter
+        operationId: hideOktaUIFooter
+      - alias: showEndUserFooter
+        operationId: showOktaUIFooter
+    x-okta-tags:
+      - Org
+  OrgSetting:
+    properties:
+      _links:
+        additionalProperties:
+          type: object
+      address1:
+        type: string
+      address2:
+        type: string
+      city:
+        type: string
+      companyName:
+        type: string
+      country:
+        type: string
+      created:
+        format: date-time
+        #readOnly: true
+        type: string
+      endUserSupportHelpURL:
+        type: string
+      expiresAt:
+        format: date-time
+        #readOnly: true
+        type: string
+      id:
+        #readOnly: true
+        type: string
+      lastUpdated:
+        format: date-time
+        #readOnly: true
+        type: string
+      phoneNumber:
+        type: string
+      postalCode:
+        type: string
+      state:
+        type: string
+      status:
+        #readOnly: true
+        type: string
+      subdomain:
+        #readOnly: true
+        type: string
+      supportPhoneNumber:
+        type: string
+      website:
+        type: string
+    type: object
+    x-okta-crud:
+      - alias: read
+        arguments:
+          - dest: orgSetting
+            self: true
+        operationId: getOrgSettings
+      - alias: update
+        arguments:
+          - dest: orgSetting
+            self: true
+        operationId: updateOrgSetting
+    x-okta-operations:
+      - alias: partialUpdate
+        arguments:
+          - dest: orgSetting
+            self: true
+        operationId: partialUpdateOrgSetting
+      - alias: getContactTypes
+        operationId: getOrgContactTypes
+      - alias: getOrgContactUser
+        operationId: getOrgContactUser
+      - alias: getSupportSettings
+        operationId: getOrgOktaSupportSettings
+      - alias: communicationSettings
+        operationId: getOktaCommunicationSettings
+      - alias: orgPreferences
+        operationId: getOrgPreferences
+      - alias: showFooter
+        arguments:
+          - dest: orgSetting
+            self: true
+        operationId: showOktaUIFooter
+      - alias: hideFooter
+        arguments:
+          - dest: orgSetting
+            self: true
+        operationId: hideOktaUIFooter
+      - alias: updateOrgLogo
+        operationId: updateOrgLogo
+    x-okta-tags:
+      - Org
   PasswordCredential:
     properties:
       hash:
@@ -11382,6 +14014,17 @@ definitions:
     type: object
     x-okta-tags:
       - Policy
+  PasswordSettingObject:
+    properties:
+      change:
+        $ref: '#/definitions/ChangeEnum'
+      seed:
+        $ref: '#/definitions/SeedEnum'
+      status:
+        $ref: '#/definitions/EnabledStatus'
+    type: object
+    x-okta-tags:
+      - Application
   PlatformConditionEvaluatorPlatform:
     properties:
       os:
@@ -11528,10 +14171,12 @@ definitions:
       - Policy
     x-openapi-v3-discriminator:
       mapping:
+        ACCESS_POLICY: '#/definitions/AccessPolicy'
         IDP_DISCOVERY: '#/definitions/IdentityProviderPolicy'
         OAUTH_AUTHORIZATION_POLICY: '#/definitions/OAuthAuthorizationPolicy'
         OKTA_SIGN_ON: '#/definitions/OktaSignOnPolicy'
         PASSWORD: '#/definitions/PasswordPolicy'
+        PROFILE_ENROLLMENT: '#/definitions/ProfileEnrollmentPolicy'
       propertyName: type
   PolicyAccountLink:
     properties:
@@ -11660,13 +14305,17 @@ definitions:
       - Policy
     x-openapi-v3-discriminator:
       mapping:
+        ACCESS_POLICY: '#/definitions/AccessPolicyRule'
         PASSWORD: '#/definitions/PasswordPolicyRule'
+        PROFILE_ENROLLMENT: '#/definitions/ProfileEnrollmentPolicyRule'
         SIGN_ON: '#/definitions/OktaSignOnPolicyRule'
       propertyName: type
   PolicyRuleActions:
     properties:
       enroll:
         $ref: '#/definitions/PolicyRuleActionsEnroll'
+      idp:
+        $ref: '#/definitions/IdpPolicyRuleAction'
       passwordChange:
         $ref: '#/definitions/PasswordPolicyRuleAction'
       selfServicePasswordReset:
@@ -11782,6 +14431,8 @@ definitions:
       - OKTA_SIGN_ON
       - PASSWORD
       - IDP_DISCOVERY
+      - PROFILE_ENROLLMENT
+      - ACCESS_POLICY
     type: string
     x-okta-tags:
       - Policy
@@ -11789,6 +14440,89 @@ definitions:
     properties:
       template:
         type: string
+    type: object
+    x-okta-tags:
+      - Policy
+  PossessionConstraint:
+    properties:
+      deviceBound:
+        type: string
+      hardwareProtection:
+        type: string
+      phishingResistant:
+        type: string
+      userPresence:
+        type: string
+    x-okta-parent: '#/definitions/AccessPolicyConstraint'
+    x-okta-tags:
+      - Policy
+  PreRegistrationInlineHook:
+    properties:
+      inlineHookId:
+        type: string
+    type: object
+    x-okta-tags:
+      - Policy
+  ProfileEnrollmentPolicy:
+    x-okta-parent: '#/definitions/Policy'
+    x-okta-tags:
+      - Policy
+  ProfileEnrollmentPolicyRule:
+    properties:
+      actions:
+        $ref: '#/definitions/ProfileEnrollmentPolicyRuleActions'
+      name:
+        type: string
+    type: object
+    x-okta-parent: '#/definitions/PolicyRule'
+    x-okta-tags:
+      - Policy
+  ProfileEnrollmentPolicyRuleAction:
+    properties:
+      access:
+        type: string
+      activationRequirements:
+        $ref: '#/definitions/ProfileEnrollmentPolicyRuleActivationRequirement'
+      preRegistrationInlineHooks:
+        items:
+          $ref: '#/definitions/PreRegistrationInlineHook'
+        type: array
+      profileAttributes:
+        items:
+          $ref: '#/definitions/ProfileEnrollmentPolicyRuleProfileAttribute'
+        type: array
+      targetGroupIds:
+        items:
+          type: string
+        type: array
+      unknownUserAction:
+        type: string
+    type: object
+    x-okta-tags:
+      - Policy
+  ProfileEnrollmentPolicyRuleActions:
+    properties:
+      profileEnrollment:
+        $ref: '#/definitions/ProfileEnrollmentPolicyRuleAction'
+    type: object
+    x-okta-parent: '#/definitions/PolicyRuleActions'
+    x-okta-tags:
+      - Policy
+  ProfileEnrollmentPolicyRuleActivationRequirement:
+    properties:
+      emailVerification:
+        type: boolean
+    type: object
+    x-okta-tags:
+      - Policy
+  ProfileEnrollmentPolicyRuleProfileAttribute:
+    properties:
+      label:
+        type: string
+      name:
+        type: string
+      required:
+        type: boolean
     type: object
     x-okta-tags:
       - Policy
@@ -11860,6 +14594,13 @@ definitions:
     type: object
     x-okta-tags:
       - ProfileMapping
+  ProfileSettingObject:
+    properties:
+      status:
+        $ref: '#/definitions/EnabledStatus'
+    type: object
+    x-okta-tags:
+      - Application
   Protocol:
     properties:
       algorithms:
@@ -12006,6 +14747,61 @@ definitions:
     type: object
     x-okta-tags:
       - IdentityProvider
+  ProvisioningConnection:
+    properties:
+      _links:
+        additionalProperties:
+          type: object
+        #readOnly: true
+        type: object
+      authScheme:
+        $ref: '#/definitions/ProvisioningConnectionAuthScheme'
+      status:
+        $ref: '#/definitions/ProvisioningConnectionStatus'
+    type: object
+    x-okta-operations:
+      - alias: getDefaultProvisioningConnectionForApplication
+        operationId: getDefaultProvisioningConnectionForApplication
+      - alias: activateDefaultProvisioningConnectionForApplication
+        operationId: activateDefaultProvisioningConnectionForApplication
+      - alias: deactivateDefaultProvisioningConnectionForApplication
+        operationId: deactivateDefaultProvisioningConnectionForApplication
+    x-okta-tags:
+      - Application
+  ProvisioningConnectionAuthScheme:
+    enum:
+      - TOKEN
+      - UNKNOWN
+    type: string
+    x-okta-tags:
+      - Application
+  ProvisioningConnectionProfile:
+    properties:
+      authScheme:
+        $ref: '#/definitions/ProvisioningConnectionAuthScheme'
+      token:
+        type: string
+    type: object
+    x-okta-operations:
+      - alias: setDefaultProvisioningConnectionForApplication
+        operationId: setDefaultProvisioningConnectionForApplication
+    x-okta-tags:
+      - Application
+  ProvisioningConnectionRequest:
+    properties:
+      profile:
+        $ref: '#/definitions/ProvisioningConnectionProfile'
+    type: object
+    x-okta-tags:
+      - Application
+  ProvisioningConnectionStatus:
+    enum:
+      - DISABLED
+      - ENABLED
+      - UNKNOWN
+    type: string
+    x-okta-tags:
+      - Application
   ProvisioningDeprovisionedCondition:
     properties:
       action:
@@ -12085,6 +14881,14 @@ definitions:
     type: object
     x-okta-tags:
       - User
+  RequiredEnum:
+    enum:
+      - ALWAYS
+      - HIGH_RISK_ONLY
+      - NEVER
+    type: string
+    x-okta-tags:
+      - Authenticator
   ResetPasswordToken:
     properties:
       resetPasswordUrl:
@@ -12223,6 +15027,7 @@ definitions:
       - MOBILE_ADMIN
       - API_ACCESS_MANAGEMENT_ADMIN
       - REPORT_ADMIN
+      - GROUP_MEMBERSHIP_ADMIN
     type: string
     x-okta-tags:
       - Role
@@ -12233,6 +15038,10 @@ definitions:
     x-okta-parent: '#/definitions/Application'
     x-okta-tags:
       - Application
+    x-openapi-v3-discriminator:
+      mapping:
+        okta_org2org: '#/definitions/Org2OrgApplication'
+      propertyName: name
   SamlApplicationSettings:
     properties:
       signOn:
@@ -12437,6 +15246,13 @@ definitions:
         type: string
     x-okta-tags:
       - UserFactor
+  SeedEnum:
+    enum:
+      - OKTA
+      - RANDOM
+    type: string
+    x-okta-tags:
+      - Application
   Session:
     properties:
       _links:
@@ -12544,6 +15360,14 @@ definitions:
     type: string
     x-okta-tags:
       - Session
+  SignInPageTouchPointVariant:
+    enum:
+      - OKTA_DEFAULT
+      - BACKGROUND_SECONDARY_COLOR
+      - BACKGROUND_IMAGE
+    type: string
+    x-okta-tags:
+      - Brand
   SignOnInlineHook:
     properties:
       id:
@@ -12655,9 +15479,6 @@ definitions:
       tokenAuthScheme:
         type: string
       tokenType:
-        enum:
-          - ACCESS
-          - REFRESH
         type: string
     type: object
     x-okta-tags:
@@ -12671,6 +15492,48 @@ definitions:
         type: array
     x-okta-tags:
       - Application
+  Subscription:
+    properties:
+      _links:
+        additionalProperties:
+          type: object
+        #readOnly: true
+        type: object
+      channels:
+        items:
+          type: string
+        type: array
+      notificationType:
+        $ref: '#/definitions/NotificationType'
+      status:
+        $ref: '#/definitions/SubscriptionStatus'
+    type: object
+    x-okta-operations:
+      - alias: listRoleSubscriptions
+        operationId: listRoleSubscriptions
+      - alias: getRoleSubscriptionByNotificationType
+        operationId: getRoleSubscriptionByNotificationType
+      - alias: getUserSubscriptionByNotificationType
+        operationId: getUserSubscriptionByNotificationType
+      - alias: listUserSubscriptions
+        operationId: listUserSubscriptions
+      - alias: subscribeUserSubscriptionByNotificationType
+        operationId: subscribeUserSubscriptionByNotificationType
+      - alias: unsubscribeRoleSubscriptionByNotificationType
+        operationId: unsubscribeRoleSubscriptionByNotificationType
+      - alias: subscribeRoleSubscriptionByNotificationType
+        operationId: subscribeRoleSubscriptionByNotificationType
+      - alias: unsubscribeUserSubscriptionByNotificationType
+        operationId: unsubscribeUserSubscriptionByNotificationType
+    x-okta-tags:
+      - Role
+  SubscriptionStatus:
+    enum:
+      - subscribed
+      - unsubscribed
+    type: string
+    x-okta-tags:
+      - Role
   SwaApplication:
     properties:
       name:
@@ -12693,9 +15556,13 @@ definitions:
     properties:
       buttonField:
         type: string
+      checkbox:
+        type: string
       loginUrlRegex:
         type: string
       passwordField:
+        type: string
+      redirectUrl:
         type: string
       url:
         type: string
@@ -12748,6 +15615,89 @@ definitions:
         type: string
     x-okta-tags:
       - User
+  Theme:
+    properties:
+      _links:
+        additionalProperties:
+          type: object
+        #readOnly: true
+        type: object
+      backgroundImage:
+        #readOnly: true
+        type: string
+      emailTemplateTouchPointVariant:
+        $ref: '#/definitions/EmailTemplateTouchPointVariant'
+      endUserDashboardTouchPointVariant:
+        $ref: '#/definitions/EndUserDashboardTouchPointVariant'
+      errorPageTouchPointVariant:
+        $ref: '#/definitions/ErrorPageTouchPointVariant'
+      primaryColorContrastHex:
+        type: string
+      primaryColorHex:
+        type: string
+      secondaryColorContrastHex:
+        type: string
+      secondaryColorHex:
+        type: string
+      signInPageTouchPointVariant:
+        $ref: '#/definitions/SignInPageTouchPointVariant'
+    x-okta-crud:
+      - alias: read
+        operationId: getBrandTheme
+      - alias: update
+        operationId: updateBrandTheme
+    x-okta-operations:
+      - alias: uploadBrandThemeLogo
+        operationId: uploadBrandThemeLogo
+      - alias: deleteBrandThemeLogo
+        operationId: deleteBrandThemeLogo
+      - alias: updateBrandThemeFavicon
+        operationId: uploadBrandThemeFavicon
+      - alias: deleteBrandThemeFavicon
+        operationId: deleteBrandThemeFavicon
+      - alias: updateBrandThemeBackgroundImage
+        operationId: uploadBrandThemeBackgroundImage
+      - alias: deleteBrandThemeBackgroundImage
+        operationId: deleteBrandThemeBackgroundImage
+    x-okta-tags:
+      - Brand
+  ThemeResponse:
+    properties:
+      _links:
+        additionalProperties:
+          type: object
+        #readOnly: true
+        type: object
+      backgroundImage:
+        #readOnly: true
+        type: string
+      emailTemplateTouchPointVariant:
+        $ref: '#/definitions/EmailTemplateTouchPointVariant'
+      endUserDashboardTouchPointVariant:
+        $ref: '#/definitions/EndUserDashboardTouchPointVariant'
+      errorPageTouchPointVariant:
+        $ref: '#/definitions/ErrorPageTouchPointVariant'
+      favicon:
+        #readOnly: true
+        type: string
+      id:
+        #readOnly: true
+        type: string
+      logo:
+        #readOnly: true
+        type: string
+      primaryColorContrastHex:
+        type: string
+      primaryColorHex:
+        type: string
+      secondaryColorContrastHex:
+        type: string
+      secondaryColorHex:
+        type: string
+      signInPageTouchPointVariant:
+        $ref: '#/definitions/SignInPageTouchPointVariant'
+    x-okta-tags:
+      - Brand
   ThreatInsightConfiguration:
     properties:
       _links:
@@ -13001,6 +15951,11 @@ definitions:
           - dest: userId
             src: id
         operationId: assignRoleToUser
+      - alias: getRole
+        arguments:
+          - dest: userId
+            src: id
+        operationId: getUserRole
       - alias: removeRole
         arguments:
           - dest: userId
@@ -13303,6 +16258,14 @@ definitions:
         web: '#/definitions/WebUserFactor'
         webauthn: '#/definitions/WebAuthnUserFactor'
       propertyName: factorType
+  UserIdString:
+    properties:
+      userId:
+        type: string
+    type: object
+    x-okta-parent: '#/definitions/OrgContactUser'
+    x-okta-tags:
+      - Org
   UserIdentifierConditionEvaluatorPattern:
     properties:
       matchType:
@@ -13442,6 +16405,8 @@ definitions:
       zipCode:
         type: string
     type: object
+    additionalProperties:
+      type: string
     x-okta-extensible: true
     x-okta-tags:
       - User
@@ -13838,6 +16803,40 @@ definitions:
         operationId: replaceUserType
     x-okta-tags:
       - UserType
+  UserTypeCondition:
+    properties:
+      exclude:
+        items:
+          type: string
+        type: array
+      include:
+        items:
+          type: string
+        type: array
+    x-okta-tags:
+      - Policy
+  UserVerificationEnum:
+    enum:
+      - REQUIRED
+      - PREFERRED
+    type: string
+    x-okta-tags:
+      - Authenticator
+  VerificationMethod:
+    properties:
+      constraints:
+        items:
+          $ref: '#/definitions/AccessPolicyConstraints'
+        type: array
+      factorMode:
+        type: string
+      reauthenticateIn:
+        type: string
+      type:
+        type: string
+    type: object
+    x-okta-tags:
+      - Policy
   VerifyFactorRequest:
     properties:
       activationToken:

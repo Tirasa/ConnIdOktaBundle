@@ -19,8 +19,10 @@ import io.swagger.api.ApplicationApi;
 import io.swagger.model.AppUser;
 import io.swagger.model.Application;
 import io.swagger.model.ApplicationGroupAssignment;
+import io.swagger.model.CapabilitiesObject;
 import io.swagger.model.CsrMetadata;
 import io.swagger.model.OAuth2ScopeConsentGrant;
+import io.swagger.model.ProvisioningConnectionRequest;
 import io.swagger.model.User;
 import java.lang.reflect.InvocationTargetException;
 import java.time.Instant;
@@ -34,6 +36,7 @@ import javax.ws.rs.core.Response;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 
 /**
  * Okta API
@@ -497,6 +500,64 @@ public class ApplicationApiServiceImpl extends AbstractServiceImpl implements Ap
      */
     @Override
     public Response updateApplicationUser(AppUser body, String appId, String userId) {
+        // TODO: Implement...
+
+        return Response.ok().entity("magic!").build();
+    }
+
+    @Override
+    public Response activateDefaultProvisioningConnectionForApplication(final String appId) {
+        // TODO: Implement...
+
+        return Response.ok().entity("magic!").build();
+    }
+
+    @Override
+    public Response deactivateDefaultProvisioningConnectionForApplication(final String appId) {
+        // TODO: Implement...
+
+        return Response.ok().entity("magic!").build();
+    }
+
+    @Override
+    public Response getDefaultProvisioningConnectionForApplication(final String appId) {
+        // TODO: Implement...
+
+        return Response.ok().entity("magic!").build();
+    }
+
+    @Override
+    public Response getFeatureForApplication(final String appId, final String name) {
+        // TODO: Implement...
+
+        return Response.ok().entity("magic!").build();
+    }
+
+    @Override
+    public Response listFeaturesForApplication(final String appId) {
+        // TODO: Implement...
+
+        return Response.ok().entity("magic!").build();
+    }
+
+    @Override
+    public Response setDefaultProvisioningConnectionForApplication(
+            final ProvisioningConnectionRequest body, final String appId, final Boolean activate) {
+
+        // TODO: Implement...
+        return Response.ok().entity("magic!").build();
+    }
+
+    @Override
+    public Response updateFeatureForApplication(
+            final CapabilitiesObject body, final String appId, final String name) {
+
+        // TODO: Implement...
+        return Response.ok().entity("magic!").build();
+    }
+
+    @Override
+    public Response uploadApplicationLogo(final Attachment fileDetail, final String appId) {
         // TODO: Implement...
 
         return Response.ok().entity("magic!").build();

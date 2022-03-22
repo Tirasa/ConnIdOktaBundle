@@ -28,6 +28,7 @@ import com.okta.sdk.resource.group.GroupList;
 import com.okta.sdk.resource.user.User;
 import com.okta.sdk.resource.user.UserStatus;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -61,6 +62,8 @@ import org.junit.Test;
 public class OktaConnectorTests extends AbstractConnectorTests {
 
     private static final Log LOG = Log.getLog(OktaConnectorTests.class);
+
+    private static final String ENTITLEMENTS_ATTR = "entitlements";
 
     @BeforeClass
     public static void setupData() {
@@ -106,8 +109,8 @@ public class OktaConnectorTests extends AbstractConnectorTests {
     @Test
     public void crudUser() {
         ToListResultsHandler handler = new ToListResultsHandler();
-        OperationOptions operationOption =
-                new OperationOptionsBuilder().setAttributesToGet(OktaAttribute.EMAIL, OktaAttribute.MOBILEPHONE).build();
+        OperationOptions operationOption = new OperationOptionsBuilder().
+                setAttributesToGet(OktaAttribute.EMAIL, OktaAttribute.MOBILEPHONE, ENTITLEMENTS_ATTR).build();
         try {
             // CREATE USER
             String username = UUID.randomUUID().toString();
@@ -118,6 +121,7 @@ public class OktaConnectorTests extends AbstractConnectorTests {
             userAttrs.add(AttributeBuilder.build(OktaAttribute.EMAIL, username + "@tirasa.net"));
             userAttrs.add(AttributeBuilder.build(OktaAttribute.FIRSTNAME, "Test"));
             userAttrs.add(AttributeBuilder.build(OktaAttribute.LASTNAME, "Test"));
+            userAttrs.add(AttributeBuilder.build(ENTITLEMENTS_ATTR, "{}"));
             userAttrs.add(mobilePhone);
             userAttrs.add(password);
 
@@ -132,6 +136,9 @@ public class OktaConnectorTests extends AbstractConnectorTests {
             assertNotNull(handler.getObjects());
             assertFalse(handler.getObjects().isEmpty());
             assertEquals(handler.getObjects().get(0).getUid().getUidValue(), created.getUidValue());
+            Attribute entitlements = handler.getObjects().get(0).getAttributeByName(ENTITLEMENTS_ATTR);
+            assertNotNull(entitlements);
+            assertEquals(Collections.singletonList("{}"), entitlements.getValue());
             LOG.info("Created User with id {0} on Okta", handler.getObjects().get(0).getUid());
 
             // UPDATE USER
@@ -424,9 +431,8 @@ public class OktaConnectorTests extends AbstractConnectorTests {
     public void sync() {
         TestSyncResultsHandler handler = new TestSyncResultsHandler();
 
-        OperationOptionsBuilder operationOptionBuilder =
-                new OperationOptionsBuilder().setAttributesToGet(
-                        OktaAttribute.EMAIL, OktaAttribute.MOBILEPHONE, OktaAttribute.OKTA_GROUPS);
+        OperationOptionsBuilder operationOptionBuilder = new OperationOptionsBuilder().
+                setAttributesToGet(OktaAttribute.EMAIL, OktaAttribute.MOBILEPHONE, OktaAttribute.OKTA_GROUPS);
 
         SyncToken token = connector.getLatestSyncToken(ObjectClass.ACCOUNT);
         connector.sync(ObjectClass.ACCOUNT, token, handler, operationOptionBuilder.build());
