@@ -15,9 +15,14 @@
  */
 package net.tirasa.connid.bundles.okta.utils;
 
+import java.util.Arrays;
 import java.util.List;
+import org.identityconnectors.framework.common.objects.Name;
+import org.identityconnectors.framework.common.objects.Uid;
 
 public class OktaFilter {
+
+    public static final List<String> ID_ATTRS = Arrays.asList(OktaAttribute.ID, Uid.NAME, Name.NAME);
 
     private final OktaFilterOp filterOp;
 
@@ -34,6 +39,7 @@ public class OktaFilter {
             final String value,
             final boolean quote,
             final List<OktaFilter> filters) {
+
         this.filterOp = filterOp;
         this.attribute = attribute;
         this.value = value;

@@ -17,7 +17,6 @@ package net.tirasa.connid.bundles.okta;
 
 import java.util.Arrays;
 import java.util.List;
-import net.tirasa.connid.bundles.okta.utils.OktaAttribute;
 import net.tirasa.connid.bundles.okta.utils.OktaFilter;
 import net.tirasa.connid.bundles.okta.utils.OktaFilterOp;
 import org.identityconnectors.common.logging.Log;
@@ -143,12 +142,7 @@ public class OktaFilterTranslator extends AbstractFilterTranslator<OktaFilter> {
     }
 
     private String getFilterName(final AttributeFilter filter) {
-        if (ObjectClass.GROUP == objectClass) {
-            return OktaAttribute.ID.equals(filter.getName()) || OktaAttribute.NAME.equals(filter.getName()) 
-                    ? filter.getName() : "profile." + filter.getName();
-        } else {
-            return OktaAttribute.ID.equals(filter.getName()) ? filter.getName() : "profile." + filter.getName();
-        }
+        return OktaFilter.ID_ATTRS.contains(filter.getName()) ? filter.getName() : "profile." + filter.getName();
     }
 
     private String getFilterValue(final AttributeFilter filter) {

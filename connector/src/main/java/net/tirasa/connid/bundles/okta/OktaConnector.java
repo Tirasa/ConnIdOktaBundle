@@ -564,17 +564,17 @@ public class OktaConnector implements Connector, PoolableConnector,
         if (ObjectClass.ACCOUNT.equals(objectClass)) {
             if (filter == null) {
                 int remainingResults = -1;
-                int pagesSize = options.getPageSize() != null ? options.getPageSize() : -1;
+                int pageSize = options.getPageSize() == null ? -1 : options.getPageSize();
                 String cookie = options.getPagedResultsCookie();
                 DefaultUserList userList = null;
                 try {
-                    if (pagesSize != -1) {
-                        String nextPage = StringUtil.isBlank(cookie) ? USER_API_URL + "?limit=" + pagesSize : cookie;
+                    if (pageSize != -1) {
+                        String nextPage = StringUtil.isBlank(cookie) ? USER_API_URL + "?limit=" + pageSize : cookie;
                         userList = client.getDataStore().getResource(nextPage, DefaultUserList.class);
                         nextPage = ((AbstractCollectionResource) userList).hasProperty("nextPage")
                                 && ((AbstractCollectionResource) userList).getProperty("nextPage") != null
                                 ? ((AbstractCollectionResource) userList).getProperty("nextPage").toString() : null;
-                        cookie = userList.getCurrentPage().getItems().size() >= pagesSize ? nextPage : null;
+                        cookie = userList.getCurrentPage().getItems().size() >= pageSize ? nextPage : null;
                     } else {
                         userList = ((DefaultUserList) client.listUsers());
                     }
@@ -595,7 +595,7 @@ public class OktaConnector implements Connector, PoolableConnector,
             } else {
                 try {
                     if (filter.getFilters() == null
-                            && OktaAttribute.ID.equals(filter.getAttribute())
+                            && OktaFilter.ID_ATTRS.contains(filter.getAttribute())
                             && OktaFilterOp.EQUALS.equals(filter.getFilterOp())) {
 
                         User user = client.getUser(filter.getValue());
@@ -616,18 +616,18 @@ public class OktaConnector implements Connector, PoolableConnector,
         } else if (APPLICATION.equals(objectClass)) {
             if (filter == null) {
                 int remainingResults = -1;
-                int pagesSize = options.getPageSize() != null ? options.getPageSize() : -1;
+                int pageSize = options.getPageSize() == null ? -1 : options.getPageSize();
                 String cookie = options.getPagedResultsCookie();
                 DefaultApplicationList applicationList = null;
                 try {
-                    if (pagesSize != -1) {
-                        String nextPage = StringUtil.isBlank(cookie) ? APP_API_URL + "?limit=" + pagesSize : cookie;
+                    if (pageSize != -1) {
+                        String nextPage = StringUtil.isBlank(cookie) ? APP_API_URL + "?limit=" + pageSize : cookie;
                         applicationList = client.getDataStore().getResource(nextPage, DefaultApplicationList.class);
                         nextPage = ((AbstractCollectionResource) applicationList).hasProperty("nextPage")
                                 && ((AbstractCollectionResource) applicationList).getProperty("nextPage") != null
                                 ? ((AbstractCollectionResource) applicationList).getProperty("nextPage").toString()
                                 : null;
-                        cookie = applicationList.getCurrentPage().getItems().size() >= pagesSize ? nextPage : null;
+                        cookie = applicationList.getCurrentPage().getItems().size() >= pageSize ? nextPage : null;
                     } else {
                         applicationList = ((DefaultApplicationList) client.listApplications());
                     }
@@ -664,18 +664,18 @@ public class OktaConnector implements Connector, PoolableConnector,
         } else if (ObjectClass.GROUP.equals(objectClass)) {
             if (filter == null) {
                 int remainingResults = -1;
-                int pagesSize = options.getPageSize() != null ? options.getPageSize() : -1;
+                int pageSize = options.getPageSize() == null ? -1 : options.getPageSize();
                 String cookie = options.getPagedResultsCookie();
                 DefaultGroupList groupList = null;
                 try {
-                    if (pagesSize != -1) {
-                        String nextPage = StringUtil.isBlank(cookie) ? GROUP_API_URL + "?limit=" + pagesSize : cookie;
+                    if (pageSize != -1) {
+                        String nextPage = StringUtil.isBlank(cookie) ? GROUP_API_URL + "?limit=" + pageSize : cookie;
                         groupList = client.getDataStore().getResource(nextPage, DefaultGroupList.class);
                         nextPage = ((AbstractCollectionResource) groupList).hasProperty("nextPage")
                                 && ((AbstractCollectionResource) groupList).getProperty("nextPage") != null
                                 ? ((AbstractCollectionResource) groupList).getProperty("nextPage").toString()
                                 : null;
-                        cookie = groupList.getCurrentPage().getItems().size() >= pagesSize ? nextPage : null;
+                        cookie = groupList.getCurrentPage().getItems().size() >= pageSize ? nextPage : null;
                     } else {
                         groupList = ((DefaultGroupList) client.listGroups());
                     }
