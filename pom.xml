@@ -82,7 +82,7 @@
     <swagger-codegen.plugin.version>3.0.33</swagger-codegen.plugin.version>
     <javax.servlet.version>3.1.0</javax.servlet.version>
     <spring.version>5.2.19.RELEASE</spring.version>
-    <jackson.version>2.12.6</jackson.version>
+    <jackson.version>2.13.2.1</jackson.version>
     <javax.validation.version>2.0.1.Final</javax.validation.version>
     <apache.cxf.version>3.3.13</apache.cxf.version>
     <swagger-annotations.version>2.1.13</swagger-annotations.version>
@@ -153,7 +153,7 @@
       <dependency>
         <groupId>com.fasterxml.jackson.core</groupId>
         <artifactId>jackson-databind</artifactId>
-        <version>${jackson.version}.1</version>
+        <version>${jackson.version}</version>
       </dependency>
       <dependency>
         <groupId>com.fasterxml.jackson.jaxrs</groupId>
