@@ -23,7 +23,7 @@
   <parent>
     <groupId>net.tirasa.connid</groupId>
     <artifactId>connid</artifactId>
-    <version>1.4.5.1</version>
+    <version>1.5.1.0</version>
   </parent>
     
   <groupId>net.tirasa.connid.bundles.okta</groupId>
@@ -76,7 +76,7 @@
   </mailingLists>
 
   <properties>
-    <connid.version>1.4.5.1</connid.version>
+    <connid.version>1.5.1.0</connid.version>
     <okta.version>8.2.0</okta.version>
     
     <swagger-codegen.plugin.version>3.0.33</swagger-codegen.plugin.version>
