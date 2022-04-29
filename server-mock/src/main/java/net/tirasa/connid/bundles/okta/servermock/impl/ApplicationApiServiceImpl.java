@@ -553,14 +553,19 @@ public class ApplicationApiServiceImpl extends AbstractServiceImpl implements Ap
             final CapabilitiesObject body, final String appId, final String name) {
 
         // TODO: Implement...
-        return Response.ok().entity("magic!").build();
+        return Response.status(Response.Status.NOT_FOUND).build();
     }
 
     @Override
     public Response uploadApplicationLogo(final Attachment fileDetail, final String appId) {
         // TODO: Implement...
+        return Response.status(Response.Status.NOT_FOUND).build();
+    }
 
-        return Response.ok().entity("magic!").build();
+    @Override
+    public Response updateApplicationPolicy(final String appId, final String policyId) {
+        // TODO: Implement...
+        return Response.noContent().build();
     }
 
     private List<Application> searchApplication(final String filter) {

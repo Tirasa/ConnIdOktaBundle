@@ -25,7 +25,7 @@ info:
   license:
     name: Apache-2.0
     url: 'https://www.apache.org/licenses/LICENSE-2.0.html'
-  version: 2.11.1
+  version: 2.12.0
 externalDocs:
   description: Find more info here
   url: 'https://developer.okta.com/docs/api/getting_started/design_principles.html'
@@ -978,6 +978,33 @@ paths:
         The file must be in PNG, JPG, or GIF format, and less than 1 MB in size.
         For best results use landscape orientation, a transparent background,
         and a minimum size of 420px by 120px to prevent upscaling.
+      tags:
+        - Application
+  '/api/v1/apps/{appId}/policies/{policyId}':
+    put:
+      consumes:
+        - application/json
+      description: >-
+        Assign an application to a specific policy. This unassigns the
+        application from its currently assigned policy.
+      operationId: updateApplicationPolicy
+      parameters:
+        - in: path
+          name: appId
+          required: true
+          type: string
+        - in: path
+          name: policyId
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        '204':
+          description: No Content
+      security:
+        - api_token: []
+      summary: Update application policy
       tags:
         - Application
   '/api/v1/apps/{appId}/tokens':
@@ -9631,6 +9658,11 @@ definitions:
           - dest: appId
             src: id
         operationId: updateFeatureForApplication
+      - alias: updateApplicationPolicy
+        arguments:
+          - dest: appId
+            src: id
+        operationId: updateApplicationPolicy
     x-okta-tags:
       - Application
     x-openapi-v3-discriminator:
@@ -12071,6 +12103,12 @@ definitions:
     type: object
     x-okta-tags:
       - Policy
+  IframeEmbedScopeAllowedApps:
+    enum:
+      - OKTA_ENDUSER
+    type: string
+    x-okta-tags:
+      - Role
   ImageUploadResponse:
     properties:
       url:
@@ -14898,7 +14936,12 @@ definitions:
     x-okta-tags:
       - User
   ResponseLinks:
-    properties: {}
+    properties:
+      _links:
+        additionalProperties:
+          type: object
+        #readOnly: true
+        type: object
     type: object
     x-okta-tags:
       - User
@@ -15162,6 +15205,10 @@ definitions:
       - Application
   Scope:
     properties:
+      allowedOktaApps:
+        items:
+          $ref: '#/definitions/IframeEmbedScopeAllowedApps'
+        type: array
       stringValue:
         type: string
       type:
@@ -15173,6 +15220,7 @@ definitions:
     enum:
       - CORS
       - REDIRECT
+      - IFRAME_EMBED
     type: string
     x-okta-tags:
       - Role
