@@ -95,7 +95,7 @@
     <cargo.log>${log.directory}/cargo.log</cargo.log>
     <cargo.output>${log.directory}/cargo-output.log</cargo.output>
 
-    <tomcat.version>9.0.60</tomcat.version>
+    <tomcat.version>9.0.63</tomcat.version>
     
     <java.version>1.8</java.version>
     <rootpom.basedir>${basedir}</rootpom.basedir>
