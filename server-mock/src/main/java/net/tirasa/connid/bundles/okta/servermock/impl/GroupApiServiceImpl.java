@@ -92,6 +92,10 @@ public class GroupApiServiceImpl extends AbstractServiceImpl implements GroupApi
      */
     @Override
     public Response addUserToGroup(String groupId, String userId) {
+        if (EVERYONE_ID.equals(groupId)) {
+            // Okta Groups API returns 501 error when adding a user to default Everyone group
+            return Response.status(Response.Status.NOT_IMPLEMENTED).build();
+        }
         if (GROUP_REPOSITORY.stream().anyMatch(group -> StringUtils.equals(groupId, group.getId()))
                 && USER_REPOSITORY.stream().anyMatch(user -> StringUtils.equals(userId, user.getId()))) {
             GROUP_USER_REPOSITORY.add(Pair.of(groupId, userId));

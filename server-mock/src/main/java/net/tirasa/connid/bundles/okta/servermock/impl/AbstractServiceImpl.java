@@ -18,6 +18,7 @@ package net.tirasa.connid.bundles.okta.servermock.impl;
 import io.swagger.model.Application;
 import io.swagger.model.Group;
 import io.swagger.model.GroupProfile;
+import io.swagger.model.GroupType;
 import io.swagger.model.LogEvent;
 import io.swagger.model.LogTarget;
 import io.swagger.model.User;
@@ -54,7 +55,7 @@ public abstract class AbstractServiceImpl {
 
     protected static final List<Group> GROUP_REPOSITORY =
             Collections.synchronizedList(new ArrayList<Group>(Arrays.asList(
-                    new Group().id(EVERYONE_ID).profile(new GroupProfile().name(EVERYONE).description(
+                    new Group().id(EVERYONE_ID).type(GroupType.BUILT_IN).profile(new GroupProfile().name(EVERYONE).description(
                             EVERYONE)))));
 
     protected static final List<Pair<String, String>> GROUP_USER_REPOSITORY =

@@ -110,6 +110,12 @@ class OktaSchemaBuilder {
         AttributeInfoBuilder attributeInfo = new AttributeInfoBuilder();
         attributeInfo.setRequired(true);
         attributeInfos.add(AttributeInfoBuilder.build(OktaAttribute.ID, String.class));
+
+        attributeInfos.add(AttributeInfoBuilder.define(OktaAttribute.OKTA_GROUPS, String.class)
+                .setMultiValued(true)
+                .setReturnedByDefault(false)
+                .build());
+
         return attributeInfos;
     }
 

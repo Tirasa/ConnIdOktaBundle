@@ -28,6 +28,7 @@ import com.okta.sdk.resource.ResourceException;
 import com.okta.sdk.resource.application.Application;
 import com.okta.sdk.resource.application.ApplicationList;
 import com.okta.sdk.resource.group.Group;
+import com.okta.sdk.resource.group.GroupBuilder;
 import com.okta.sdk.resource.group.GroupList;
 import com.okta.sdk.resource.log.LogEvent;
 import com.okta.sdk.resource.log.LogEventList;
@@ -93,6 +94,8 @@ import org.identityconnectors.framework.spi.operations.SyncOp;
 import org.identityconnectors.framework.spi.operations.TestOp;
 import org.identityconnectors.framework.spi.operations.UpdateOp;
 
+import static net.tirasa.connid.bundles.okta.utils.OktaAttribute.isDefaultEveryoneGroup;
+
 /**
  * Main implementation of the Okta Connector.
  *
@@ -134,7 +137,8 @@ public class OktaConnector implements Connector, PoolableConnector,
     private static final Set<String> NOT_FOR_PROFILE = CollectionUtil.newReadOnlySet(
             Name.NAME, OperationalAttributes.ENABLE_NAME, OperationalAttributes.PASSWORD_NAME,
             OktaAttribute.ID, OktaAttribute.STATUS,
-            OktaAttribute.OKTA_SECURITY_QUESTION, OktaAttribute.OKTA_SECURITY_ANSWER);
+            OktaAttribute.OKTA_SECURITY_QUESTION, OktaAttribute.OKTA_SECURITY_ANSWER,
+            OktaAttribute.OKTA_GROUPS);
 
     private OktaConfiguration configuration;
 
@@ -279,6 +283,14 @@ public class OktaConnector implements Connector, PoolableConnector,
             }
 
             return new Uid(result.getId());
+        } else if (ObjectClass.GROUP.equals(objectClass)) {
+            GroupBuilder groupBuilder = GroupBuilder.instance();
+
+            Group result = groupBuilder.setName(accessor.findString(OktaAttribute.NAME))
+                    .setDescription(accessor.findString(OktaAttribute.DESCRIPTION))
+                    .buildAndCreate(client);
+
+            return new Uid(result.getId());
         } else {
             LOG.warn("Create of type {0} is not supported", objectClass.getObjectClassValue());
             throw new UnsupportedOperationException("Create of type"
@@ -333,15 +345,18 @@ public class OktaConnector implements Connector, PoolableConnector,
                 OktaUtils.wrapGeneralError("Could not update User " + uid.getUidValue() + " from attributes ", e);
             }
 
-            if (accessor.findList(OktaAttribute.OKTA_GROUPS) != null) {
+            if (accessor.hasAttribute(OktaAttribute.OKTA_GROUPS)) {
                 try {
                     //Assign User to Groups
                     final List<Object> groupsToAssign =
                             CollectionUtil.nullAsEmpty(accessor.findList(OktaAttribute.OKTA_GROUPS));
 
                     final Set<String> assignedGroups = Optional.ofNullable(user.listGroups())
-                            .map(GroupList::stream).orElseGet(Stream::empty).map(Group::getId).collect(Collectors.
-                            toSet());
+                            .map(GroupList::stream)
+                            .orElseGet(Stream::empty)
+                            .filter(item -> !isDefaultEveryoneGroup(item))
+                            .map(Group::getId).collect(Collectors.
+                                    toSet());
 
                     CollectionUtil.nullAsEmpty(groupsToAssign).stream().forEach(grp -> {
                         if (!assignedGroups.contains(grp.toString())) {
@@ -353,11 +368,9 @@ public class OktaConnector implements Connector, PoolableConnector,
                                 OktaUtils.handleGeneralError("Could not add User to Group ", ex);
                             }
                         }
-
                     });
 
                     CollectionUtil.nullAsEmpty(assignedGroups).stream().forEach(grp -> {
-
                         if (!groupsToAssign.contains(grp)) {
                             try {
                                 client.getGroup(grp).removeUser(uid.getUidValue());
@@ -374,6 +387,21 @@ public class OktaConnector implements Connector, PoolableConnector,
                 }
             }
             return returnUid;
+        } else if (ObjectClass.GROUP.equals(objectClass)) {
+            Group group = client.getGroup(uid.getUidValue());
+
+            Attribute name = accessor.find(OktaAttribute.NAME);
+            if (name != null) {
+                group.getProfile().setName(AttributeUtil.getStringValue(name));
+            }
+            Attribute desc = accessor.find(OktaAttribute.DESCRIPTION);
+            if (desc != null) {
+                group.getProfile().setDescription(AttributeUtil.getStringValue(desc));
+            }
+
+            Group update = group.update();
+
+            return new Uid(update.getId());
         } else {
             LOG.warn("Update of type {0} is not supported", objectClass.getObjectClassValue());
             throw new UnsupportedOperationException("Update of type"
@@ -694,14 +722,19 @@ public class OktaConnector implements Connector, PoolableConnector,
                 }
             } else {
                 try {
-                    GroupList groups = OktaAttribute.ID.equals(filter.getAttribute())
-                            || OktaAttribute.NAME.equals(filter.getAttribute())
-                            ? client.listGroups(filter.getValue(), null, null)
-                            : client.listGroups(null, filter.toString(), null);
-                    for (Group group : groups) {
-                        if (!handler.handle(fromGroup(group, attributesToGet))) {
-                            LOG.ok("Stop processing of the result set");
-                            break;
+                    if (filter.getFilters() == null
+                            && OktaFilter.ID_ATTRS.contains(filter.getAttribute())
+                            && OktaFilterOp.EQUALS.equals(filter.getFilterOp())) {
+
+                        Group group = client.getGroup(filter.getValue());
+                        handler.handle(fromGroup(group, attributesToGet));
+                    } else {
+                        GroupList groups = client.listGroups();
+                        for (Group group : groups) {
+                            if (!handler.handle(fromGroup(group, attributesToGet))) {
+                                LOG.ok("Stop processing of the result set");
+                                break;
+                            }
                         }
                     }
                 } catch (Exception e) {

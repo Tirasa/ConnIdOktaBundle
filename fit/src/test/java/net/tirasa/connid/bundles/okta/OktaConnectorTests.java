@@ -254,20 +254,9 @@ public class OktaConnectorTests extends AbstractConnectorTests {
             assertNotNull(groupUpdate.getId());
             GROUPS.add(groupUpdate.getId());
 
-            //Add default group everyone
-            GroupList groups = conn.getClient().listGroups("Everyone", null, null);
-            Group group;
-            if (groups.iterator().hasNext()) {
-                group = groups.single();
-            } else {
-                group = GroupBuilder.instance()
-                        .setName("Everyone")
-                        .setDescription("Everyone").buildAndCreate(conn.getClient());
-            }
-
             // UPDATE USER
             userAttrs.remove(password);
-            userAttrs.add(AttributeBuilder.build(OktaAttribute.OKTA_GROUPS, groupUpdate.getId(), group.getId()));
+            userAttrs.add(AttributeBuilder.build(OktaAttribute.OKTA_GROUPS, groupUpdate.getId()));
 
             Uid updated = connector.update(ObjectClass.ACCOUNT, created, userAttrs, operationOption);
             assertNotNull(updated);
@@ -275,8 +264,9 @@ public class OktaConnectorTests extends AbstractConnectorTests {
             assignedGroups = getUserGroups(conn.getClient(), updated.getUidValue());
             assertTrue(assignedGroups.contains(groupUpdate.getId()));
         } catch (Exception e) {
-            fail();
             LOG.error(e, "While running test");
+            throw e;
+            //fail();
         }
     }
 
@@ -320,21 +310,10 @@ public class OktaConnectorTests extends AbstractConnectorTests {
             assertEquals(handler.getObjects().get(0).getUid().getUidValue(), created.getUidValue());
             LOG.info("Created User with id {0} on Okta", handler.getObjects().get(0).getUid());
 
-            //Add default group everyone
-            GroupList groups = conn.getClient().listGroups("Everyone", null, null);
-            Group group;
-            if (groups.iterator().hasNext()) {
-                group = groups.single();
-            } else {
-                group = GroupBuilder.instance()
-                        .setName("Everyone")
-                        .setDescription("Everyone").buildAndCreate(conn.getClient());
-            }
-
             // UPDATE USER
             userAttrs.remove(password);
             userAttrs.add(
-                    AttributeBuilder.build(OktaAttribute.OKTA_GROUPS, group.getId()));
+                    AttributeBuilder.build(OktaAttribute.OKTA_GROUPS));
 
             Uid updated = connector.update(ObjectClass.ACCOUNT, created, userAttrs, operationOption);
             assertNotNull(updated);
