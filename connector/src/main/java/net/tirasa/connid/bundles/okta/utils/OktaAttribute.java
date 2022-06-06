@@ -132,7 +132,10 @@ public final class OktaAttribute {
             } else if (OKTA_GROUPS.equals(attributeToGetName)) {
                 try {
                     List<String> assignedGroups =
-                            user.listGroups().stream().map(item -> item.getId()).collect(Collectors.toList());
+                            user.listGroups().stream()
+                                    .filter(item -> !isDefaultEveryoneGroup(item))
+                                    .map(item -> item.getId())
+                                    .collect(Collectors.toList());
                     attributes.add(buildAttribute(assignedGroups, attributeToGetName, Set.class).build());
                 } catch (Exception ex) {
                     LOG.error(ex, "Could not list groups for User {0}", user.getId());
@@ -246,5 +249,9 @@ public final class OktaAttribute {
 
     public static String buildProfileAttrName(final String name) {
         return "profile." + name;
+    }
+
+    public static boolean isDefaultEveryoneGroup(Group group) {
+        return group.getType().name().equals("BUILT_IN") && group.getProfile().getName().equals("Everyone");
     }
 }
