@@ -295,10 +295,14 @@ public class OktaConnector implements Connector, PoolableConnector,
         } else if (ObjectClass.GROUP.equals(objectClass)) {
             GroupBuilder groupBuilder = GroupBuilder.instance();
 
-            Group result = groupBuilder.setName(accessor.findString(OktaAttribute.NAME))
-                    .setDescription(accessor.findString(OktaAttribute.DESCRIPTION))
-                    .buildAndCreate(client);
-
+            Group result = null;
+            try {
+                result = groupBuilder.setName(accessor.findString(OktaAttribute.NAME))
+                        .setDescription(accessor.findString(OktaAttribute.DESCRIPTION))
+                        .buildAndCreate(client);
+            } catch (Exception e) {
+                OktaUtils.wrapGeneralError("Could not create Group : " + accessor.findString(OktaAttribute.NAME), e);
+            }
             return new Uid(result.getId());
         } else {
             LOG.warn("Create of type {0} is not supported", objectClass.getObjectClassValue());
@@ -408,7 +412,12 @@ public class OktaConnector implements Connector, PoolableConnector,
                 group.getProfile().setDescription(AttributeUtil.getStringValue(desc));
             }
 
-            Group update = group.update();
+            Group update = null;
+            try {
+                 update = group.update();
+            } catch (Exception e) {
+                OktaUtils.wrapGeneralError("Could not update Group " + uid.getUidValue() + " from attributes ", e);
+            }
 
             return new Uid(update.getId());
         } else {
