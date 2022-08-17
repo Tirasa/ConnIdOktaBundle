@@ -623,9 +623,8 @@ public class OktaConnector implements Connector, PoolableConnector,
             } else {
                 try {
                     if (filter.getFilters() == null
-                            && OktaFilter.ID_ATTRS.contains(filter.getAttribute())
+                            && OktaAttribute.ID.equals(filter.getAttribute())
                             && OktaFilterOp.EQUALS.equals(filter.getFilterOp())) {
-
                         User user = client.getUser(filter.getValue());
                         handler.handle(fromUser(user, attributesToGet));
                     } else {
@@ -675,11 +674,19 @@ public class OktaConnector implements Connector, PoolableConnector,
             } else {
                 Application result = null;
                 try {
-                    ApplicationList applications = client.listApplications(null, filter.toString(), null, null);
-                    for (Application app : applications) {
-                        if (!handler.handle(fromApplication(app, attributesToGet))) {
-                            LOG.ok("Stop processing of the result set");
-                            break;
+                    if (filter.getFilters() == null
+                            && OktaAttribute.ID.equals(filter.getAttribute())
+                            && OktaFilterOp.EQUALS.equals(filter.getFilterOp())) {
+
+                        Application app = client.getApplication(filter.getValue());
+                        handler.handle(fromApplication(app, attributesToGet));
+                    } else {
+                        ApplicationList applications = client.listApplications(null, filter.toString(), null, null);
+                        for (Application app : applications) {
+                            if (!handler.handle(fromApplication(app, attributesToGet))) {
+                                LOG.ok("Stop processing of the result set");
+                                break;
+                            }
                         }
                     }
                 } catch (Exception e) {
@@ -708,7 +715,7 @@ public class OktaConnector implements Connector, PoolableConnector,
                         groupList = ((DefaultGroupList) client.listGroups());
                     }
                 } catch (Exception e) {
-                    OktaUtils.wrapGeneralError("While getting Applications!", e);
+                    OktaUtils.wrapGeneralError("While getting Groups!", e);
                 }
 
                 if (groupList != null) {
@@ -729,7 +736,7 @@ public class OktaConnector implements Connector, PoolableConnector,
                         Group group = client.getGroup(filter.getValue());
                         handler.handle(fromGroup(group, attributesToGet));
                     } else {
-                        GroupList groups = client.listGroups();
+                        GroupList groups = client.listGroups(null, filter.toString(), null);
                         for (Group group : groups) {
                             if (!handler.handle(fromGroup(group, attributesToGet))) {
                                 LOG.ok("Stop processing of the result set");
@@ -804,7 +811,7 @@ public class OktaConnector implements Connector, PoolableConnector,
         ConnectorObjectBuilder builder = new ConnectorObjectBuilder();
         builder.setObjectClass(ObjectClass.ACCOUNT);
         builder.setUid(user.getId());
-        builder.setName(user.getId());
+        builder.setName(user.getProfile().getLogin());
         return builder.addAttributes(
                 OktaAttribute.buildUserAttributes(client, user, schema.getSchema(), attributesToGet)).build();
     }
@@ -823,7 +830,7 @@ public class OktaConnector implements Connector, PoolableConnector,
         ConnectorObjectBuilder builder = new ConnectorObjectBuilder();
         builder.setObjectClass(ObjectClass.GROUP);
         builder.setUid(group.getId());
-        builder.setName(group.getId());
+        builder.setName(group.getProfile().getName());
         return builder.addAttributes(
                 OktaAttribute.buildExtResourceAttributes(client, group,
                         schema.getSchema(), attributesToGet, ObjectClass.GROUP_NAME)).build();
