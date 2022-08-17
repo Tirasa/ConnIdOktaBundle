@@ -16,7 +16,9 @@
 package net.tirasa.connid.bundles.okta;
 
 import com.okta.sdk.authc.credentials.TokenClientCredentials;
+import com.okta.sdk.client.AuthorizationMode;
 import com.okta.sdk.client.Client;
+import com.okta.sdk.client.ClientBuilder;
 import com.okta.sdk.client.Clients;
 import com.okta.sdk.impl.resource.AbstractCollectionResource;
 import com.okta.sdk.impl.resource.DefaultUserBuilder;
@@ -168,13 +170,20 @@ public class OktaConnector implements Connector, PoolableConnector,
         this.configuration = (OktaConfiguration) configuration;
         try {
             if (client == null) {
-                this.client = Clients.builder()
+                ClientBuilder builder = Clients.builder()
                         .setOrgUrl(this.configuration.getDomain())
-                        .setClientCredentials(new TokenClientCredentials(this.configuration.getOktaApiToken()))
                         .setRetryMaxAttempts(this.configuration.getRateLimitMaxRetries())
                         .setRetryMaxElapsed(this.configuration.getRetryMaxElapsed())
-                        .setConnectionTimeout(this.configuration.getRequestTimeout())
-                        .build();
+                        .setConnectionTimeout(this.configuration.getRequestTimeout());
+                if (this.configuration.getClientId() != null && this.configuration.getPrivateKeyPEM() != null) {
+                    builder.setAuthorizationMode(AuthorizationMode.PRIVATE_KEY)
+                            .setClientId(this.configuration.getClientId())
+                            .setScopes(new HashSet<>(Arrays.asList("okta.schemas.read", "okta.users.manage", "okta.groups.manage", "okta.apps.manage", "okta.logs.read")))
+                            .setPrivateKey(this.configuration.getPrivateKeyPEM());
+                } else {
+                    builder.setClientCredentials(new TokenClientCredentials(this.configuration.getOktaApiToken()));
+                }
+                this.client = builder.build();
             }
         } catch (Exception ex) {
             OktaUtils.wrapGeneralError("Could not create Okta client", ex);
