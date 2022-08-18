@@ -121,8 +121,10 @@ public final class OktaAttribute {
         UserProfile userProfile = user.getProfile();
         attributesToGet.stream().forEach((String attributeToGetName) -> {
             if (Name.NAME.equals(attributeToGetName)
-                    || Uid.NAME.equals(attributeToGetName)
-                    || OktaAttribute.ID.equals(attributeToGetName)) {
+                    || Uid.NAME.equals(attributeToGetName)) {
+                // Skip it as it has already been set by the caller
+                return;
+            } else if (OktaAttribute.ID.equals(attributeToGetName)) {
                 attributes.add(AttributeBuilder.build(attributeToGetName, user.getId()));
             } else if (STATUS.equals(attributeToGetName)) {
                 attributes.add(buildAttribute(user.getStatus().toString(), attributeToGetName, String.class).build());
@@ -170,9 +172,10 @@ public final class OktaAttribute {
         ObjectClassInfo objectClassInfo = schema.findObjectClassInfo(objName);
         attributesToGet.stream().forEach(attributeToGetName -> {
             if (Name.NAME.equals(attributeToGetName)
-                    || Uid.NAME.equals(attributeToGetName)
-                    || OktaAttribute.ID.equals(attributeToGetName)) {
-
+                    || Uid.NAME.equals(attributeToGetName) ) {
+                // Skip it as it has already been set by the caller
+                return;
+            } else if (OktaAttribute.ID.equals(attributeToGetName)) {
                 attributes.add(AttributeBuilder.build(attributeToGetName, resource.getString(ID)));
             } else if (STATUS.equals(attributeToGetName)) {
                 AttributeBuilder attributeBuilder = new AttributeBuilder();

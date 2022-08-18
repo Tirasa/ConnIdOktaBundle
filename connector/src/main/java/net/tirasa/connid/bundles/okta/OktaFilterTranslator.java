@@ -17,11 +17,15 @@ package net.tirasa.connid.bundles.okta;
 
 import java.util.Arrays;
 import java.util.List;
+
+import net.tirasa.connid.bundles.okta.utils.OktaAttribute;
 import net.tirasa.connid.bundles.okta.utils.OktaFilter;
 import net.tirasa.connid.bundles.okta.utils.OktaFilterOp;
 import org.identityconnectors.common.logging.Log;
 import org.identityconnectors.framework.common.objects.AttributeUtil;
+import org.identityconnectors.framework.common.objects.Name;
 import org.identityconnectors.framework.common.objects.ObjectClass;
+import org.identityconnectors.framework.common.objects.Uid;
 import org.identityconnectors.framework.common.objects.filter.AbstractFilterTranslator;
 import org.identityconnectors.framework.common.objects.filter.AttributeFilter;
 import org.identityconnectors.framework.common.objects.filter.ContainsFilter;
@@ -33,6 +37,8 @@ import org.identityconnectors.framework.common.objects.filter.GreaterThanOrEqual
 import org.identityconnectors.framework.common.objects.filter.LessThanFilter;
 import org.identityconnectors.framework.common.objects.filter.LessThanOrEqualFilter;
 import org.identityconnectors.framework.common.objects.filter.StartsWithFilter;
+
+import static net.tirasa.connid.bundles.okta.OktaConnector.APPLICATION;
 
 /**
  * This is an implementation of AbstractFilterTranslator that gives a concrete representation
@@ -142,7 +148,37 @@ public class OktaFilterTranslator extends AbstractFilterTranslator<OktaFilter> {
     }
 
     private String getFilterName(final AttributeFilter filter) {
-        return OktaFilter.ID_ATTRS.contains(filter.getName()) ? filter.getName() : "profile." + filter.getName();
+        String name = filter.getName();
+
+        if (ObjectClass.ACCOUNT.equals(objectClass)) {
+            if (OktaFilter.ID_ATTRS.contains(name)) {
+                return OktaAttribute.ID;
+            }
+            if (OktaFilter.USER_NAME_ATTRS.contains(name)) {
+                return "profile.login";
+            }
+            return  "profile." + filter.getName();
+
+        } else if (APPLICATION.equals(objectClass)) {
+            if (OktaFilter.ID_ATTRS.contains(name) || Name.NAME.equals(name)) {
+                return OktaAttribute.ID;
+            }
+            return  filter.getName();
+
+        } else if (ObjectClass.GROUP.equals(objectClass)) {
+            if (OktaFilter.ID_ATTRS.contains(name)) {
+                return OktaAttribute.ID;
+            }
+            if (OktaFilter.GROUP_NAME_ATTRS.contains(name)) {
+                return "profile.name";
+            }
+            return  "profile." + filter.getName();
+
+        } else {
+            LOG.warn("Search of type {0} is not supported", objectClass.getObjectClassValue());
+            throw new UnsupportedOperationException("Search of type" + objectClass.getObjectClassValue()
+                    + " is not supported");
+        }
     }
 
     private String getFilterValue(final AttributeFilter filter) {
