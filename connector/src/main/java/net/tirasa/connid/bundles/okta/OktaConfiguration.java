@@ -30,6 +30,10 @@ public class OktaConfiguration extends AbstractConfiguration implements Stateful
 
     private String oktaApiToken;
 
+    private String clientId;
+
+    private String privateKeyPEM;
+
     private String[] userEvents = { "user.account.update_profile" };
 
     private String[] groupEvents = {};
@@ -54,7 +58,7 @@ public class OktaConfiguration extends AbstractConfiguration implements Stateful
     }
 
     @ConfigurationProperty(order = 2, displayMessageKey = "oktaApiToken.display",
-            groupMessageKey = "basic.group", helpMessageKey = "oktaApiToken.help", required = true,
+            groupMessageKey = "basic.group", helpMessageKey = "oktaApiToken.help", required = false,
             confidential = true)
     public String getOktaApiToken() {
         return oktaApiToken;
@@ -64,7 +68,29 @@ public class OktaConfiguration extends AbstractConfiguration implements Stateful
         this.oktaApiToken = oktaApiToken;
     }
 
-    @ConfigurationProperty(order = 3,
+    @ConfigurationProperty(order = 3, displayMessageKey = "clientId.display",
+            groupMessageKey = "basic.group", helpMessageKey = "clientId.help", required = false,
+            confidential = false)
+    public String getClientId() {
+        return clientId;
+    }
+
+    public void setClientId(String clientId) {
+        this.clientId = clientId;
+    }
+
+    @ConfigurationProperty(order = 4, displayMessageKey = "privateKeyPEM.display",
+            groupMessageKey = "basic.group", helpMessageKey = "privateKeyPEM.help", required = false,
+            confidential = true)
+    public String getPrivateKeyPEM() {
+        return privateKeyPEM;
+    }
+
+    public void setPrivateKeyPEM(String privateKeyPEM) {
+        this.privateKeyPEM = privateKeyPEM;
+    }
+
+    @ConfigurationProperty(order = 5,
             displayMessageKey = "userEvents.display",
             groupMessageKey = "basic.group",
             helpMessageKey = "userEvents.help")
@@ -76,7 +102,7 @@ public class OktaConfiguration extends AbstractConfiguration implements Stateful
         this.userEvents = userEvents.clone();
     }
 
-    @ConfigurationProperty(order = 4,
+    @ConfigurationProperty(order = 6,
             displayMessageKey = "groupEvents.display",
             groupMessageKey = "basic.group",
             helpMessageKey = "groupEvents.help")
@@ -88,7 +114,7 @@ public class OktaConfiguration extends AbstractConfiguration implements Stateful
         this.groupEvents = groupEvents.clone();
     }
 
-    @ConfigurationProperty(order = 5,
+    @ConfigurationProperty(order = 7,
             displayMessageKey = "applicationEvents.display",
             groupMessageKey = "basic.group",
             helpMessageKey = "applicationEvents.help")
@@ -104,7 +130,7 @@ public class OktaConfiguration extends AbstractConfiguration implements Stateful
         this.rateLimitMaxRetries = rateLimitMaxRetries;
     }
 
-    @ConfigurationProperty(order = 6,
+    @ConfigurationProperty(order = 8,
             displayMessageKey = "rateLimitMaxRetries.display",
             groupMessageKey = "basic.group",
             helpMessageKey = "rateLimitMaxRetries.help")
@@ -116,7 +142,7 @@ public class OktaConfiguration extends AbstractConfiguration implements Stateful
         this.retryMaxElapsed = retryMaxElapsed;
     }
 
-    @ConfigurationProperty(order = 7,
+    @ConfigurationProperty(order = 9,
             displayMessageKey = "retryMaxElapsed.display",
             groupMessageKey = "basic.group",
             helpMessageKey = "retryMaxElapsed.help")
@@ -128,7 +154,7 @@ public class OktaConfiguration extends AbstractConfiguration implements Stateful
         this.requestTimeout = requestTimeout;
     }
 
-    @ConfigurationProperty(order = 8,
+    @ConfigurationProperty(order = 10,
             displayMessageKey = "requestTimeout.display",
             groupMessageKey = "basic.group",
             helpMessageKey = "requestTimeout.help")
