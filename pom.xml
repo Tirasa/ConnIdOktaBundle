@@ -77,14 +77,14 @@
 
   <properties>
     <connid.version>1.5.1.0</connid.version>
-    <okta.version>8.2.1</okta.version>
+    <okta.version>8.2.2</okta.version>
     
     <swagger-codegen.plugin.version>3.0.33</swagger-codegen.plugin.version>
     <javax.servlet.version>3.1.0</javax.servlet.version>
-    <spring.version>5.2.22.RELEASE</spring.version>
-    <jackson.version>2.12.7</jackson.version>
+    <spring.version>5.3.23</spring.version>
+    <jackson.version>2.13.4</jackson.version>
     <javax.validation.version>2.0.1.Final</javax.validation.version>
-    <apache.cxf.version>3.3.13</apache.cxf.version>
+    <apache.cxf.version>3.5.3</apache.cxf.version>
     <swagger-annotations.version>2.1.13</swagger-annotations.version>
 
     <log.directory>${project.build.directory}/log</log.directory>
@@ -95,7 +95,7 @@
     <cargo.log>${log.directory}/cargo.log</cargo.log>
     <cargo.output>${log.directory}/cargo-output.log</cargo.output>
 
-    <tomcat.version>9.0.63</tomcat.version>
+    <tomcat.version>9.0.65</tomcat.version>
     
     <java.version>1.8</java.version>
     <rootpom.basedir>${basedir}</rootpom.basedir>
@@ -309,7 +309,7 @@
       <plugin>
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
-        <version>0.13</version>
+        <version>0.15</version>
         <configuration>
           <excludes>
             <exclude>**/nbactions.xml</exclude>
@@ -353,7 +353,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-resources-plugin</artifactId>
-        <version>3.2.0</version>
+        <version>3.3.0</version>
         <executions>
           <execution>
             <id>copy-artifact-legal-files</id>
