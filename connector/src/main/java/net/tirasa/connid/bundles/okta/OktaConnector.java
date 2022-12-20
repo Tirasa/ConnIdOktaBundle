@@ -62,6 +62,7 @@ import org.identityconnectors.common.StringUtil;
 import org.identityconnectors.common.logging.Log;
 import org.identityconnectors.common.security.GuardedString;
 import org.identityconnectors.common.security.SecurityUtil;
+import org.identityconnectors.framework.common.exceptions.ConnectorException;
 import org.identityconnectors.framework.common.exceptions.InvalidAttributeValueException;
 import org.identityconnectors.framework.common.objects.Attribute;
 import org.identityconnectors.framework.common.objects.AttributeUtil;
@@ -95,8 +96,6 @@ import org.identityconnectors.framework.spi.operations.SearchOp;
 import org.identityconnectors.framework.spi.operations.SyncOp;
 import org.identityconnectors.framework.spi.operations.TestOp;
 import org.identityconnectors.framework.spi.operations.UpdateOp;
-
-import static net.tirasa.connid.bundles.okta.utils.OktaAttribute.isDefaultEveryoneGroup;
 
 /**
  * Main implementation of the Okta Connector.
@@ -178,7 +177,8 @@ public class OktaConnector implements Connector, PoolableConnector,
                 if (this.configuration.getClientId() != null && this.configuration.getPrivateKeyPEM() != null) {
                     builder.setAuthorizationMode(AuthorizationMode.PRIVATE_KEY)
                             .setClientId(this.configuration.getClientId())
-                            .setScopes(new HashSet<>(Arrays.asList("okta.schemas.read", "okta.users.manage", "okta.groups.manage", "okta.apps.manage", "okta.logs.read")))
+                            .setScopes(new HashSet<>(Arrays.asList("okta.schemas.read", "okta.users.manage",
+                                    "okta.groups.manage", "okta.apps.manage", "okta.logs.read")))
                             .setPrivateKey(this.configuration.getPrivateKeyPEM());
                 } else {
                     builder.setClientCredentials(new TokenClientCredentials(this.configuration.getOktaApiToken()));
@@ -323,11 +323,12 @@ public class OktaConnector implements Connector, PoolableConnector,
             OktaUtils.handleGeneralError("Set of Attributes value is null or empty");
         }
 
-        final AttributesAccessor accessor = new AttributesAccessor(replaceAttributes);
+        AttributesAccessor accessor = new AttributesAccessor(replaceAttributes);
         if (ObjectClass.ACCOUNT.equals(objectClass)) {
             Uid returnUid = uid;
             User user = client.getUser(uid.getUidValue());
 
+            // 1. update password
             GuardedString password = accessor.getPassword();
             if (password != null && StringUtil.isNotBlank(SecurityUtil.decrypt(password))) {
                 Attribute currentPassword = accessor.find(OperationalAttributes.CURRENT_PASSWORD_NAME);
@@ -348,6 +349,8 @@ public class OktaConnector implements Connector, PoolableConnector,
                     }
                 }
             }
+
+            // 2. update attributes
             try {
                 updateUserAttributes(user, replaceAttributes);
                 User updatedUser = user.update(true);
@@ -358,63 +361,60 @@ public class OktaConnector implements Connector, PoolableConnector,
                 OktaUtils.wrapGeneralError("Could not update User " + uid.getUidValue() + " from attributes ", e);
             }
 
+            // 3. update group memberships
             if (accessor.hasAttribute(OktaAttribute.OKTA_GROUPS)) {
                 try {
-                    //Assign User to Groups
-                    final List<Object> groupsToAssign =
+                    List<Object> groupsToAssign =
                             CollectionUtil.nullAsEmpty(accessor.findList(OktaAttribute.OKTA_GROUPS));
 
-                    final Set<String> assignedGroups = Optional.ofNullable(user.listGroups())
+                    Set<String> assignedGroups = Optional.ofNullable(user.listGroups())
                             .map(GroupList::stream)
                             .orElseGet(Stream::empty)
-                            .filter(item -> !isDefaultEveryoneGroup(item))
-                            .map(Group::getId).collect(Collectors.
-                                    toSet());
+                            .filter(item -> !OktaAttribute.isDefaultEveryoneGroup(item))
+                            .map(Group::getId).collect(Collectors.toSet());
 
-                    CollectionUtil.nullAsEmpty(groupsToAssign).stream().forEach(grp -> {
-                        if (!assignedGroups.contains(grp.toString())) {
-                            try {
-                                user.addToGroup(grp.toString());
-                                LOG.ok("User added to Group: {0} after update", grp);
-                            } catch (Exception ex) {
-                                LOG.error(ex, "Could not add User {0} to Group {1} ", uid.getUidValue(), grp);
-                                OktaUtils.handleGeneralError("Could not add User to Group ", ex);
-                            }
-                        }
-                    });
+                    groupsToAssign.stream().
+                            filter(grp -> !assignedGroups.contains(grp.toString())).
+                            forEach(grp -> {
+                                try {
+                                    user.addToGroup(grp.toString());
+                                    LOG.ok("User {0} added to Group {1} after update", uid.getUidValue(), grp);
+                                } catch (Exception ex) {
+                                    OktaUtils.handleGeneralError(
+                                            "Could not add User " + uid.getUidValue() + " to Group " + grp, ex);
+                                }
+                            });
 
-                    CollectionUtil.nullAsEmpty(assignedGroups).stream().forEach(grp -> {
-                        if (!groupsToAssign.contains(grp)) {
-                            try {
-                                client.getGroup(grp).removeUser(uid.getUidValue());
-                                LOG.ok("User removed from group: {0} after update", grp);
-                            } catch (Exception ex) {
-                                LOG.error(ex, "Could not remove User {0} from Group {1} ", uid.getUidValue(), grp);
-                                OktaUtils.handleGeneralError("Could not remove User from Group " + grp, ex);
-                            }
-                        }
-                    });
+                    assignedGroups.stream().
+                            filter(grp -> !groupsToAssign.contains(grp)).
+                            forEach(grp -> {
+                                try {
+                                    client.getGroup(grp).removeUser(uid.getUidValue());
+                                    LOG.ok("User {0} removed from Group {1} after update", uid.getUidValue(), grp);
+                                } catch (Exception ex) {
+                                    OktaUtils.handleGeneralError(
+                                            "Could not remove User " + uid.getUidValue() + " from Group " + grp, ex);
+                                }
+                            });
+                } catch (ConnectorException ex) {
+                    // skip reporting as thrown by OktaUtils#handleGeneralError
                 } catch (Exception ex) {
-                    LOG.error(ex, "Could not list groups for User {0}", uid.getUidValue());
-                    OktaUtils.handleGeneralError("Could not list groups for User", ex);
+                    OktaUtils.handleGeneralError("Errors while working with groups for User " + uid.getUidValue(), ex);
                 }
             }
             return returnUid;
         } else if (ObjectClass.GROUP.equals(objectClass)) {
             Group group = client.getGroup(uid.getUidValue());
 
-            Attribute name = accessor.find(OktaAttribute.NAME);
-            if (name != null) {
-                group.getProfile().setName(AttributeUtil.getStringValue(name));
-            }
-            Attribute desc = accessor.find(OktaAttribute.DESCRIPTION);
-            if (desc != null) {
-                group.getProfile().setDescription(AttributeUtil.getStringValue(desc));
-            }
+            Optional.ofNullable(accessor.getName()).
+                    ifPresent(name -> group.getProfile().setName(name.getNameValue()));
+
+            Optional.ofNullable(accessor.find(OktaAttribute.DESCRIPTION)).
+                    ifPresent(desc -> group.getProfile().setDescription(AttributeUtil.getStringValue(desc)));
 
             Group update = null;
             try {
-                 update = group.update();
+                update = group.update();
             } catch (Exception e) {
                 OktaUtils.wrapGeneralError("Could not update Group " + uid.getUidValue() + " from attributes ", e);
             }
@@ -432,6 +432,7 @@ public class OktaConnector implements Connector, PoolableConnector,
             final ObjectClass objectClass,
             final Uid uid,
             final OperationOptions options) {
+
         LOG.ok("Connector DELETE");
 
         if (StringUtil.isBlank(uid.getUidValue())) {

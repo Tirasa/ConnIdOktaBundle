@@ -23,8 +23,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import com.okta.sdk.resource.group.Group;
-import com.okta.sdk.resource.group.GroupBuilder;
-import com.okta.sdk.resource.group.GroupList;
 import com.okta.sdk.resource.user.User;
 import com.okta.sdk.resource.user.UserStatus;
 import java.util.Arrays;
@@ -273,8 +271,8 @@ public class OktaConnectorTests extends AbstractConnectorTests {
     @Test
     public void removeUserFromGroup() {
         ToListResultsHandler handler = new ToListResultsHandler();
-        OperationOptions operationOption =
-                new OperationOptionsBuilder().setAttributesToGet(OktaAttribute.EMAIL, OktaAttribute.MOBILEPHONE).build();
+        OperationOptions operationOption = new OperationOptionsBuilder().
+                setAttributesToGet(OktaAttribute.EMAIL, OktaAttribute.MOBILEPHONE).build();
         try {
             Group groupOne = createGroup(conn.getClient());
             Group groupTwo = createGroup(conn.getClient());
@@ -312,8 +310,7 @@ public class OktaConnectorTests extends AbstractConnectorTests {
 
             // UPDATE USER
             userAttrs.remove(password);
-            userAttrs.add(
-                    AttributeBuilder.build(OktaAttribute.OKTA_GROUPS));
+            userAttrs.add(AttributeBuilder.build(OktaAttribute.OKTA_GROUPS));
 
             Uid updated = connector.update(ObjectClass.ACCOUNT, created, userAttrs, operationOption);
             assertNotNull(updated);
@@ -321,7 +318,6 @@ public class OktaConnectorTests extends AbstractConnectorTests {
             assignedGroups = getUserGroups(conn.getClient(), updated.getUidValue());
             assertFalse(assignedGroups.contains(groupOne.getId()));
             assertFalse(assignedGroups.contains(groupTwo.getId()));
-
         } catch (Exception e) {
             fail();
             LOG.error(e, "While running test");
@@ -588,14 +584,14 @@ public class OktaConnectorTests extends AbstractConnectorTests {
         assertNotNull(created);
 
         User user = conn.getClient().getUser(created.getUidValue());
-        assertEquals("STAGED", UserStatus.STAGED.toString());
+        assertEquals(UserStatus.STAGED, user.getStatus());
     }
 
     @Test
     public void changePasswordWithOldValidation() {
         ToListResultsHandler handler = new ToListResultsHandler();
-        OperationOptions operationOption =
-                new OperationOptionsBuilder().setAttributesToGet(OktaAttribute.EMAIL, OktaAttribute.MOBILEPHONE).build();
+        OperationOptions operationOption = new OperationOptionsBuilder().
+                setAttributesToGet(OktaAttribute.EMAIL, OktaAttribute.MOBILEPHONE).build();
         try {
             // CREATE USER
             String username = UUID.randomUUID().toString();
@@ -640,8 +636,8 @@ public class OktaConnectorTests extends AbstractConnectorTests {
     @Test
     public void oldPasswordNotValid() {
         ToListResultsHandler handler = new ToListResultsHandler();
-        OperationOptions operationOption =
-                new OperationOptionsBuilder().setAttributesToGet(OktaAttribute.EMAIL, OktaAttribute.MOBILEPHONE).build();
+        OperationOptions operationOption = new OperationOptionsBuilder().
+                setAttributesToGet(OktaAttribute.EMAIL, OktaAttribute.MOBILEPHONE).build();
         try {
             // CREATE USER
             String username = UUID.randomUUID().toString();
@@ -684,8 +680,8 @@ public class OktaConnectorTests extends AbstractConnectorTests {
 
     @AfterClass
     public static void cleanTestData() {
-        USERS.stream().forEach(item -> cleanUserTestData(conn.getClient(), item));
-        GROUPS.stream().forEach(item -> cleanGroupTestData(conn.getClient(), item));
-        APPLICATIONS.stream().forEach(item -> cleanApplicationTestData(conn.getClient(), item));
+        USERS.forEach(item -> cleanUserTestData(conn.getClient(), item));
+        GROUPS.forEach(item -> cleanGroupTestData(conn.getClient(), item));
+        APPLICATIONS.forEach(item -> cleanApplicationTestData(conn.getClient(), item));
     }
 }

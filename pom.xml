@@ -81,10 +81,10 @@
     
     <swagger-codegen.plugin.version>3.0.33</swagger-codegen.plugin.version>
     <javax.servlet.version>3.1.0</javax.servlet.version>
-    <spring.version>5.3.23</spring.version>
+    <spring.version>5.3.24</spring.version>
     <jackson.version>2.13.4</jackson.version>
     <javax.validation.version>2.0.1.Final</javax.validation.version>
-    <apache.cxf.version>3.5.4</apache.cxf.version>
+    <apache.cxf.version>3.5.5</apache.cxf.version>
     <swagger-annotations.version>2.1.13</swagger-annotations.version>
 
     <log.directory>${project.build.directory}/log</log.directory>
@@ -95,7 +95,7 @@
     <cargo.log>${log.directory}/cargo.log</cargo.log>
     <cargo.output>${log.directory}/cargo-output.log</cargo.output>
 
-    <tomcat.version>9.0.65</tomcat.version>
+    <tomcat.version>9.0.70</tomcat.version>
     
     <java.version>1.8</java.version>
     <rootpom.basedir>${basedir}</rootpom.basedir>
