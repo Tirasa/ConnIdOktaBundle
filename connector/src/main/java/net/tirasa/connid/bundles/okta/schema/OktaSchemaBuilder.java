@@ -15,14 +15,12 @@
  */
 package net.tirasa.connid.bundles.okta.schema;
 
-import com.okta.sdk.client.Client;
-import com.okta.sdk.resource.ExtensibleResource;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 import net.tirasa.connid.bundles.okta.OktaConnector;
 import net.tirasa.connid.bundles.okta.utils.OktaAttribute;
 import org.identityconnectors.common.logging.Log;
@@ -33,31 +31,20 @@ import org.identityconnectors.framework.common.objects.ObjectClass;
 import org.identityconnectors.framework.common.objects.ObjectClassInfoBuilder;
 import org.identityconnectors.framework.common.objects.Schema;
 import org.identityconnectors.framework.common.objects.SchemaBuilder;
+import org.openapitools.client.api.SchemaApi;
+import org.openapitools.client.model.UserSchemaAttribute;
+import org.openapitools.client.model.UserSchemaDefinitions;
 
 class OktaSchemaBuilder {
 
     private static final Log LOG = Log.getLog(OktaSchemaBuilder.class);
 
-    public static final String SCHEMA_DEFINITIONS = "definitions";
-
-    public static final String SCHEMA_BASE = "base";
-
-    public static final String SCHEMA_CUSTOM = "custom";
-
-    public static final String TYPE = "type";
-
-    public static final String REQUIRED = "required";
-
-    private static final String PROPERTIES = "properties";
-
-    public static final List<String> ATTRS_TYPE = Arrays.asList(SCHEMA_BASE, SCHEMA_CUSTOM);
-
-    private final Client client;
+    private final SchemaApi schemaApi;
 
     private Schema schema;
 
-    public OktaSchemaBuilder(final Client client) {
-        this.client = client;
+    public OktaSchemaBuilder(final SchemaApi schemaApi) {
+        this.schemaApi = schemaApi;
     }
 
     public Schema getSchema() {
@@ -89,23 +76,71 @@ class OktaSchemaBuilder {
         return objClassBld;
     }
 
+    private Optional<AttributeInfo> map(
+            final String key, final UserSchemaAttribute attr, final List<String> req) {
+
+        return Optional.ofNullable(attr).map(prop -> {
+            AttributeInfoBuilder attributeInfo = new AttributeInfoBuilder();
+            attributeInfo.setRequired(req.contains(key));
+            return AttributeInfoBuilder.build(key, OktaAttribute.getType(prop.getType().getValue()));
+        });
+    }
+
     @SuppressWarnings({ "unchecked" })
     private Collection<AttributeInfo> buildAccountAttrInfos() {
         LOG.ok("Retrieve User schema profile");
         List<AttributeInfo> attributeInfos = new ArrayList<>();
-        ExtensibleResource userSchema = client.getDataStore().http().
-                get(OktaConnector.SCHEMA_USER_EDITOR_PROFILE_API_URL, ExtensibleResource.class);
-        Map<String, Object> definitions = Map.class.cast(userSchema.get(SCHEMA_DEFINITIONS));
-        ATTRS_TYPE.stream().forEach(item -> {
-            List<String> requiredAttrs = ((Map<String, List<String>>) definitions.get(item)).get(REQUIRED);
-            Map<String, Object> schemas = (Map<String, Object>) definitions.get(item);
-            ((Map<String, Object>) schemas.get(PROPERTIES)).forEach((key, value) -> {
-                AttributeInfoBuilder attributeInfo = new AttributeInfoBuilder();
-                attributeInfo.setRequired(requiredAttrs != null && requiredAttrs.contains(key));
-                attributeInfos.add(AttributeInfoBuilder.build(key,
-                        OktaAttribute.getType(((Map<String, String>) value).get(TYPE))));
-            });
-        });
+
+        UserSchemaDefinitions defs = schemaApi.getUserSchema("default").getDefinitions();
+
+        List<String> reqBase = Optional.ofNullable(defs.getBase().getRequired()).orElse(Collections.emptyList());
+        map("city", defs.getBase().getProperties().getCity(), reqBase).
+                ifPresent(attributeInfos::add);
+        map("costCenter", defs.getBase().getProperties().getCostCenter(), reqBase).
+                ifPresent(attributeInfos::add);
+        map("countryCode", defs.getBase().getProperties().getCountryCode(), reqBase).
+                ifPresent(attributeInfos::add);
+        map("department", defs.getBase().getProperties().getDepartment(), reqBase).
+                ifPresent(attributeInfos::add);
+        map("displayName", defs.getBase().getProperties().getDisplayName(), reqBase).
+                ifPresent(attributeInfos::add);
+        map("division", defs.getBase().getProperties().getDivision(), reqBase).
+                ifPresent(attributeInfos::add);
+        map("email", defs.getBase().getProperties().getEmail(), reqBase).
+                ifPresent(attributeInfos::add);
+        map("employeeNumber", defs.getBase().getProperties().getEmployeeNumber(), reqBase).
+                ifPresent(attributeInfos::add);
+        map("firstName", defs.getBase().getProperties().getFirstName(), reqBase).
+                ifPresent(attributeInfos::add);
+        map("honorificPrefix", defs.getBase().getProperties().getHonorificPrefix(), reqBase).
+                ifPresent(attributeInfos::add);
+        map("honorificSuffix", defs.getBase().getProperties().getHonorificSuffix(), reqBase).
+                ifPresent(attributeInfos::add);
+        map("lastName", defs.getBase().getProperties().getLastName(), reqBase).ifPresent(attributeInfos::add);
+        map("locale", defs.getBase().getProperties().getLocale(), reqBase).ifPresent(attributeInfos::add);
+        map("login", defs.getBase().getProperties().getLogin(), reqBase).ifPresent(attributeInfos::add);
+        map("manager", defs.getBase().getProperties().getManager(), reqBase).ifPresent(attributeInfos::add);
+        map("managerId", defs.getBase().getProperties().getManagerId(), reqBase).ifPresent(attributeInfos::add);
+        map("middleName", defs.getBase().getProperties().getMiddleName(), reqBase).ifPresent(attributeInfos::add);
+        map("mobilePhone", defs.getBase().getProperties().getMobilePhone(), reqBase).ifPresent(attributeInfos::add);
+        map("nickName", defs.getBase().getProperties().getNickName(), reqBase).ifPresent(attributeInfos::add);
+        map("organization", defs.getBase().getProperties().getOrganization(), reqBase).ifPresent(attributeInfos::add);
+        map("postalAddress", defs.getBase().getProperties().getPostalAddress(), reqBase).ifPresent(attributeInfos::add);
+        map("preferredLanguage", defs.getBase().getProperties().getPreferredLanguage(), reqBase).
+                ifPresent(attributeInfos::add);
+        map("primaryPhone", defs.getBase().getProperties().getPrimaryPhone(), reqBase).ifPresent(attributeInfos::add);
+        map("profileUrl", defs.getBase().getProperties().getProfileUrl(), reqBase).ifPresent(attributeInfos::add);
+        map("secondEmail", defs.getBase().getProperties().getSecondEmail(), reqBase).ifPresent(attributeInfos::add);
+        map("state", defs.getBase().getProperties().getState(), reqBase).ifPresent(attributeInfos::add);
+        map("streetAddress", defs.getBase().getProperties().getStreetAddress(), reqBase).ifPresent(attributeInfos::add);
+        map("timezone", defs.getBase().getProperties().getTimezone(), reqBase).ifPresent(attributeInfos::add);
+        map("title", defs.getBase().getProperties().getTitle(), reqBase).ifPresent(attributeInfos::add);
+        map("userType", defs.getBase().getProperties().getUserType(), reqBase).ifPresent(attributeInfos::add);
+        map("zipCode", defs.getBase().getProperties().getZipCode(), reqBase).ifPresent(attributeInfos::add);
+
+        List<String> reqCustom = Optional.ofNullable(defs.getCustom().getRequired()).orElse(Collections.emptyList());
+        defs.getCustom().getProperties().
+                forEach((key, prop) -> map(key, prop, reqCustom).ifPresent(attributeInfos::add));
 
         AttributeInfoBuilder attributeInfo = new AttributeInfoBuilder();
         attributeInfo.setRequired(true);

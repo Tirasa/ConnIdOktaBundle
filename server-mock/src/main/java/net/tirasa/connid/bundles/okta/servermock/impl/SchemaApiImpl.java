@@ -15,7 +15,9 @@
  */
 package net.tirasa.connid.bundles.okta.servermock.impl;
 
-import io.swagger.api.UserSchemaApi;
+import io.swagger.api.SchemaApi;
+import io.swagger.model.GroupSchema;
+import io.swagger.model.LogStreamType;
 import io.swagger.model.UserSchema;
 import io.swagger.model.UserSchemaAttribute;
 import io.swagger.model.UserSchemaAttributePermission;
@@ -35,56 +37,57 @@ import java.util.HashMap;
 import javax.ws.rs.core.Response;
 import net.tirasa.connid.bundles.okta.servermock.OktaObjectMapper;
 
-public class UserSchemaApiServiceImpl implements UserSchemaApi {
+public class SchemaApiImpl implements SchemaApi {
 
-    /**
-     * Fetches the Schema for an App User
-     *
-     * Fetches the Schema for an App User
-     *
-     */
     @Override
-    public Response getApplicationUserSchema(String appInstanceId) {
-        // TODO: Implement...
-
+    public Response getApplicationUserSchema(final String appInstanceId) {
         return Response.ok().entity("magic!").build();
     }
 
-    /**
-     * Fetches the schema for a Schema Id.
-     *
-     * Fetches the schema for a Schema Id.
-     *
-     */
     @Override
     public Response getUserSchema(final String schemaId) {
         return Response.ok().entity(initializeUserSchema(schemaId)).build();
     }
 
-    /**
-     * Partial updates on the User Profile properties of the Application User Schema.
-     *
-     * Partial updates on the User Profile properties of the Application User Schema.
-     *
-     */
     @Override
-    public Response updateApplicationUserProfile(String appInstanceId, UserSchema body) {
-        // TODO: Implement...
-
+    public Response updateApplicationUserProfile(final String appInstanceId, final UserSchema body) {
         return Response.ok().entity("magic!").build();
     }
 
     @Override
-    public Response updateUserProfile(UserSchema body, String schemaId) {
-        // TODO: Implement...
+    public Response updateUserProfile(final UserSchema body, final String schemaId) {
+        return Response.ok().entity("magic!").build();
+    }
 
+    @Override
+    public Response getApplicationLayout(final String appName) {
+        return Response.ok().entity("magic!").build();
+    }
+
+    @Override
+    public Response getGroupSchema() {
+        return Response.ok().entity("magic!").build();
+    }
+
+    @Override
+    public Response getLogStreamSchema(final LogStreamType logStreamType) {
+        return Response.ok().entity("magic!").build();
+    }
+
+    @Override
+    public Response listLogStreamSchemas() {
+        return Response.ok().entity("magic!").build();
+    }
+
+    @Override
+    public Response updateGroupSchema(final GroupSchema body) {
         return Response.ok().entity("magic!").build();
     }
 
     private UserSchema initializeUserSchema(final String schemaId) {
         UserSchema schema = new UserSchema();
         schema.setId("/meta/schemas/user/" + schemaId);
-        schema.set$Schema("http://json-schema.org/draft-04/schema#");
+        //schema.set$Schema("http://json-schema.org/draft-04/schema#");
         schema.setName("user");
         schema.setTitle("User");
         schema.setCreated(OktaObjectMapper.DATE_FORMAT.get().format(new Date()));

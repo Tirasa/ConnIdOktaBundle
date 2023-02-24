@@ -15,36 +15,23 @@
  */
 package net.tirasa.connid.bundles.okta.servermock.impl;
 
-import io.swagger.api.*;
-import java.util.Date;
-import io.swagger.model.LogEvent;
+import static net.tirasa.connid.bundles.okta.servermock.impl.AbstractApiImpl.EVENT_REPOSITORY;
 
+import io.swagger.api.SystemLogApi;
+import io.swagger.model.LogEvent;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.ws.rs.core.Response;
 
-/**
- * Okta API
- *
- * <p>
- * Allows customers to easily access the Okta API
- *
- */
-public class LogApiServiceImpl extends AbstractServiceImpl implements LogApi {
+public class SystemLogApiImpl implements SystemLogApi {
 
-    /**
-     * Fetch a list of events from your Okta organization system log.
-     *
-     * The Okta System Log API provides read access to your organization’s system log. This API provides more
-     * functionality than the Events API
-     *
-     */
     @Override
-    public Response getLogs(
+    public Response listLogEvents(
             final Date since,
             final Date until,
             final String filter,

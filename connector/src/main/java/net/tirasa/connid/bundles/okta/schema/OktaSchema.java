@@ -15,25 +15,24 @@
  */
 package net.tirasa.connid.bundles.okta.schema;
 
-import com.okta.sdk.client.Client;
 import org.identityconnectors.framework.common.objects.Schema;
+import org.openapitools.client.api.SchemaApi;
 
 public class OktaSchema {
 
-    private final Client client;
+    private final SchemaApi schemaApi;
 
     private Schema schema;
 
-    public OktaSchema(final Client client) {
-        this.client = client;
+    public OktaSchema(final SchemaApi schemaApi) {
+        this.schemaApi = schemaApi;
     }
 
     public Schema getSchema() {
         if (schema == null) {
-            schema = new OktaSchemaBuilder(client).getSchema();
+            schema = new OktaSchemaBuilder(schemaApi).getSchema();
         }
 
         return schema;
     }
-
 }

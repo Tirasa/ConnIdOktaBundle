@@ -19,6 +19,7 @@ import io.swagger.api.ApplicationApi;
 import io.swagger.model.AppUser;
 import io.swagger.model.Application;
 import io.swagger.model.ApplicationGroupAssignment;
+import io.swagger.model.ApplicationLifecycleStatus;
 import io.swagger.model.CapabilitiesObject;
 import io.swagger.model.CsrMetadata;
 import io.swagger.model.OAuth2ScopeConsentGrant;
@@ -38,45 +39,15 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 
-/**
- * Okta API
- *
- * <p>
- * Allows customers to easily access the Okta API
- *
- */
-public class ApplicationApiServiceImpl extends AbstractServiceImpl implements ApplicationApi {
+public class ApplicationApiImpl extends AbstractApiImpl implements ApplicationApi {
 
-    /**
-     * Activate Application
-     *
-     * Activates an inactive application.
-     *
-     */
     @Override
-    public Response activateApplication(String appId) {
-        // TODO: Implement...
-
+    public Response activateApplication(final String appId) {
         return Response.ok().entity("magic!").build();
     }
 
     @Override
-    public Response apiV1AppsAppIdCredentialsCsrsCsrIdLifecyclePublishPost(String appId, String csrId) {
-        // TODO: Implement...
-
-        return Response.ok().entity("magic!").build();
-    }
-
-    /**
-     * Assign User to Application for SSO &amp; Provisioning
-     *
-     * Assigns an user to an application with [credentials](#application-user-credentials-object) and an app-specific
-     * [profile](#application-user-profile-object). Profile mappings defined for the application are first applied
-     * before applying any profile properties specified in the request.
-     *
-     */
-    @Override
-    public Response assignUserToApplication(AppUser body, String appId) {
+    public Response assignUserToApplication(final AppUser body, final String appId) {
         if (APPLICATION_REPOSITORY.stream().anyMatch(app -> StringUtils.equals(appId, app.getId()))
                 && USER_REPOSITORY.stream().anyMatch(user -> StringUtils.equals(body.getId(), user.getId()))) {
 
@@ -88,30 +59,20 @@ public class ApplicationApiServiceImpl extends AbstractServiceImpl implements Ap
         }
     }
 
-    /**
-     * Clone Application Key Credential
-     *
-     * Clones a X.509 certificate for an application key credential from a source application to target application.
-     *
-     */
     @Override
-    public Response cloneApplicationKey(String appId, String keyId, String targetAid) {
-        // TODO: Implement...
-
+    public Response cloneApplicationKey(final String appId, final String keyId, final String targetAid) {
         return Response.ok().entity("magic!").build();
     }
 
-    /**
-     * Add Application
-     *
-     * Adds a new application to your Okta organization.
-     *
-     */
     @Override
-    public Response createApplication(Application body, String oktaAccessGatewayAgent, Boolean activate) {
+    public Response createApplication(
+            final Application body,
+            final String oktaAccessGatewayAgent,
+            final Boolean activate) {
+
         if (body.getId() == null) {
             if (Boolean.TRUE.equals(activate)) {
-                body.setStatus(Application.StatusEnum.ACTIVE);
+                body.setStatus(ApplicationLifecycleStatus.ACTIVE);
             }
             body.setId(UUID.randomUUID().toString());
             body.setCreated(Date.from(Instant.now()));
@@ -120,35 +81,16 @@ public class ApplicationApiServiceImpl extends AbstractServiceImpl implements Ap
             createLogEvent("application.lifecycle.create", body.getId());
             return Response.status(Response.Status.CREATED).entity(body).build();
         } else {
-            return updateApplication(body, body.getId());
+            return replaceApplication(body, body.getId());
         }
     }
 
-    /**
-     * Assign Group to Application
-     *
-     * Assigns a group to an application
-     *
-     */
     @Override
-    public Response createApplicationGroupAssignment(String appId, String groupId, ApplicationGroupAssignment body) {
-        // TODO: Implement...
-
-        return Response.ok().entity("magic!").build();
-    }
-
-    /**
-     * Deactivate Application
-     *
-     * Deactivates an active application.
-     *
-     */
-    @Override
-    public Response deactivateApplication(String appId) {
+    public Response deactivateApplication(final String appId) {
         APPLICATION_REPOSITORY.stream()
                 .filter(app -> StringUtils.equals(appId, app.getId()))
                 .findFirst().map(item -> {
-                    item.setStatus(Application.StatusEnum.INACTIVE);
+                    item.setStatus(ApplicationLifecycleStatus.INACTIVE);
                     item.setLastUpdated(Date.from(Instant.now()));
                     createLogEvent("application.lifecycle.deactivate", appId);
                     return Response.ok().entity(item).build();
@@ -156,40 +98,15 @@ public class ApplicationApiServiceImpl extends AbstractServiceImpl implements Ap
         return Response.status(Response.Status.NOT_FOUND).build();
     }
 
-    /**
-     * Delete Application
-     *
-     * Removes an inactive application.
-     *
-     */
     @Override
-    public Response deleteApplication(String appId) {
+    public Response deleteApplication(final String appId) {
         createLogEvent("application.lifecycle.delete", appId);
         return APPLICATION_REPOSITORY.removeIf(app -> StringUtils.equals(appId, app.getId())) ? Response.
                 noContent().build() : Response.status(Response.Status.NOT_FOUND).build();
     }
 
-    /**
-     * Remove Group from Application
-     *
-     * Removes a group assignment from an application.
-     *
-     */
     @Override
-    public Response deleteApplicationGroupAssignment(String appId, String groupId) {
-        // TODO: Implement...
-
-        return Response.ok().entity("magic!").build();
-    }
-
-    /**
-     * Remove User from Application
-     *
-     * Removes an assignment for a user from an application.
-     *
-     */
-    @Override
-    public Response deleteApplicationUser(String appId, String userId, Boolean sendEmail) {
+    public Response unassignUserFromApplication(final String appId, final String userId, final Boolean sendEmail) {
         createLogEvent("application.user_membership.remove", appId);
         return APPLICATION_USER_REPOSITORY.removeIf(pair -> StringUtils.equals(pair.getLeft(), appId)
                 && StringUtils.equals(pair.getRight(), userId)) ? Response.noContent().build() : Response.status(
@@ -197,149 +114,83 @@ public class ApplicationApiServiceImpl extends AbstractServiceImpl implements Ap
     }
 
     @Override
-    public Response generateApplicationKey(String appId, Integer validityYears) {
-        // TODO: Implement...
-
+    public Response generateApplicationKey(final String appId, final Integer validityYears) {
         return Response.ok().entity("magic!").build();
     }
 
-    /**
-     * Generate Certificate Signing Request for Application
-     *
-     * Generates a new key pair and returns the Certificate Signing Request for it.
-     *
-     */
     @Override
-    public Response generateCsrForApplication(CsrMetadata body, String appId) {
-        // TODO: Implement...
-
+    public Response generateCsrForApplication(final CsrMetadata body, final String appId) {
         return Response.ok().entity("magic!").build();
     }
 
-    /**
-     * Get Application
-     *
-     * Fetches an application from your Okta organization by &#x60;id&#x60;.
-     *
-     */
     @Override
-    public Response getApplication(String appId, String expand) {
+    public Response getApplication(final String appId, final String expand) {
         Optional<Application> found = APPLICATION_REPOSITORY.stream()
                 .filter(app -> StringUtils.equals(appId, app.getId()))
                 .findAny();
         if (found.isPresent()) {
             return Response.ok().entity(found.get()).build();
-        } else {
-            return Response.status(Response.Status.NOT_FOUND).build();
         }
+
+        return Response.status(Response.Status.NOT_FOUND).build();
     }
 
-    /**
-     * Get Assigned Group for Application
-     *
-     * Fetches an application group assignment
-     *
-     */
     @Override
-    public Response getApplicationGroupAssignment(String appId, String groupId, String expand) {
-        // TODO: Implement...
-
+    public Response getApplicationGroupAssignment(final String appId, final String groupId, final String expand) {
         return Response.ok().entity("magic!").build();
     }
 
-    /**
-     * Get Key Credential for Application
-     *
-     * Gets a specific application key credential by kid
-     *
-     */
     @Override
-    public Response getApplicationKey(String appId, String keyId) {
-        // TODO: Implement...
-
+    public Response getApplicationKey(final String appId, final String keyId) {
         return Response.ok().entity("magic!").build();
     }
 
-    /**
-     * Get Assigned User for Application
-     *
-     * Fetches a specific user assignment for application by &#x60;id&#x60;.
-     *
-     */
     @Override
-    public Response getApplicationUser(String appId, String userId, String expand) {
+    public Response getApplicationUser(final String appId, final String userId, final String expand) {
         Optional<Pair<String, String>> found = APPLICATION_USER_REPOSITORY.stream().
                 filter(pair -> StringUtils.equals(appId, pair.getLeft())
                 && StringUtils.equals(userId, pair.getRight())).
                 findFirst();
         if (found.isPresent()) {
             return Response.ok().
-                    entity(new UserApiServiceImpl().getUser(found.get().getRight()).readEntity(User.class)).build();
-        } else {
-            return Response.status(Response.Status.NOT_FOUND).build();
+                    entity(new UserApiImpl().getUser(found.get().getRight()).readEntity(User.class)).build();
         }
+
+        return Response.status(Response.Status.NOT_FOUND).build();
     }
 
     @Override
-    public Response getCsrForApplication(String appId, String csrId) {
-        // TODO: Implement...
+    public Response getCsrForApplication(final String appId, final String csrId) {
+        return Response.ok().entity("magic!").build();
+    }
+
+    @Override
+    public Response getOAuth2TokenForApplication(final String appId, final String tokenId, final String expand) {
+        return Response.ok().entity("magic!").build();
+    }
+
+    @Override
+    public Response getScopeConsentGrant(final String appId, final String grantId, final String expand) {
+        return Response.ok().entity("magic!").build();
+    }
+
+    @Override
+    public Response grantConsentToScope(final OAuth2ScopeConsentGrant body, final String appId) {
+        return Response.ok().entity("magic!").build();
+    }
+
+    @Override
+    public Response listApplicationGroupAssignments(
+            final String appId, final String q, final String after, final Integer limit, final String expand) {
 
         return Response.ok().entity("magic!").build();
     }
 
     @Override
-    public Response getOAuth2TokenForApplication(String appId, String tokenId, String expand) {
-        // TODO: Implement...
-
+    public Response listApplicationKeys(final String appId) {
         return Response.ok().entity("magic!").build();
     }
 
-    @Override
-    public Response getScopeConsentGrant(String appId, String grantId, String expand) {
-        // TODO: Implement...
-
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response grantConsentToScope(OAuth2ScopeConsentGrant body, String appId) {
-        // TODO: Implement...
-
-        return Response.ok().entity("magic!").build();
-    }
-
-    /**
-     * List Groups Assigned to Application
-     *
-     * Enumerates group assignments for an application.
-     *
-     */
-    @Override
-    public Response listApplicationGroupAssignments(String appId, String q, String after, Integer limit, String expand) {
-        // TODO: Implement...
-
-        return Response.ok().entity("magic!").build();
-    }
-
-    /**
-     * List Key Credentials for Application
-     *
-     * Enumerates key credentials for an application
-     *
-     */
-    @Override
-    public Response listApplicationKeys(String appId) {
-        // TODO: Implement...
-
-        return Response.ok().entity("magic!").build();
-    }
-
-    /**
-     * List Users Assigned to Application
-     *
-     * Enumerates all assigned [application users](#application-user-model) for an application.
-     *
-     */
     @Override
     public Response listApplicationUsers(
             final String appId,
@@ -359,8 +210,9 @@ public class ApplicationApiServiceImpl extends AbstractServiceImpl implements Ap
                 collect(Collectors.toList())));
 
         if (filter != null) {
-            return Response.ok().entity(new UserApiServiceImpl().searchUsers(users, filter)).build();
+            return Response.ok().entity(new UserApiImpl().searchUsers(users, filter)).build();
         }
+
         return Response.ok().entity(USER_REPOSITORY.stream().
                 limit(limit == null ? DEFAULT_LIMIT : limit.longValue()).
                 filter(q == null ? user -> true : user -> user.getProfile().getFirstName().contains(q)
@@ -370,13 +222,18 @@ public class ApplicationApiServiceImpl extends AbstractServiceImpl implements Ap
                 build();
     }
 
-    /**
-     * List Applications
-     *
-     * Enumerates apps added to your organization with pagination. A subset of apps can be returned that match a
-     * supported filter expression or query.
-     *
-     */
+    private String nextPage(final long limit, final int after, final List<Application> repository) {
+        if (limit + after < repository.size()) {
+            return "<" + uriInfo.getBaseUri().toString() + "api/v1/apps?after="
+                    + repository.get((int) (limit + after)).getId()
+                    + "&limit=" + limit + ">; rel=\"next\"";
+        }
+
+        return "<" + uriInfo.getBaseUri().toString() + "api/v1/apps?after="
+                + repository.get(repository.size() - 1).getId()
+                + "&limit=" + limit + ">; rel=\"self\"";
+    }
+
     @Override
     public Response listApplications(
             final String q,
@@ -388,7 +245,8 @@ public class ApplicationApiServiceImpl extends AbstractServiceImpl implements Ap
 
         if (filter != null) {
             List<Application> applications = searchApplication(filter);
-            return Response.ok().entity(applications).build();
+            return Response.ok().entity(applications).
+                    header("link", nextPage(limit, 0, APPLICATION_REPOSITORY)).build();
         }
 
         if (after != null) {
@@ -399,83 +257,65 @@ public class ApplicationApiServiceImpl extends AbstractServiceImpl implements Ap
                 int lastIndexOf = APPLICATION_REPOSITORY.lastIndexOf(found.get());
                 return Response.ok().entity(APPLICATION_REPOSITORY.stream().
                         skip(lastIndexOf).
-                        limit(limit == null ? DEFAULT_LIMIT : limit.longValue()).
-                        filter(q == null ? application -> true : application -> application.getName().contains(q)).
+                        limit(limit).
+                        filter(q == null ? application -> true : application -> application.getLabel().contains(q)).
                         collect(Collectors.toList())).
-                        header("link", getNextPage(limit, lastIndexOf, APPLICATION_REPOSITORY)).build();
+                        header("link", nextPage(limit, lastIndexOf, APPLICATION_REPOSITORY)).build();
             }
         }
+
         long actualLimit = limit == null || limit < 0 ? DEFAULT_LIMIT : limit.longValue();
         return Response.ok().entity(APPLICATION_REPOSITORY.stream().
                 limit(actualLimit).
-                filter(q == null ? application -> true : application -> application.getName().contains(q)).
-                collect(Collectors.toList())).header("link", getNextPage(actualLimit, 0, APPLICATION_REPOSITORY)).
+                filter(q == null ? application -> true : application -> application.getLabel().contains(q)).
+                collect(Collectors.toList())).header("link", nextPage(actualLimit, 0, APPLICATION_REPOSITORY)).
                 build();
     }
 
-    /**
-     * List Certificate Signing Requests for Application
-     *
-     * Enumerates Certificate Signing Requests for an application
-     *
-     */
     @Override
-    public Response listCsrsForApplication(String appId) {
-        // TODO: Implement...
+    public Response listCsrsForApplication(final String appId) {
+        return Response.ok().entity("magic!").build();
+    }
+
+    @Override
+    public Response listOAuth2TokensForApplication(
+            final String appId, final String expand, final String after, final Integer limit) {
 
         return Response.ok().entity("magic!").build();
     }
 
     @Override
-    public Response listOAuth2TokensForApplication(String appId, String expand, String after, Integer limit) {
-        // TODO: Implement...
-
+    public Response listScopeConsentGrants(final String appId, final String expand) {
         return Response.ok().entity("magic!").build();
     }
 
     @Override
-    public Response listScopeConsentGrants(String appId, String expand) {
-        // TODO: Implement...
-
+    public Response revokeCsrFromApplication(final String appId, final String csrId) {
         return Response.ok().entity("magic!").build();
     }
 
     @Override
-    public Response revokeCsrFromApplication(String appId, String csrId) {
-        // TODO: Implement...
-
+    public Response revokeOAuth2TokenForApplication(final String appId, final String tokenId) {
         return Response.ok().entity("magic!").build();
     }
 
     @Override
-    public Response revokeOAuth2TokenForApplication(String appId, String tokenId) {
-        // TODO: Implement...
-
+    public Response revokeOAuth2TokensForApplication(final String appId) {
         return Response.ok().entity("magic!").build();
     }
 
     @Override
-    public Response revokeOAuth2TokensForApplication(String appId) {
-        // TODO: Implement...
-
+    public Response revokeScopeConsentGrant(final String appId, final String grantId) {
         return Response.ok().entity("magic!").build();
     }
 
     @Override
-    public Response revokeScopeConsentGrant(String appId, String grantId) {
-        // TODO: Implement...
-
+    public Response uploadApplicationLogo(final String appId, final Attachment fileDetail) {
         return Response.ok().entity("magic!").build();
     }
 
-    /**
-     * Update Application
-     *
-     * Updates an application in your organization.
-     *
-     */
     @Override
-    public Response updateApplication(Application body, String appId) {
+    public Response replaceApplication(final Application body, final String appId) {
         Optional<Application> found = APPLICATION_REPOSITORY.stream()
                 .filter(app -> StringUtils.equals(appId, app.getId()))
                 .findAny();
@@ -487,64 +327,38 @@ public class ApplicationApiServiceImpl extends AbstractServiceImpl implements Ap
             body.setLastUpdated(Date.from(Instant.now()));
             createLogEvent("application.lifecycle.update", appId);
             return Response.ok().entity(body).build();
-        } else {
-            return Response.status(Response.Status.NOT_FOUND).build();
         }
+
+        return Response.status(Response.Status.NOT_FOUND).build();
     }
 
-    /**
-     * Update Application Profile for Assigned User
-     *
-     * Updates a user&#x27;s profile for an application
-     *
-     */
     @Override
-    public Response updateApplicationUser(AppUser body, String appId, String userId) {
-        // TODO: Implement...
-
+    public Response updateApplicationUser(final AppUser body, final String appId, final String userId) {
         return Response.ok().entity("magic!").build();
     }
 
     @Override
     public Response activateDefaultProvisioningConnectionForApplication(final String appId) {
-        // TODO: Implement...
-
         return Response.ok().entity("magic!").build();
     }
 
     @Override
     public Response deactivateDefaultProvisioningConnectionForApplication(final String appId) {
-        // TODO: Implement...
-
         return Response.ok().entity("magic!").build();
     }
 
     @Override
     public Response getDefaultProvisioningConnectionForApplication(final String appId) {
-        // TODO: Implement...
-
         return Response.ok().entity("magic!").build();
     }
 
     @Override
     public Response getFeatureForApplication(final String appId, final String name) {
-        // TODO: Implement...
-
         return Response.ok().entity("magic!").build();
     }
 
     @Override
     public Response listFeaturesForApplication(final String appId) {
-        // TODO: Implement...
-
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response setDefaultProvisioningConnectionForApplication(
-            final ProvisioningConnectionRequest body, final String appId, final Boolean activate) {
-
-        // TODO: Implement...
         return Response.ok().entity("magic!").build();
     }
 
@@ -552,20 +366,7 @@ public class ApplicationApiServiceImpl extends AbstractServiceImpl implements Ap
     public Response updateFeatureForApplication(
             final CapabilitiesObject body, final String appId, final String name) {
 
-        // TODO: Implement...
         return Response.status(Response.Status.NOT_FOUND).build();
-    }
-
-    @Override
-    public Response uploadApplicationLogo(final Attachment fileDetail, final String appId) {
-        // TODO: Implement...
-        return Response.status(Response.Status.NOT_FOUND).build();
-    }
-
-    @Override
-    public Response updateApplicationPolicy(final String appId, final String policyId) {
-        // TODO: Implement...
-        return Response.noContent().build();
     }
 
     private List<Application> searchApplication(final String filter) {
@@ -583,13 +384,27 @@ public class ApplicationApiServiceImpl extends AbstractServiceImpl implements Ap
                 collect(Collectors.toList());
     }
 
-    private String getNextPage(long limit, int after, List<Application> repository) {
-        if (limit + after < repository.size()) {
-            return "<" + uriInfo.getBaseUri().toString() + "api/v1/apps?after="
-                    + repository.get((int) (limit + after)).getId()
-                    + "&limit=" + limit + ">; rel=\"next\"";
-        } else {
-            return null;
-        }
+    @Override
+    public Response assignApplicationPolicy(final String appId, final String policyId) {
+        return Response.ok().entity("magic!").build();
+    }
+
+    @Override
+    public Response assignGroupToApplication(
+            final String appId, final String groupId, final ApplicationGroupAssignment body) {
+
+        return Response.ok().entity("magic!").build();
+    }
+
+    @Override
+    public Response unassignApplicationFromGroup(final String appId, final String groupId) {
+        return Response.ok().entity("magic!").build();
+    }
+
+    @Override
+    public Response updateDefaultProvisioningConnectionForApplication(
+            final ProvisioningConnectionRequest body, final String appId, final Boolean activate) {
+
+        return Response.ok().entity("magic!").build();
     }
 }

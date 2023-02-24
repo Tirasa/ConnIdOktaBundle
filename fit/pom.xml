@@ -21,7 +21,7 @@
   <parent>
     <groupId>net.tirasa.connid.bundles.okta</groupId>
     <artifactId>okta</artifactId>
-    <version>2.1.4-SNAPSHOT</version>
+    <version>3.0.0-SNAPSHOT</version>
   </parent>
     
   <groupId>net.tirasa.connid.bundles.okta</groupId>
@@ -47,7 +47,7 @@
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-simple</artifactId>
-      <version>1.7.30</version>
+      <version>1.7.36</version>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
@@ -68,11 +68,6 @@
     <dependency>
       <groupId>com.okta.sdk</groupId>
       <artifactId>okta-sdk-api</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.okta.sdk</groupId>
-      <artifactId>okta-sdk-httpclient</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -170,7 +165,6 @@
         <inherited>false</inherited>
         <configuration>
           <redirectTestOutputToFile>true</redirectTestOutputToFile>
-          <encoding>utf-8</encoding>
         </configuration>
         <executions>
           <execution>
@@ -194,7 +188,7 @@
 
       <plugin>
         <groupId>org.codehaus.cargo</groupId>
-        <artifactId>cargo-maven2-plugin</artifactId>
+        <artifactId>cargo-maven3-plugin</artifactId>
         <inherited>false</inherited>
         <configuration>
           <container>
@@ -234,13 +228,19 @@
             <goals>
               <goal>start</goal>
             </goals>
+            <configuration>
+              <skip>${skipTests}</skip>
+            </configuration>
           </execution>
           <execution>
             <id>stop-container</id>
-            <phase>no</phase>
+            <phase>post-integration-test</phase>
             <goals>
-              <goal />
+              <goal>stop</goal>
             </goals>
+            <configuration>
+              <skip>${skipTests}</skip>
+            </configuration>
           </execution>
         </executions>
       </plugin>
@@ -295,7 +295,7 @@
         <plugins>
           <plugin>
             <groupId>org.codehaus.cargo</groupId>
-            <artifactId>cargo-maven2-plugin</artifactId>
+            <artifactId>cargo-maven3-plugin</artifactId>
             <inherited>false</inherited>
             <executions>
               <execution>
@@ -349,6 +349,7 @@
               </execution>
             </executions>
           </plugin>
+
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-surefire-plugin</artifactId>
@@ -396,7 +397,7 @@
         <plugins>
           <plugin>
             <groupId>org.codehaus.cargo</groupId>
-            <artifactId>cargo-maven2-plugin</artifactId>
+            <artifactId>cargo-maven3-plugin</artifactId>
             <inherited>false</inherited>
             <executions>
               <execution>
@@ -450,6 +451,7 @@
               </execution>
             </executions>
           </plugin>
+
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-surefire-plugin</artifactId>
@@ -491,11 +493,14 @@
     
     <profile>
       <id>debug</id>
+
       <properties>
         <it.skipTests>true</it.skipTests>
       </properties>
+
       <build>
         <defaultGoal>clean package cargo:run</defaultGoal>
+
         <plugins>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
@@ -506,9 +511,10 @@
               <argLine>-Djavax.net.ssl.trustStore=${basedir}/src/test/resources/keystore -Djavax.net.ssl.trustStorePassword=password</argLine>
             </configuration>
           </plugin>
+
           <plugin>
             <groupId>org.codehaus.cargo</groupId>
-            <artifactId>cargo-maven2-plugin</artifactId>
+            <artifactId>cargo-maven3-plugin</artifactId>
             <inherited>true</inherited>
             <configuration>
               <configuration>
