@@ -17,30 +17,13 @@ package net.tirasa.connid.bundles.okta;
 
 import com.okta.sdk.authc.credentials.TokenClientCredentials;
 import com.okta.sdk.client.AuthorizationMode;
-import com.okta.sdk.client.Client;
 import com.okta.sdk.client.ClientBuilder;
 import com.okta.sdk.client.Clients;
-import com.okta.sdk.impl.resource.AbstractCollectionResource;
-import com.okta.sdk.impl.resource.DefaultUserBuilder;
-import com.okta.sdk.impl.resource.application.DefaultApplicationList;
-import com.okta.sdk.impl.resource.group.DefaultGroupList;
-import com.okta.sdk.impl.resource.user.DefaultUserList;
-import com.okta.sdk.resource.ExtensibleResource;
-import com.okta.sdk.resource.ResourceException;
-import com.okta.sdk.resource.application.Application;
-import com.okta.sdk.resource.application.ApplicationList;
-import com.okta.sdk.resource.group.Group;
+import com.okta.sdk.error.ResourceException;
+import com.okta.sdk.resource.common.PagedList;
 import com.okta.sdk.resource.group.GroupBuilder;
-import com.okta.sdk.resource.group.GroupList;
-import com.okta.sdk.resource.log.LogEvent;
-import com.okta.sdk.resource.log.LogEventList;
-import com.okta.sdk.resource.user.ChangePasswordRequest;
-import com.okta.sdk.resource.user.PasswordCredential;
-import com.okta.sdk.resource.user.User;
 import com.okta.sdk.resource.user.UserBuilder;
-import com.okta.sdk.resource.user.UserCredentials;
-import com.okta.sdk.resource.user.UserList;
-import com.okta.sdk.resource.user.UserStatus;
+import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
@@ -48,6 +31,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import net.tirasa.connid.bundles.okta.schema.OktaSchema;
@@ -96,6 +80,20 @@ import org.identityconnectors.framework.spi.operations.SearchOp;
 import org.identityconnectors.framework.spi.operations.SyncOp;
 import org.identityconnectors.framework.spi.operations.TestOp;
 import org.identityconnectors.framework.spi.operations.UpdateOp;
+import org.openapitools.client.ApiClient;
+import org.openapitools.client.api.ApplicationApi;
+import org.openapitools.client.api.GroupApi;
+import org.openapitools.client.api.SchemaApi;
+import org.openapitools.client.api.SystemLogApi;
+import org.openapitools.client.api.UserApi;
+import org.openapitools.client.model.Application;
+import org.openapitools.client.model.ChangePasswordRequest;
+import org.openapitools.client.model.Group;
+import org.openapitools.client.model.LogEvent;
+import org.openapitools.client.model.PasswordCredential;
+import org.openapitools.client.model.UpdateUserRequest;
+import org.openapitools.client.model.User;
+import org.openapitools.client.model.UserStatus;
 
 /**
  * Main implementation of the Okta Connector.
@@ -110,16 +108,6 @@ public class OktaConnector implements Connector, PoolableConnector,
     public static final String APPLICATION_NAME = ObjectClassUtil.createSpecialName("APPLICATION");
 
     public static final ObjectClass APPLICATION = new ObjectClass(APPLICATION_NAME);
-
-    public static final String SCHEMA_USER_EDITOR_PROFILE_API_URL = "/api/v1/meta/schemas/user/default";
-
-    public static final String USER_API_URL = "/api/v1/users";
-
-    public static final String APP_API_URL = "/api/v1/apps";
-
-    public static final String GROUP_API_URL = "/api/v1/groups";
-
-    public static final String LOG_API_URL = "/api/v1/logs";
 
     public static final String LIMIT = "50";
 
@@ -143,7 +131,15 @@ public class OktaConnector implements Connector, PoolableConnector,
 
     private OktaConfiguration configuration;
 
-    private Client client;
+    private ApiClient client;
+
+    private UserApi userApi;
+
+    private GroupApi groupApi;
+
+    private ApplicationApi appApi;
+
+    private SystemLogApi systemLogApi;
 
     private OktaSchema schema;
 
@@ -183,17 +179,38 @@ public class OktaConnector implements Connector, PoolableConnector,
                 } else {
                     builder.setClientCredentials(new TokenClientCredentials(this.configuration.getOktaApiToken()));
                 }
+
                 this.client = builder.build();
+                this.userApi = new UserApi(client);
+                this.groupApi = new GroupApi(client);
+                this.appApi = new ApplicationApi(client);
+                this.systemLogApi = new SystemLogApi(client);
             }
         } catch (Exception ex) {
             OktaUtils.wrapGeneralError("Could not create Okta client", ex);
         }
 
         if (schema == null) {
-            this.schema = new OktaSchema(client);
+            this.schema = new OktaSchema(new SchemaApi(client));
         }
 
         LOG.ok("Connector {0} successfully inited", getClass().getName());
+    }
+
+    public UserApi getUserApi() {
+        return userApi;
+    }
+
+    public GroupApi getGroupApi() {
+        return groupApi;
+    }
+
+    public ApplicationApi getApplicationApi() {
+        return appApi;
+    }
+
+    public SystemLogApi getSystemLogApi() {
+        return systemLogApi;
     }
 
     @Override
@@ -219,7 +236,7 @@ public class OktaConnector implements Connector, PoolableConnector,
             Attribute status = accessor.find(OperationalAttributes.ENABLE_NAME);
             Attribute email = accessor.find(OktaAttribute.EMAIL);
             try {
-                UserBuilder userBuilder = new DefaultUserBuilder();
+                UserBuilder userBuilder = UserBuilder.instance();
 
                 if (status == null || CollectionUtil.isEmpty(status.getValue())) {
                     LOG.warn("{0} attribute value not correct or not found, won't handle User status",
@@ -279,10 +296,10 @@ public class OktaConnector implements Connector, PoolableConnector,
                 buildProfile(userBuilder, accessor, objectClass);
 
                 //Assign User to Groups
-                Optional.ofNullable(accessor.findList(OktaAttribute.OKTA_GROUPS)).map(Collection::stream)
-                        .orElseGet(Stream::empty).map(Object::toString).forEach(item -> userBuilder.addGroup(item));
+                Optional.ofNullable(accessor.findList(OktaAttribute.OKTA_GROUPS)).map(Collection::stream).
+                        orElseGet(Stream::empty).map(Object::toString).forEach(userBuilder::addGroup);
 
-                result = userBuilder.buildAndCreate(client);
+                result = userBuilder.buildAndCreate(userApi);
             } catch (Exception e) {
                 OktaUtils.wrapGeneralError("Could not create User : " + AttributeUtil.getAsStringValue(email), e);
             }
@@ -299,10 +316,11 @@ public class OktaConnector implements Connector, PoolableConnector,
             try {
                 result = groupBuilder.setName(accessor.findString(OktaAttribute.NAME))
                         .setDescription(accessor.findString(OktaAttribute.DESCRIPTION))
-                        .buildAndCreate(client);
+                        .buildAndCreate(groupApi);
             } catch (Exception e) {
                 OktaUtils.wrapGeneralError("Could not create Group : " + accessor.findString(OktaAttribute.NAME), e);
             }
+
             return new Uid(result.getId());
         } else {
             LOG.warn("Create of type {0} is not supported", objectClass.getObjectClassValue());
@@ -326,37 +344,28 @@ public class OktaConnector implements Connector, PoolableConnector,
         AttributesAccessor accessor = new AttributesAccessor(replaceAttributes);
         if (ObjectClass.ACCOUNT.equals(objectClass)) {
             Uid returnUid = uid;
-            User user = client.getUser(uid.getUidValue());
+            User user = userApi.getUser(uid.getUidValue());
 
             // 1. update password
-            GuardedString password = accessor.getPassword();
-            if (password != null && StringUtil.isNotBlank(SecurityUtil.decrypt(password))) {
-                Attribute currentPassword = accessor.find(OperationalAttributes.CURRENT_PASSWORD_NAME);
-                GuardedString currentPasswordValue =
-                        currentPassword == null ? null : AttributeUtil.getGuardedStringValue(currentPassword);
-                if (currentPasswordValue != null
-                        && StringUtil.isNotBlank(SecurityUtil.decrypt(currentPasswordValue))) {
-                    selfPasswordUpdate(user, currentPasswordValue, password);
-                } else {
-                    try {
-                        UserCredentials userCredentials = client.instantiate(UserCredentials.class);
-                        PasswordCredential passwordCredentials = client.instantiate(PasswordCredential.class);
-                        passwordCredentials.setValue(SecurityUtil.decrypt(password).toCharArray());
-                        userCredentials.setPassword(passwordCredentials);
-                        user.setCredentials(userCredentials);
-                    } catch (Exception e) {
-                        OktaUtils.wrapGeneralError("Could not update password for User " + uid.getUidValue(), e);
-                    }
-                }
-            }
+            Optional.ofNullable(accessor.getPassword()).
+                    map(SecurityUtil::decrypt).filter(StringUtil::isNotBlank).ifPresent(newPassword -> {
+
+                Optional.ofNullable(accessor.find(OperationalAttributes.CURRENT_PASSWORD_NAME)).
+                        map(AttributeUtil::getGuardedStringValue).map(SecurityUtil::decrypt).
+                        filter(StringUtil::isNotBlank).
+                        ifPresent(oldPassword -> selfPasswordUpdate(user.getId(), oldPassword, newPassword));
+            });
 
             // 2. update attributes
             try {
                 updateUserAttributes(user, replaceAttributes);
-                User updatedUser = user.update(true);
+                UpdateUserRequest req = new UpdateUserRequest();
+                req.setProfile(user.getProfile());
 
-                updateUserStatus(updatedUser, accessor.find(OperationalAttributes.ENABLE_NAME));
-                returnUid = new Uid(updatedUser.getId());
+                User update = userApi.updateUser(user.getId(), req, Boolean.FALSE);
+
+                updateUserStatus(update, accessor.find(OperationalAttributes.ENABLE_NAME));
+                returnUid = new Uid(update.getId());
             } catch (Exception e) {
                 OktaUtils.wrapGeneralError("Could not update User " + uid.getUidValue() + " from attributes ", e);
             }
@@ -367,9 +376,7 @@ public class OktaConnector implements Connector, PoolableConnector,
                     List<Object> groupsToAssign =
                             CollectionUtil.nullAsEmpty(accessor.findList(OktaAttribute.OKTA_GROUPS));
 
-                    Set<String> assignedGroups = Optional.ofNullable(user.listGroups())
-                            .map(GroupList::stream)
-                            .orElseGet(Stream::empty)
+                    Set<String> assignedGroups = userApi.listUserGroups(user.getId()).stream()
                             .filter(item -> !OktaAttribute.isDefaultEveryoneGroup(item))
                             .map(Group::getId).collect(Collectors.toSet());
 
@@ -377,7 +384,7 @@ public class OktaConnector implements Connector, PoolableConnector,
                             filter(grp -> !assignedGroups.contains(grp.toString())).
                             forEach(grp -> {
                                 try {
-                                    user.addToGroup(grp.toString());
+                                    groupApi.assignUserToGroup(grp.toString(), user.getId());
                                     LOG.ok("User {0} added to Group {1} after update", uid.getUidValue(), grp);
                                 } catch (Exception ex) {
                                     OktaUtils.handleGeneralError(
@@ -389,7 +396,7 @@ public class OktaConnector implements Connector, PoolableConnector,
                             filter(grp -> !groupsToAssign.contains(grp)).
                             forEach(grp -> {
                                 try {
-                                    client.getGroup(grp).removeUser(uid.getUidValue());
+                                    groupApi.unassignUserFromGroup(grp, user.getId());
                                     LOG.ok("User {0} removed from Group {1} after update", uid.getUidValue(), grp);
                                 } catch (Exception ex) {
                                     OktaUtils.handleGeneralError(
@@ -404,7 +411,7 @@ public class OktaConnector implements Connector, PoolableConnector,
             }
             return returnUid;
         } else if (ObjectClass.GROUP.equals(objectClass)) {
-            Group group = client.getGroup(uid.getUidValue());
+            Group group = groupApi.getGroup(uid.getUidValue());
 
             Optional.ofNullable(accessor.getName()).
                     ifPresent(name -> group.getProfile().setName(name.getNameValue()));
@@ -414,7 +421,7 @@ public class OktaConnector implements Connector, PoolableConnector,
 
             Group update = null;
             try {
-                update = group.update();
+                update = groupApi.replaceGroup(group.getId(), group);
             } catch (Exception e) {
                 OktaUtils.wrapGeneralError("Could not update Group " + uid.getUidValue() + " from attributes ", e);
             }
@@ -447,24 +454,21 @@ public class OktaConnector implements Connector, PoolableConnector,
 
         if (ObjectClass.ACCOUNT.equals(objectClass)) {
             try {
-                User user = client.getUser(uid.getUidValue());
-                user.delete(false);
-                user.delete(false);
+                userApi.deleteUser(uid.getUidValue(), Boolean.FALSE);
+                userApi.deleteUser(uid.getUidValue(), Boolean.FALSE);
             } catch (Exception e) {
                 OktaUtils.wrapGeneralError("Could not delete User " + uid.getUidValue(), e);
             }
         } else if (APPLICATION.equals(objectClass)) {
             try {
-                Application application = client.getApplication(uid.getUidValue());
-                application.deactivate();
-                application.delete();
+                appApi.deactivateApplication(uid.getUidValue());
+                appApi.deleteApplication(uid.getUidValue());
             } catch (Exception e) {
                 OktaUtils.wrapGeneralError("Could not delete Application " + uid.getUidValue(), e);
             }
         } else if (ObjectClass.GROUP.equals(objectClass)) {
             try {
-                Group group = client.getGroup(uid.getUidValue());
-                group.delete();
+                groupApi.deleteGroup(uid.getUidValue());
             } catch (Exception e) {
                 OktaUtils.wrapGeneralError("Could not delete Group " + uid.getUidValue(), e);
             }
@@ -521,28 +525,29 @@ public class OktaConnector implements Connector, PoolableConnector,
         }
 
         LOG.info("Execute sync query {0} on {1}", tokenValue, objectClass);
-        LogEventList logEvents = getEvents(
+        List<LogEvent> logEvents = getEvents(
                 objectClass,
                 tokenValue == null ? null : OktaUtils.convertToDate(tokenValue));
         if (logEvents != null) {
             logEvents.stream().forEach(item -> {
                 ConnectorObject connObj = null;
-                ExtensibleResource result;
                 try {
                     if (isDeleteEvent(item.getEventType())) {
                         connObj = fromLogEvent(
-                                item.getTarget().get(0).getId(), item.getPublished().getTime(), objectClass);
+                                item.getTarget().get(0).getId(),
+                                item.getPublished().toInstant().toEpochMilli(),
+                                objectClass);
                     } else {
                         try {
                             if (ObjectClass.ACCOUNT.equals(objectClass)) {
-                                result = client.getUser(item.getTarget().get(0).getId());
-                                connObj = fromUser((User) result, attributesToGet);
+                                User user = userApi.getUser(item.getTarget().get(0).getId());
+                                connObj = fromUser(user, attributesToGet);
                             } else if (ObjectClass.GROUP.equals(objectClass)) {
-                                result = client.getGroup(item.getTarget().get(0).getId());
-                                connObj = fromGroup((Group) result, attributesToGet);
+                                Group group = groupApi.getGroup(item.getTarget().get(0).getId());
+                                connObj = fromGroup(group, attributesToGet);
                             } else {
-                                result = client.getApplication(item.getTarget().get(0).getId());
-                                connObj = fromApplication((Application) result, attributesToGet);
+                                Application app = appApi.getApplication(item.getTarget().get(0).getId(), null);
+                                connObj = fromApplication(app, attributesToGet);
                             }
                         } catch (Exception ex) {
                             LOG.info("{0} not found", item.getTarget().get(0).getId());
@@ -562,9 +567,9 @@ public class OktaConnector implements Connector, PoolableConnector,
 
     @Override
     public void test() {
-        if (configuration != null && client != null) {
+        if (configuration != null && schema != null) {
             try {
-                new OktaSchema(client).getSchema();
+                schema.getSchema();
             } catch (Exception ex) {
                 OktaUtils.handleGeneralError("Test error. Problems with client service", ex);
             }
@@ -572,10 +577,6 @@ public class OktaConnector implements Connector, PoolableConnector,
         } else {
             LOG.error("Test error. No instance of the configuration class");
         }
-    }
-
-    public Client getClient() {
-        return client;
     }
 
     @Override
@@ -590,6 +591,61 @@ public class OktaConnector implements Connector, PoolableConnector,
         return new OktaFilterTranslator(oclass);
     }
 
+    private <T> void doExecuteQuery(
+            final ObjectClass objectClass,
+            final OktaFilter filter,
+            final Integer pageSize,
+            final String beforeCookie,
+            final ResultsHandler handler,
+            final Function<String, T> getFunction,
+            final Function<String, PagedList<T>> pagedSearchFunction,
+            final Function<String, List<T>> searchFunction,
+            final Function<T, ConnectorObject> fromFunction) {
+
+        if (filter != null && filter.getFilters() == null
+                && OktaAttribute.ID.equals(filter.getAttribute())
+                && OktaFilterOp.EQUALS.equals(filter.getFilterOp())) {
+
+            try {
+                T object = getFunction.apply(filter.getValue());
+                handler.handle(fromFunction.apply(object));
+            } catch (Exception e) {
+                OktaUtils.wrapGeneralError(
+                        "While getting " + objectClass.getObjectClassValue() + " with filter: " + filter, e);
+            }
+        } else {
+            String theFilter = Optional.ofNullable(filter).map(OktaFilter::toString).orElse(null);
+            String afterCookie = beforeCookie;
+            List<T> objects = null;
+            try {
+                if (pageSize != null) {
+                    PagedList<T> response = pagedSearchFunction.apply(theFilter);
+                    afterCookie = response.getItems().size() >= pageSize ? response.getNextPage() : null;
+                    objects = response.getItems();
+                } else {
+                    objects = searchFunction.apply(theFilter);
+                }
+            } catch (Exception e) {
+                OktaUtils.wrapGeneralError(
+                        "While getting " + objectClass.getObjectClassValue() + " with filter: " + filter, e);
+            }
+
+            if (objects != null) {
+                for (T object : objects) {
+                    if (!handler.handle(fromFunction.apply(object))) {
+                        LOG.ok("Stop processing of the result set");
+                        break;
+                    }
+                }
+            }
+
+            if (handler instanceof SearchResultsHandler) {
+                ((SearchResultsHandler) handler).handleResult(new SearchResult(afterCookie, -1));
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
     @Override
     public void executeQuery(
             final ObjectClass objectClass,
@@ -609,168 +665,43 @@ public class OktaConnector implements Connector, PoolableConnector,
         }
 
         if (ObjectClass.ACCOUNT.equals(objectClass)) {
-            if (filter == null) {
-                int remainingResults = -1;
-                int pageSize = options.getPageSize() == null ? -1 : options.getPageSize();
-                String cookie = options.getPagedResultsCookie();
-                DefaultUserList userList = null;
-                try {
-                    if (pageSize != -1) {
-                        String nextPage = StringUtil.isBlank(cookie) ? USER_API_URL + "?limit=" + pageSize : cookie;
-                        userList = client.getDataStore().getResource(nextPage, DefaultUserList.class);
-                        nextPage = ((AbstractCollectionResource) userList).hasProperty("nextPage")
-                                && ((AbstractCollectionResource) userList).getProperty("nextPage") != null
-                                ? ((AbstractCollectionResource) userList).getProperty("nextPage").toString() : null;
-                        cookie = userList.getCurrentPage().getItems().size() >= pageSize ? nextPage : null;
-                    } else {
-                        userList = ((DefaultUserList) client.listUsers());
-                    }
-
-                } catch (Exception e) {
-                    OktaUtils.wrapGeneralError("While getting Users!", e);
-                }
-
-                if (userList != null) {
-                    for (User user : userList) {
-                        handler.handle(fromUser(user, attributesToGet));
-                    }
-                }
-
-                if (handler instanceof SearchResultsHandler) {
-                    ((SearchResultsHandler) handler).handleResult(new SearchResult(cookie, remainingResults));
-                }
-            } else {
-                try {
-                    if (filter.getFilters() == null
-                            && OktaAttribute.ID.equals(filter.getAttribute())
-                            && OktaFilterOp.EQUALS.equals(filter.getFilterOp())) {
-                        User user = client.getUser(filter.getValue());
-                        handler.handle(fromUser(user, attributesToGet));
-                    } else {
-                        UserList users = client.listUsers(null, null, filter.toString(), null, null);
-                        for (User user : users) {
-                            if (!handler.handle(fromUser(user, attributesToGet))) {
-                                LOG.ok("Stop processing of the result set");
-                                break;
-                            }
-                        }
-                    }
-                } catch (Exception e) {
-                    OktaUtils.wrapGeneralError("While getting User : " + filter, e);
-                }
-            }
+            doExecuteQuery(
+                    objectClass,
+                    filter,
+                    options.getPageSize(),
+                    options.getPagedResultsCookie(),
+                    handler,
+                    userApi::getUser,
+                    f -> OktaPaginationApis.listUsers(
+                            userApi, null, options.getPagedResultsCookie(), options.getPageSize(), f, null, null, null),
+                    f -> userApi.listUsers(null, null, null, f, null, null, null),
+                    o -> fromUser(o, attributesToGet));
         } else if (APPLICATION.equals(objectClass)) {
-            if (filter == null) {
-                int remainingResults = -1;
-                int pageSize = options.getPageSize() == null ? -1 : options.getPageSize();
-                String cookie = options.getPagedResultsCookie();
-                DefaultApplicationList applicationList = null;
-                try {
-                    if (pageSize != -1) {
-                        String nextPage = StringUtil.isBlank(cookie) ? APP_API_URL + "?limit=" + pageSize : cookie;
-                        applicationList = client.getDataStore().getResource(nextPage, DefaultApplicationList.class);
-                        nextPage = ((AbstractCollectionResource) applicationList).hasProperty("nextPage")
-                                && ((AbstractCollectionResource) applicationList).getProperty("nextPage") != null
-                                ? ((AbstractCollectionResource) applicationList).getProperty("nextPage").toString()
-                                : null;
-                        cookie = applicationList.getCurrentPage().getItems().size() >= pageSize ? nextPage : null;
-                    } else {
-                        applicationList = ((DefaultApplicationList) client.listApplications());
-                    }
-                } catch (Exception e) {
-                    OktaUtils.wrapGeneralError("While getting Applications!", e);
-                }
-
-                if (applicationList != null) {
-                    for (Application application : applicationList) {
-                        handler.handle(fromApplication(application, attributesToGet));
-                    }
-                }
-
-                if (handler instanceof SearchResultsHandler) {
-                    ((SearchResultsHandler) handler).handleResult(new SearchResult(cookie, remainingResults));
-                }
-            } else {
-                Application result = null;
-                try {
-                    if (filter.getFilters() == null
-                            && OktaAttribute.ID.equals(filter.getAttribute())
-                            && OktaFilterOp.EQUALS.equals(filter.getFilterOp())) {
-
-                        Application app = client.getApplication(filter.getValue());
-                        handler.handle(fromApplication(app, attributesToGet));
-                    } else {
-                        ApplicationList applications = client.listApplications(null, filter.toString(), null, null);
-                        for (Application app : applications) {
-                            if (!handler.handle(fromApplication(app, attributesToGet))) {
-                                LOG.ok("Stop processing of the result set");
-                                break;
-                            }
-                        }
-                    }
-                } catch (Exception e) {
-                    OktaUtils.wrapGeneralError("While getting Application : " + filter.toString(), e);
-                }
-                if (result != null) {
-                    handler.handle(fromApplication(result, attributesToGet));
-                }
-            }
+            doExecuteQuery(objectClass,
+                    filter,
+                    options.getPageSize(),
+                    options.getPagedResultsCookie(),
+                    handler,
+                    id -> appApi.getApplication(id, null),
+                    f -> OktaPaginationApis.listApplications(
+                            appApi, null, options.getPagedResultsCookie(), options.getPageSize(), f, null, null),
+                    f -> appApi.listApplications(null, null, null, f, null, null),
+                    o -> fromApplication(o, attributesToGet));
         } else if (ObjectClass.GROUP.equals(objectClass)) {
-            if (filter == null) {
-                int remainingResults = -1;
-                int pageSize = options.getPageSize() == null ? -1 : options.getPageSize();
-                String cookie = options.getPagedResultsCookie();
-                DefaultGroupList groupList = null;
-                try {
-                    if (pageSize != -1) {
-                        String nextPage = StringUtil.isBlank(cookie) ? GROUP_API_URL + "?limit=" + pageSize : cookie;
-                        groupList = client.getDataStore().getResource(nextPage, DefaultGroupList.class);
-                        nextPage = ((AbstractCollectionResource) groupList).hasProperty("nextPage")
-                                && ((AbstractCollectionResource) groupList).getProperty("nextPage") != null
-                                ? ((AbstractCollectionResource) groupList).getProperty("nextPage").toString()
-                                : null;
-                        cookie = groupList.getCurrentPage().getItems().size() >= pageSize ? nextPage : null;
-                    } else {
-                        groupList = ((DefaultGroupList) client.listGroups());
-                    }
-                } catch (Exception e) {
-                    OktaUtils.wrapGeneralError("While getting Groups!", e);
-                }
-
-                if (groupList != null) {
-                    for (Group group : groupList) {
-                        handler.handle(fromGroup(group, attributesToGet));
-                    }
-                }
-
-                if (handler instanceof SearchResultsHandler) {
-                    ((SearchResultsHandler) handler).handleResult(new SearchResult(cookie, remainingResults));
-                }
-            } else {
-                try {
-                    if (filter.getFilters() == null
-                            && OktaFilter.ID_ATTRS.contains(filter.getAttribute())
-                            && OktaFilterOp.EQUALS.equals(filter.getFilterOp())) {
-
-                        Group group = client.getGroup(filter.getValue());
-                        handler.handle(fromGroup(group, attributesToGet));
-                    } else {
-                        GroupList groups = client.listGroups(null, filter.toString(), null);
-                        for (Group group : groups) {
-                            if (!handler.handle(fromGroup(group, attributesToGet))) {
-                                LOG.ok("Stop processing of the result set");
-                                break;
-                            }
-                        }
-                    }
-                } catch (Exception e) {
-                    OktaUtils.wrapGeneralError("While getting Groups: " + filter.toString(), e);
-                }
-            }
+            doExecuteQuery(
+                    objectClass,
+                    filter,
+                    options.getPageSize(),
+                    options.getPagedResultsCookie(),
+                    handler,
+                    groupApi::getGroup,
+                    f -> OktaPaginationApis.listGroups(
+                            groupApi, null, f, options.getPagedResultsCookie(), options.getPageSize(), null, null),
+                    f -> groupApi.listGroups(null, f, null, null, null, null),
+                    o -> fromGroup(o, attributesToGet));
         } else {
-            LOG.warn("Search of type {0} is not supported", objectClass.getObjectClassValue());
-            throw new UnsupportedOperationException("Search of type" + objectClass.getObjectClassValue()
-                    + " is not supported");
+            throw new UnsupportedOperationException(
+                    "Search of type" + objectClass.getObjectClassValue() + " is not supported");
         }
     }
 
@@ -779,18 +710,18 @@ public class OktaConnector implements Connector, PoolableConnector,
         if (StringUtil.isBlank(filter)) {
             OktaUtils.handleGeneralError("Provide envenType for Sync");
         }
-        LogEventList events = client.getDataStore().getResource(
-                LOG_API_URL + "?filter=" + filter + "&limit=1&sortOrder=DESCENDING", LogEventList.class);
-        return events != null && events.stream().count() > 0 ? events.single().getPublished().getTime() : 0L;
+
+        List<LogEvent> events = systemLogApi.listLogEvents(null, null, filter, null, 1, "DESCENDING", null);
+        return CollectionUtil.isEmpty(events) ? 0L : events.get(0).getPublished().toInstant().toEpochMilli();
     }
 
-    private LogEventList getEvents(final ObjectClass objectClass, final Date since) {
+    private List<LogEvent> getEvents(final ObjectClass objectClass, final OffsetDateTime since) {
         String filter = buildFilterByObjectClass(objectClass);
         if (StringUtil.isBlank(filter)) {
             LOG.info("Provide envenType for Sync {0}", objectClass);
             return null;
         }
-        return client.getLogs(since, null, filter, null, "ASCENDING");
+        return systemLogApi.listLogEvents(since, null, filter, null, null, "ASCENDING", null);
     }
 
     private String buildFilterByObjectClass(final ObjectClass objectClass) {
@@ -821,8 +752,7 @@ public class OktaConnector implements Connector, PoolableConnector,
         builder.setObjectClass(objectClass);
         builder.setUid(id);
         builder.setName(id);
-        builder.addAttribute(
-                OktaAttribute.buildAttribute(lastUpdate, OktaAttribute.LASTUPDATED, Long.class).build());
+        builder.addAttribute(OktaAttribute.buildAttribute(lastUpdate, OktaAttribute.LASTUPDATED, Long.class).build());
         return builder.build();
     }
 
@@ -831,8 +761,9 @@ public class OktaConnector implements Connector, PoolableConnector,
         builder.setObjectClass(ObjectClass.ACCOUNT);
         builder.setUid(user.getId());
         builder.setName(user.getProfile().getLogin());
-        return builder.addAttributes(
-                OktaAttribute.buildUserAttributes(client, user, schema.getSchema(), attributesToGet)).build();
+        builder.addAttributes(OktaAttribute.buildUserAttributes(
+                userApi, user, schema.getSchema(), attributesToGet));
+        return builder.build();
     }
 
     private ConnectorObject fromApplication(final Application application, final Set<String> attributesToGet) {
@@ -840,9 +771,9 @@ public class OktaConnector implements Connector, PoolableConnector,
         builder.setObjectClass(APPLICATION);
         builder.setUid(application.getId());
         builder.setName(application.getId());
-        return builder.addAttributes(
-                OktaAttribute.buildExtResourceAttributes(client, application,
-                        schema.getSchema(), attributesToGet, APPLICATION_NAME)).build();
+        builder.addAttributes(OktaAttribute.buildApplicationAttributes(appApi, application, schema.getSchema(),
+                attributesToGet));
+        return builder.build();
     }
 
     private ConnectorObject fromGroup(final Group group, final Set<String> attributesToGet) {
@@ -850,9 +781,9 @@ public class OktaConnector implements Connector, PoolableConnector,
         builder.setObjectClass(ObjectClass.GROUP);
         builder.setUid(group.getId());
         builder.setName(group.getProfile().getName());
-        return builder.addAttributes(
-                OktaAttribute.buildExtResourceAttributes(client, group,
-                        schema.getSchema(), attributesToGet, ObjectClass.GROUP_NAME)).build();
+        builder.addAttributes(OktaAttribute.buildGroupAttributes(
+                groupApi, group, schema.getSchema(), attributesToGet));
+        return builder.build();
     }
 
     private SyncDeltaBuilder buildSyncDelta(final ConnectorObject connectorObject, final LogEvent event) {
@@ -860,10 +791,10 @@ public class OktaConnector implements Connector, PoolableConnector,
         SyncDeltaBuilder bld = new SyncDeltaBuilder();
         long published;
         if (isMembershipOperationEvent(event.getEventType())) {
-            published = event.getPublished().getTime();
+            published = event.getPublished().toInstant().toEpochMilli();
         } else {
             Attribute lastUpdate = connectorObject.getAttributeByName(OktaAttribute.LASTUPDATED);
-            published = Long.valueOf(AttributeUtil.getSingleValue(lastUpdate).toString());
+            published = Long.parseLong(AttributeUtil.getSingleValue(lastUpdate).toString());
         }
 
         bld.setToken(new SyncToken(published));
@@ -937,31 +868,31 @@ public class OktaConnector implements Connector, PoolableConnector,
                         }
                     } else {
                         if (Boolean.class.isInstance(attributeInfo.getType())) {
-                            userBuilder.putProfileProperty(attrName,
+                            userBuilder.setCustomProfileProperty(attrName,
                                     AttributeUtil.getBooleanValue(accessor.find(attrName)));
                         } else if (Integer.class.isInstance(attributeInfo.getType())) {
-                            userBuilder.putProfileProperty(attrName,
+                            userBuilder.setCustomProfileProperty(attrName,
                                     AttributeUtil.getIntegerValue(accessor.find(attrName)));
                         } else if (Long.class.isInstance(attributeInfo.getType())) {
-                            userBuilder.putProfileProperty(attrName,
+                            userBuilder.setCustomProfileProperty(attrName,
                                     AttributeUtil.getLongValue(accessor.find(attrName)));
                         } else if (Float.class.isInstance(attributeInfo.getType())) {
-                            userBuilder.putProfileProperty(attrName,
+                            userBuilder.setCustomProfileProperty(attrName,
                                     AttributeUtil.getFloatValue(accessor.find(attrName)));
                         } else if (Double.class.isInstance(attributeInfo.getType())) {
-                            userBuilder.putProfileProperty(attrName,
+                            userBuilder.setCustomProfileProperty(attrName,
                                     AttributeUtil.getDoubleValue(accessor.find(attrName)));
                         } else if (Date.class.isInstance(attributeInfo.getType())) {
-                            userBuilder.putProfileProperty(attrName,
+                            userBuilder.setCustomProfileProperty(attrName,
                                     AttributeUtil.getDateValue(accessor.find(attrName)));
                         } else if (Byte[].class.isInstance(attributeInfo.getType())) {
-                            userBuilder.putProfileProperty(attrName,
+                            userBuilder.setCustomProfileProperty(attrName,
                                     AttributeUtil.getByteArrayValue(accessor.find(attrName)));
                         } else if (String.class.isInstance(attributeInfo.getType())) {
-                            userBuilder.putProfileProperty(attrName,
+                            userBuilder.setCustomProfileProperty(attrName,
                                     AttributeUtil.getStringValue(accessor.find(attrName)));
                         } else {
-                            userBuilder.putProfileProperty(attrName,
+                            userBuilder.setCustomProfileProperty(attrName,
                                     AttributeUtil.getSingleValue(accessor.find(attrName)));
                         }
                     }
@@ -1007,51 +938,60 @@ public class OktaConnector implements Connector, PoolableConnector,
                             }
                         } else {
                             if (Boolean.class.isInstance(attributeInfo.getType())) {
-                                user.getProfile().put(attribute.getName(), AttributeUtil.getBooleanValue(attribute));
+                                user.getProfile().getAdditionalProperties().
+                                        put(attribute.getName(), AttributeUtil.getBooleanValue(attribute));
                             } else if (Integer.class.isInstance(attributeInfo.getType())) {
-                                user.getProfile().put(attribute.getName(), AttributeUtil.getIntegerValue(attribute));
-                            } else if (String.class
-                                    .isInstance(attributeInfo.getType())) {
-                                user.getProfile().put(attribute.getName(), AttributeUtil.getStringValue(attribute));
+                                user.getProfile().getAdditionalProperties().
+                                        put(attribute.getName(), AttributeUtil.getIntegerValue(attribute));
+                            } else if (String.class.isInstance(attributeInfo.getType())) {
+                                user.getProfile().getAdditionalProperties().
+                                        put(attribute.getName(), AttributeUtil.getStringValue(attribute));
                             } else {
-                                user.getProfile().put(attribute.getName(), AttributeUtil.getSingleValue(attribute));
+                                user.getProfile().getAdditionalProperties().
+                                        put(attribute.getName(), AttributeUtil.getSingleValue(attribute));
                             }
                         }
                     }
                 }));
     }
 
-    private void updateUserStatus(final User updatedUser, final Attribute status) {
+    private void updateUserStatus(final User user, final Attribute status) {
         if (status == null || CollectionUtil.isEmpty(status.getValue())) {
             LOG.warn("{0} attribute value not correct, can't handle User status update",
                     OperationalAttributes.ENABLE_NAME);
         } else {
             boolean enabled = (boolean) status.getValue().get(0);
 
-            if (updatedUser.getStatus() == UserStatus.ACTIVE && !enabled) {
-                updatedUser.suspend();
-            } else if (updatedUser.getStatus() == UserStatus.SUSPENDED && enabled) {
-                updatedUser.unsuspend();
-            } else if (updatedUser.getStatus() == UserStatus.STAGED) {
+            if (user.getStatus() == UserStatus.ACTIVE && !enabled) {
+                userApi.suspendUser(user.getId());
+            } else if (user.getStatus() == UserStatus.SUSPENDED && enabled) {
+                userApi.unsuspendUser(user.getId());
+            } else if (user.getStatus() == UserStatus.STAGED) {
                 if (enabled) {
-                    updatedUser.activate(Boolean.FALSE);
+                    userApi.activateUser(user.getId(), Boolean.FALSE);
                 } else {
-                    LOG.ok("not suspending user {0} as in STAGED status", updatedUser.getId());
+                    LOG.ok("not suspending user {0} as in STAGED status", user.getId());
                 }
-            } else if (updatedUser.getStatus() != UserStatus.DEPROVISIONED && !enabled) {
-                updatedUser.deactivate();
+            } else if (user.getStatus() != UserStatus.DEPROVISIONED && !enabled) {
+                userApi.deactivateUser(user.getId(), Boolean.FALSE);
             }
         }
     }
 
-    private void selfPasswordUpdate(final User user, final GuardedString oldPassword, final GuardedString newPassword) {
+    private void selfPasswordUpdate(String userId, final String oldPassword, final String newPassword) {
         try {
-            user.changePassword(client.instantiate(ChangePasswordRequest.class).
-                    setOldPassword(client.instantiate(PasswordCredential.class).
-                            setValue(SecurityUtil.decrypt(oldPassword).toCharArray())).
-                    setNewPassword(client.instantiate(PasswordCredential.class).
-                            setValue(SecurityUtil.decrypt(newPassword).toCharArray())));
-            LOG.ok("Self change passsowrd user {0}" + user.getId());
+            PasswordCredential oldPwd = new PasswordCredential();
+            oldPwd.setValue(oldPassword);
+
+            PasswordCredential newPwd = new PasswordCredential();
+            newPwd.setValue(newPassword);
+
+            ChangePasswordRequest req = new ChangePasswordRequest();
+            req.setOldPassword(oldPwd);
+            req.setNewPassword(newPwd);
+
+            userApi.changePassword(userId, req, Boolean.FALSE);
+            LOG.ok("Self change passsword user {0}" + userId);
         } catch (ResourceException e) {
             LOG.error(e, e.getMessage());
             if (!CollectionUtil.isEmpty(e.getCauses())) {

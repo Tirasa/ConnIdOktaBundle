@@ -40,7 +40,7 @@ public class OktaConfiguration extends AbstractConfiguration implements Stateful
 
     private String[] applicationEvents = {};
 
-    private int rateLimitMaxRetries = 0;
+    private int rateLimitMaxRetries = 1;
 
     private int retryMaxElapsed = 0;
 

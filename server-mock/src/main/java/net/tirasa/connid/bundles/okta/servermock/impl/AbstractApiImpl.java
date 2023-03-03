@@ -38,7 +38,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.UriInfo;
 import org.apache.commons.lang3.tuple.Pair;
 
-public abstract class AbstractServiceImpl {
+public abstract class AbstractApiImpl {
 
     @Context
     protected UriInfo uriInfo;
@@ -53,10 +53,11 @@ public abstract class AbstractServiceImpl {
 
     protected static final Map<String, List<String>> USER_PASSWORD_REPOSITORY = new ConcurrentHashMap<>();
 
-    protected static final List<Group> GROUP_REPOSITORY =
-            Collections.synchronizedList(new ArrayList<Group>(Arrays.asList(
-                    new Group().id(EVERYONE_ID).type(GroupType.BUILT_IN).profile(new GroupProfile().name(EVERYONE).description(
-                            EVERYONE)))));
+    protected static final List<Group> GROUP_REPOSITORY = Collections.synchronizedList(new ArrayList<>(Arrays.asList(
+            new Group().
+                    id(EVERYONE_ID).
+                    type(GroupType.BUILT_IN).
+                    profile(new GroupProfile().name(EVERYONE).description(EVERYONE)))));
 
     protected static final List<Pair<String, String>> GROUP_USER_REPOSITORY =
             Collections.synchronizedList(new ArrayList<>());
@@ -64,7 +65,7 @@ public abstract class AbstractServiceImpl {
     protected static final Map<String, Set<String>> USER_IDP_REPOSITORY = new ConcurrentHashMap<>();
 
     protected static final SortedMap<Date, LogEvent> EVENT_REPOSITORY =
-            Collections.synchronizedSortedMap(new TreeMap<Date, LogEvent>(Collections.reverseOrder()));
+            Collections.synchronizedSortedMap(new TreeMap<>(Collections.reverseOrder()));
 
     protected static final List<Application> APPLICATION_REPOSITORY =
             Collections.synchronizedList(new ArrayList<>());
@@ -75,8 +76,8 @@ public abstract class AbstractServiceImpl {
     protected static void createLogEvent(final String eventTypeName, final String id) {
         Date now = Date.from(OffsetDateTime.now(ZoneOffset.UTC).toInstant());
 
-        LogEvent event = new LogEvent();
-        event.eventType(eventTypeName).target(Arrays.asList(new LogTarget().id(id))).setPublished(now);
-        EVENT_REPOSITORY.put(now, event);
+        EVENT_REPOSITORY.put(
+                now,
+                new LogEvent().eventType(eventTypeName).target(Arrays.asList(new LogTarget().id(id))).published(now));
     }
 }

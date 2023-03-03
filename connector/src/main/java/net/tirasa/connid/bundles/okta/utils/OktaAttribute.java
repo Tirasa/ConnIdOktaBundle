@@ -15,19 +15,12 @@
  */
 package net.tirasa.connid.bundles.okta.utils;
 
-import com.okta.sdk.client.Client;
-import com.okta.sdk.resource.ExtensibleResource;
-import com.okta.sdk.resource.application.Application;
-import com.okta.sdk.resource.group.Group;
-import com.okta.sdk.resource.user.User;
-import com.okta.sdk.resource.user.UserProfile;
-import com.okta.sdk.resource.user.UserStatus;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import net.tirasa.connid.bundles.okta.OktaConnector;
 import org.identityconnectors.common.StringUtil;
 import org.identityconnectors.common.logging.Log;
 import org.identityconnectors.framework.common.objects.Attribute;
@@ -38,6 +31,15 @@ import org.identityconnectors.framework.common.objects.ObjectClassInfo;
 import org.identityconnectors.framework.common.objects.OperationalAttributes;
 import org.identityconnectors.framework.common.objects.Schema;
 import org.identityconnectors.framework.common.objects.Uid;
+import org.openapitools.client.api.ApplicationApi;
+import org.openapitools.client.api.GroupApi;
+import org.openapitools.client.api.UserApi;
+import org.openapitools.client.model.Application;
+import org.openapitools.client.model.ApplicationLifecycleStatus;
+import org.openapitools.client.model.Group;
+import org.openapitools.client.model.User;
+import org.openapitools.client.model.UserProfile;
+import org.openapitools.client.model.UserStatus;
 
 public final class OktaAttribute {
 
@@ -111,7 +113,7 @@ public final class OktaAttribute {
     }
 
     public static Set<Attribute> buildUserAttributes(
-            final Client client,
+            final UserApi userApi,
             final User user,
             final Schema schema,
             final Set<String> attributesToGet) {
@@ -119,103 +121,223 @@ public final class OktaAttribute {
         Set<Attribute> attributes = new HashSet<>();
         ObjectClassInfo objectClassInfo = schema.findObjectClassInfo(ObjectClass.ACCOUNT_NAME);
         UserProfile userProfile = user.getProfile();
-        attributesToGet.stream().forEach((String attributeToGetName) -> {
-            if (Name.NAME.equals(attributeToGetName)
-                    || Uid.NAME.equals(attributeToGetName)) {
-                // Skip it as it has already been set by the caller
-                return;
-            } else if (OktaAttribute.ID.equals(attributeToGetName)) {
-                attributes.add(AttributeBuilder.build(attributeToGetName, user.getId()));
-            } else if (STATUS.equals(attributeToGetName)) {
-                attributes.add(buildAttribute(user.getStatus().toString(), attributeToGetName, String.class).build());
-            } else if (OperationalAttributes.ENABLE_NAME.equals(attributeToGetName)) {
-                attributes.add(buildAttribute(user.getStatus().equals(
-                        UserStatus.ACTIVE), attributeToGetName, Boolean.class).build());
-            } else if (OKTA_GROUPS.equals(attributeToGetName)) {
+        attributesToGet.stream().filter(name -> !Name.NAME.equals(name) && !Uid.NAME.equals(name)).forEach(name -> {
+            if (ID.equals(name)) {
+                attributes.add(AttributeBuilder.build(name, user.getId()));
+            } else if (STATUS.equals(name)) {
+                attributes.add(buildAttribute(user.getStatus().toString(), name, String.class).build());
+            } else if (OperationalAttributes.ENABLE_NAME.equals(name)) {
+                attributes.add(buildAttribute(user.getStatus() == UserStatus.ACTIVE, name, Boolean.class).build());
+            } else if (OKTA_GROUPS.equals(name)) {
                 try {
-                    List<String> assignedGroups =
-                            user.listGroups().stream()
-                                    .filter(item -> !isDefaultEveryoneGroup(item))
-                                    .map(item -> item.getId())
-                                    .collect(Collectors.toList());
-                    attributes.add(buildAttribute(assignedGroups, attributeToGetName, Set.class).build());
+                    List<String> assignedGroups = userApi.listUserGroups(user.getId()).stream()
+                            .filter(item -> !isDefaultEveryoneGroup(item))
+                            .map(Group::getId)
+                            .collect(Collectors.toList());
+                    attributes.add(buildAttribute(assignedGroups, name, Set.class).build());
                 } catch (Exception ex) {
                     LOG.error(ex, "Could not list groups for User {0}", user.getId());
                 }
-            } else if (OktaAttribute.LASTUPDATED.equals(attributeToGetName)) {
-                attributes.add(
-                        buildAttribute(user.getLastUpdated() != null
-                                ? user.getLastUpdated().getTime()
-                                : 0L,
-                                attributeToGetName, Long.class).build());
+            } else if (LASTUPDATED.equals(name)) {
+                attributes.add(buildAttribute(user.getLastUpdated() != null
+                        ? user.getLastUpdated().toInstant().toEpochMilli()
+                        : 0L,
+                        name, Long.class).build());
             } else {
                 objectClassInfo.getAttributeInfo().stream().
-                        filter(attr -> attr.getName().equals(attributeToGetName)).findFirst().ifPresent(
+                        filter(attr -> attr.getName().equals(name)).findFirst().ifPresent(
                         attributeInfo -> {
-                            attributes.add(
-                                    buildAttribute(userProfile.get(
-                                            attributeToGetName), attributeToGetName, attributeInfo.getType()).build());
+                            Object value;
+                            switch (name) {
+                                case UserProfile.JSON_PROPERTY_CITY:
+                                    value = userProfile.getCity();
+                                    break;
+
+                                case UserProfile.JSON_PROPERTY_COST_CENTER:
+                                    value = userProfile.getCostCenter();
+                                    break;
+
+                                case UserProfile.JSON_PROPERTY_COUNTRY_CODE:
+                                    value = userProfile.getCountryCode();
+                                    break;
+
+                                case UserProfile.JSON_PROPERTY_DEPARTMENT:
+                                    value = userProfile.getDepartment();
+                                    break;
+
+                                case UserProfile.JSON_PROPERTY_DISPLAY_NAME:
+                                    value = userProfile.getDisplayName();
+                                    break;
+
+                                case UserProfile.JSON_PROPERTY_DIVISION:
+                                    value = userProfile.getDivision();
+                                    break;
+
+                                case UserProfile.JSON_PROPERTY_EMAIL:
+                                    value = userProfile.getEmail();
+                                    break;
+
+                                case UserProfile.JSON_PROPERTY_EMPLOYEE_NUMBER:
+                                    value = userProfile.getEmployeeNumber();
+                                    break;
+
+                                case UserProfile.JSON_PROPERTY_FIRST_NAME:
+                                    value = userProfile.getFirstName();
+                                    break;
+
+                                case UserProfile.JSON_PROPERTY_HONORIFIC_PREFIX:
+                                    value = userProfile.getHonorificPrefix();
+                                    break;
+
+                                case UserProfile.JSON_PROPERTY_HONORIFIC_SUFFIX:
+                                    value = userProfile.getHonorificSuffix();
+                                    break;
+
+                                case UserProfile.JSON_PROPERTY_LAST_NAME:
+                                    value = userProfile.getLastName();
+                                    break;
+
+                                case UserProfile.JSON_PROPERTY_LOCALE:
+                                    value = userProfile.getLocale();
+                                    break;
+
+                                case UserProfile.JSON_PROPERTY_LOGIN:
+                                    value = userProfile.getLogin();
+                                    break;
+
+                                case UserProfile.JSON_PROPERTY_MANAGER:
+                                    value = userProfile.getManager();
+                                    break;
+
+                                case UserProfile.JSON_PROPERTY_MANAGER_ID:
+                                    value = userProfile.getManagerId();
+                                    break;
+
+                                case UserProfile.JSON_PROPERTY_MIDDLE_NAME:
+                                    value = userProfile.getMiddleName();
+                                    break;
+
+                                case UserProfile.JSON_PROPERTY_MOBILE_PHONE:
+                                    value = userProfile.getMobilePhone();
+                                    break;
+
+                                case UserProfile.JSON_PROPERTY_NICK_NAME:
+                                    value = userProfile.getNickName();
+                                    break;
+
+                                case UserProfile.JSON_PROPERTY_ORGANIZATION:
+                                    value = userProfile.getOrganization();
+                                    break;
+
+                                case UserProfile.JSON_PROPERTY_POSTAL_ADDRESS:
+                                    value = userProfile.getPostalAddress();
+                                    break;
+
+                                case UserProfile.JSON_PROPERTY_PREFERRED_LANGUAGE:
+                                    value = userProfile.getPreferredLanguage();
+                                    break;
+
+                                case UserProfile.JSON_PROPERTY_PRIMARY_PHONE:
+                                    value = userProfile.getPrimaryPhone();
+                                    break;
+
+                                case UserProfile.JSON_PROPERTY_PROFILE_URL:
+                                    value = userProfile.getProfileUrl();
+                                    break;
+
+                                case UserProfile.JSON_PROPERTY_SECOND_EMAIL:
+                                    value = userProfile.getSecondEmail();
+                                    break;
+
+                                case UserProfile.JSON_PROPERTY_STATE:
+                                    value = userProfile.getState();
+                                    break;
+
+                                case UserProfile.JSON_PROPERTY_STREET_ADDRESS:
+                                    value = userProfile.getStreetAddress();
+                                    break;
+
+                                case UserProfile.JSON_PROPERTY_TIMEZONE:
+                                    value = userProfile.getTimezone();
+                                    break;
+
+                                case UserProfile.JSON_PROPERTY_TITLE:
+                                    value = userProfile.getTitle();
+                                    break;
+
+                                case UserProfile.JSON_PROPERTY_USER_TYPE:
+                                    value = userProfile.getUserType();
+                                    break;
+
+                                case UserProfile.JSON_PROPERTY_ZIP_CODE:
+                                    value = userProfile.getZipCode();
+                                    break;
+
+                                default:
+                                    value = userProfile.getAdditionalProperties().get(name);
+                            }
+
+                            attributes.add(buildAttribute(value, name, attributeInfo.getType()).build());
                         });
             }
         });
         return attributes;
     }
 
-    public static Set<Attribute> buildExtResourceAttributes(
-            final Client client,
-            final ExtensibleResource resource,
+    public static Set<Attribute> buildGroupAttributes(
+            final GroupApi groupApi,
+            final Group group,
             final Schema schema,
-            final Set<String> attributesToGet,
-            final String objName) {
+            final Set<String> attributesToGet) {
 
         Set<Attribute> attributes = new HashSet<>();
-        ObjectClassInfo objectClassInfo = schema.findObjectClassInfo(objName);
-        attributesToGet.stream().forEach(attributeToGetName -> {
-            if (Name.NAME.equals(attributeToGetName)
-                    || Uid.NAME.equals(attributeToGetName) ) {
-                // Skip it as it has already been set by the caller
-                return;
-            } else if (OktaAttribute.ID.equals(attributeToGetName)) {
-                attributes.add(AttributeBuilder.build(attributeToGetName, resource.getString(ID)));
-            } else if (STATUS.equals(attributeToGetName)) {
-                AttributeBuilder attributeBuilder = new AttributeBuilder();
-                attributeBuilder.setName(attributeToGetName);
-                if (resource instanceof Application) {
-                    attributeBuilder.
-                            addValue(((Application) resource).getStatus());
-                }
-                attributes.add(attributeBuilder.build());
-            } else if (OperationalAttributes.ENABLE_NAME.equals(attributeToGetName)) {
-                AttributeBuilder attributeBuilder = new AttributeBuilder();
-                attributeBuilder.setName(attributeToGetName);
-                if (resource instanceof Application) {
-                    attributeBuilder.
-                            addValue(((Application) resource).getStatus().equals(Application.StatusEnum.ACTIVE));
-                }
-                attributes.add(attributeBuilder.build());
-            } else if (OperationalAttributes.ENABLE_NAME.equals(attributeToGetName)
-                    || STATUS.equals(attributeToGetName)) {
+        attributesToGet.stream().filter(name -> !Name.NAME.equals(name) && !Uid.NAME.equals(name)).forEach(name -> {
+            if (ID.equals(name)) {
+                attributes.add(AttributeBuilder.build(name, group.getId()));
+            } else if (DESCRIPTION.equals(name)) {
+                attributes.add(AttributeBuilder.build(name, group.getProfile().getDescription()));
+            } else if (LASTUPDATED.equals(name)) {
+                attributes.add(buildAttribute(group.getLastUpdated() != null
+                        ? group.getLastUpdated().toInstant().toEpochMilli() : 0L,
+                        name, Long.class).build());
+            }
+        });
+        return attributes;
+    }
 
-                AttributeBuilder attributeBuilder = new AttributeBuilder().setName(attributeToGetName);
-                if (resource instanceof Application) {
-                    attributeBuilder.
-                            addValue(((Application) resource).getStatus().equals(Application.StatusEnum.ACTIVE));
-                }
+    public static Set<Attribute> buildApplicationAttributes(
+            final ApplicationApi applicationApi,
+            final Application application,
+            final Schema schema,
+            final Set<String> attributesToGet) {
+
+        Set<Attribute> attributes = new HashSet<>();
+        ObjectClassInfo objectClassInfo = schema.findObjectClassInfo(OktaConnector.APPLICATION_NAME);
+        attributesToGet.stream().filter(name -> !Name.NAME.equals(name) && !Uid.NAME.equals(name)).forEach(name -> {
+            if (ID.equals(name)) {
+                attributes.add(AttributeBuilder.build(name, application.getId()));
+            } else if (STATUS.equals(name)) {
+                AttributeBuilder attributeBuilder = new AttributeBuilder();
+                attributeBuilder.setName(name);
+                attributeBuilder.addValue(application.getStatus());
                 attributes.add(attributeBuilder.build());
-            } else if (OktaAttribute.LASTUPDATED.equals(attributeToGetName)) {
-                attributes.add(buildAttribute(resource.get(LASTUPDATED) != null
-                        ? ((Date) resource.get(LASTUPDATED)).getTime() : 0L,
-                        attributeToGetName, Long.class).build());
+            } else if (OperationalAttributes.ENABLE_NAME.equals(name)
+                    || STATUS.equals(name)) {
+
+                AttributeBuilder attributeBuilder = new AttributeBuilder();
+                attributeBuilder.setName(name);
+                attributeBuilder.addValue(application.getStatus() == ApplicationLifecycleStatus.ACTIVE);
+                attributes.add(attributeBuilder.build());
+            } else if (LASTUPDATED.equals(name)) {
+                attributes.add(buildAttribute(application.getLastUpdated() != null
+                        ? application.getLastUpdated().toInstant().toEpochMilli() : 0L,
+                        name, Long.class).build());
             } else {
                 objectClassInfo.getAttributeInfo().stream().
-                        filter(attr -> attr.getName().equals(attributeToGetName)).findFirst().ifPresent(
-                        attributeInfo -> {
-                            attributes.add(
-                                    buildAttribute(resource instanceof Group
-                                            ? ((Group) resource).getProfile().getString(attributeToGetName)
-                                            : resource.getString(attributeToGetName),
-                                            attributeToGetName, attributeInfo.getType()).build());
-                        });
+                        filter(attr -> attr.getName().equals(name)).findFirst().ifPresent(
+                        attributeInfo -> attributes.add(buildAttribute(
+                                application.getProfile().get(name),
+                                name, attributeInfo.getType()).build()));
             }
         });
         return attributes;

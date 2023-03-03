@@ -18,13 +18,7 @@ package net.tirasa.connid.bundles.okta;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
-import com.okta.sdk.client.Client;
-import com.okta.sdk.resource.application.Application;
-import com.okta.sdk.resource.application.WsFederationApplication;
-import com.okta.sdk.resource.application.WsFederationApplicationSettings;
-import com.okta.sdk.resource.group.Group;
 import com.okta.sdk.resource.group.GroupBuilder;
-import com.okta.sdk.resource.user.User;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -49,6 +43,11 @@ import org.identityconnectors.framework.common.objects.SyncResultsHandler;
 import org.identityconnectors.framework.common.objects.SyncToken;
 import org.identityconnectors.framework.common.objects.Uid;
 import org.junit.BeforeClass;
+import org.openapitools.client.api.ApplicationApi;
+import org.openapitools.client.api.GroupApi;
+import org.openapitools.client.api.UserApi;
+import org.openapitools.client.model.Application;
+import org.openapitools.client.model.Group;
 
 public abstract class AbstractConnectorTests {
 
@@ -71,8 +70,7 @@ public abstract class AbstractConnectorTests {
     @BeforeClass
     public static void setUpConf() {
         try {
-            InputStream propStream =
-                    OktaConnectorTests.class.getResourceAsStream("/okta.properties");
+            InputStream propStream = OktaConnectorTests.class.getResourceAsStream("/okta.properties");
             PROPS.load(propStream);
         } catch (IOException e) {
             fail("Could not load okta.properties: " + e.getMessage());
@@ -81,23 +79,21 @@ public abstract class AbstractConnectorTests {
         conf = new OktaConfiguration();
         conf.setDomain(PROPS.getProperty("domain"));
         conf.setOktaApiToken(PROPS.getProperty("oktaApiToken"));
-        conf.setUserEvents("user.lifecycle.create",
+        conf.setUserEvents(
+                "user.lifecycle.create",
                 "user.lifecycle.update",
                 "user.lifecycle.delete",
                 "group.user_membership.add",
                 "group.user_membership.remove");
-
-        conf.setRateLimitMaxRetries(0);
-        conf.setRetryMaxElapsed(0);
 
         try {
             conf.validate();
             conn = new OktaConnector();
             conn.init(conf);
             conn.test();
-
         } catch (Exception e) {
-            LOG.error(e, "While testing connector");
+            fail("Cannot initialize the connector");
+            LOG.error(e, "During connector initialization");
         }
 
         conn.schema();
@@ -109,45 +105,42 @@ public abstract class AbstractConnectorTests {
         assertNotNull(conf.getOktaApiToken());
     }
 
-    protected static void cleanUserTestData(final Client client, final String userId) {
+    protected static void cleanUserTestData(final UserApi client, final String userId) {
         try {
             if (!StringUtil.isEmpty(userId)) {
-                User user = client.getUser(userId);
-                user.deactivate();
-                user.delete();
+                client.deactivateUser(userId, Boolean.FALSE);
+                client.deleteUser(userId, Boolean.FALSE);
             }
-        } catch (Exception ex) {
-            LOG.error("Could not clean test data");
+        } catch (Exception e) {
+            LOG.error("Could not clean test data", e);
         }
     }
 
-    protected static void cleanGroupTestData(final Client client, final String groupId) {
+    protected static void cleanGroupTestData(final GroupApi client, final String groupId) {
         try {
             if (!StringUtil.isEmpty(groupId)) {
-                Group group = client.getGroup(groupId);
-                group.delete();
+                client.deleteGroup(groupId);
             }
-        } catch (Exception ex) {
-            LOG.error("Could not clean test data");
+        } catch (Exception e) {
+            LOG.error("Could not clean test data", e);
         }
     }
 
-    protected static void cleanApplicationTestData(final Client client, final String applicationId) {
+    protected static void cleanApplicationTestData(final ApplicationApi client, final String applicationId) {
         try {
             if (!StringUtil.isEmpty(applicationId)) {
-                Application app = client.getApplication(applicationId);
-                app.deactivate();
-                app.delete();
+                client.deactivateApplication(applicationId);
+                client.deleteApplication(applicationId);
             }
-        } catch (Exception ex) {
-            LOG.error("Could not clean test data");
+        } catch (Exception e) {
+            LOG.error("Could not clean test data", e);
         }
     }
 
-    protected Set<String> getUserGroups(final Client client, final String userId) {
+    protected Set<String> getUserGroups(final UserApi client, final String userId) {
         Set<String> assignedGroups = new HashSet<>();
         try {
-            for (Group grpItem : client.getUser(userId).listGroups()) {
+            for (Group grpItem : client.listUserGroups(userId)) {
                 assignedGroups.add(grpItem.getId());
             }
         } catch (Exception ex) {
@@ -170,18 +163,16 @@ public abstract class AbstractConnectorTests {
         return userAttrs;
     }
 
-    protected static Group createGroup(final Client client) {
+    protected static Group createGroup(final GroupApi client) {
         String groupName = UUID.randomUUID().toString();
         return GroupBuilder.instance()
                 .setName("connid-" + groupName)
                 .setDescription("connid-" + groupName).buildAndCreate(client);
     }
 
-    protected static Application createApplication(final Client client) {
-        WsFederationApplication app = client.instantiate(WsFederationApplication.class)
-                .setSettings(client.instantiate(WsFederationApplicationSettings.class));
-        app.setLabel(UUID.randomUUID().toString());
-        return client.createApplication(app);
+    protected static Application createApplication(final ApplicationApi client) {
+        Application app = new Application().label(UUID.randomUUID().toString());
+        return client.createApplication(app, Boolean.TRUE, null);
     }
 
     public static void createSearchTestData() {
@@ -193,19 +184,19 @@ public abstract class AbstractConnectorTests {
         user = connector.create(ObjectClass.ACCOUNT, createUserAttrs("Password123"), operationOption);
         USERS.add(user.getUidValue());
 
-        Group groupTest = createGroup(conn.getClient());
+        Group groupTest = createGroup(conn.getGroupApi());
         assertNotNull(groupTest);
         GROUPS.add(groupTest.getId());
 
-        groupTest = createGroup(conn.getClient());
+        groupTest = createGroup(conn.getGroupApi());
         assertNotNull(groupTest);
         GROUPS.add(groupTest.getId());
 
-        Application app = createApplication(conn.getClient());
+        Application app = createApplication(conn.getApplicationApi());
         assertNotNull(app);
         APPLICATIONS.add(app.getId());
 
-        app = createApplication(conn.getClient());
+        app = createApplication(conn.getApplicationApi());
         assertNotNull(app);
         APPLICATIONS.add(app.getId());
     }
@@ -223,9 +214,9 @@ public abstract class AbstractConnectorTests {
             latestReceivedToken = sd.getToken();
             if (sd.getDeltaType() == SyncDeltaType.DELETE) {
                 return deleted.add(sd);
-            } else {
-                return updated.add(sd);
             }
+
+            return updated.add(sd);
         }
 
         public SyncToken getLatestReceivedToken() {

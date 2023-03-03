@@ -23,12 +23,12 @@
   <parent>
     <groupId>net.tirasa.connid</groupId>
     <artifactId>connid</artifactId>
-    <version>1.5.1.0</version>
+    <version>1.5.2.0</version>
   </parent>
     
   <groupId>net.tirasa.connid.bundles.okta</groupId>
   <artifactId>okta</artifactId>
-  <version>2.1.4-SNAPSHOT</version>        
+  <version>3.0.0-SNAPSHOT</version>        
 
   <name>ConnId Bundles: Okta</name>
   
@@ -76,16 +76,16 @@
   </mailingLists>
 
   <properties>
-    <connid.version>1.5.1.0</connid.version>
-    <okta.version>8.2.3</okta.version>
-    
-    <swagger-codegen.plugin.version>3.0.33</swagger-codegen.plugin.version>
+    <connid.version>1.5.2.0</connid.version>
+    <okta.version>10.2.1</okta.version>
+
+    <swagger-codegen.plugin.version>3.0.41</swagger-codegen.plugin.version>
     <javax.servlet.version>3.1.0</javax.servlet.version>
     <spring.version>5.3.25</spring.version>
-    <jackson.version>2.13.4</jackson.version>
+    <jackson.version>2.14.2</jackson.version>
     <javax.validation.version>2.0.1.Final</javax.validation.version>
     <apache.cxf.version>3.5.5</apache.cxf.version>
-    <swagger-annotations.version>2.1.13</swagger-annotations.version>
+    <swagger-annotations.version>2.2.8</swagger-annotations.version>
 
     <log.directory>${project.build.directory}/log</log.directory>
     
@@ -120,18 +120,25 @@
         <groupId>com.okta.sdk</groupId>
         <artifactId>okta-sdk-api</artifactId>
         <version>${okta.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>com.okta.sdk</groupId>
         <artifactId>okta-sdk-impl</artifactId>
         <version>${okta.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
-      <dependency>
-        <groupId>com.okta.sdk</groupId>
-        <artifactId>okta-sdk-httpclient</artifactId>
-        <version>${okta.version}</version>
-      </dependency>
-        
+
       <dependency> 
         <groupId>javax.servlet</groupId> 
         <artifactId>javax.servlet-api</artifactId>
@@ -153,7 +160,7 @@
       <dependency>
         <groupId>com.fasterxml.jackson.core</groupId>
         <artifactId>jackson-databind</artifactId>
-        <version>${jackson.version}.2</version>
+        <version>${jackson.version}</version>
       </dependency>
       <dependency>
         <groupId>com.fasterxml.jackson.jaxrs</groupId>
@@ -266,8 +273,8 @@
 
         <plugin>
           <groupId>org.codehaus.cargo</groupId>
-          <artifactId>cargo-maven2-plugin</artifactId>
-          <version>1.8.5</version>
+          <artifactId>cargo-maven3-plugin</artifactId>
+          <version>1.10.5</version>
           <configuration>
             <container>
               <containerId>tomcat9x</containerId>
@@ -286,12 +293,30 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-deploy-plugin</artifactId>
-          <version>3.0.0</version>
+          <version>3.1.0</version>
         </plugin>
       </plugins>
     </pluginManagement>
     
-    <plugins>      
+    <plugins>
+      <plugin>
+        <groupId>org.gaul</groupId>
+        <artifactId>modernizer-maven-plugin</artifactId>
+        <version>2.5.0</version>
+        <configuration>
+          <javaVersion>${targetJdk}</javaVersion>
+        </configuration>
+        <executions>
+          <execution>
+            <id>modernizer-check</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>modernizer</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      
       <plugin>
         <groupId>com.mycila</groupId>
         <artifactId>license-maven-plugin</artifactId>

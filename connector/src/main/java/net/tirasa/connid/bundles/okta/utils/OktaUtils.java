@@ -15,10 +15,10 @@
  */
 package net.tirasa.connid.bundles.okta.utils;
 
-import java.util.Calendar;
-import java.util.Date;
-import java.util.TimeZone;
-import com.okta.sdk.resource.ResourceException;
+import com.okta.sdk.error.ResourceException;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import org.identityconnectors.common.logging.Log;
 import org.identityconnectors.framework.common.exceptions.AlreadyExistsException;
 import org.identityconnectors.framework.common.exceptions.ConnectorException;
@@ -31,8 +31,6 @@ import org.identityconnectors.framework.common.exceptions.UnknownUidException;
 public class OktaUtils {
 
     private static final Log LOG = Log.getLog(OktaUtils.class);
-
-    public static final TimeZone UTC_TIMEZONE = TimeZone.getTimeZone("UTC");
 
     public static void handleGeneralError(final String message) {
         LOG.error("General error : {0}", message);
@@ -59,13 +57,16 @@ public class OktaUtils {
             case 400:
                 if (e.getError().getCode().equals("E0000001")) {
                     boolean isAlreadyExists = e.getError().getCauses().stream()
-                            .anyMatch(x -> x.getSummary().endsWith("An object with this field already exists in the current organization"));
+                            .anyMatch(x -> x.getSummary().endsWith(
+                            "An object with this field already exists in the current organization"));
                     if (isAlreadyExists) {
                         return new AlreadyExistsException(e);
                     }
                 } else {
                     return new InvalidAttributeValueException(e);
                 }
+                break;
+
             case 401:
                 return new ConnectorSecurityException(e);
             case 403:
@@ -87,9 +88,7 @@ public class OktaUtils {
         return query.toString();
     }
 
-    public static Date convertToDate(final long source) {
-        Calendar cal = Calendar.getInstance(UTC_TIMEZONE);
-        cal.setTimeInMillis(source);
-        return cal.getTime();
+    public static OffsetDateTime convertToDate(final long source) {
+        return Instant.ofEpochMilli(source).atOffset(ZoneOffset.UTC);
     }
 }
