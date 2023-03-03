@@ -137,7 +137,7 @@ public class OktaConnector implements Connector, PoolableConnector,
 
     private GroupApi groupApi;
 
-    private ApplicationApi applicationApi;
+    private ApplicationApi appApi;
 
     private SystemLogApi systemLogApi;
 
@@ -183,7 +183,7 @@ public class OktaConnector implements Connector, PoolableConnector,
                 this.client = builder.build();
                 this.userApi = new UserApi(client);
                 this.groupApi = new GroupApi(client);
-                this.applicationApi = new ApplicationApi(client);
+                this.appApi = new ApplicationApi(client);
                 this.systemLogApi = new SystemLogApi(client);
             }
         } catch (Exception ex) {
@@ -206,7 +206,7 @@ public class OktaConnector implements Connector, PoolableConnector,
     }
 
     public ApplicationApi getApplicationApi() {
-        return applicationApi;
+        return appApi;
     }
 
     public SystemLogApi getSystemLogApi() {
@@ -461,8 +461,8 @@ public class OktaConnector implements Connector, PoolableConnector,
             }
         } else if (APPLICATION.equals(objectClass)) {
             try {
-                applicationApi.deactivateApplication(uid.getUidValue());
-                applicationApi.deleteApplication(uid.getUidValue());
+                appApi.deactivateApplication(uid.getUidValue());
+                appApi.deleteApplication(uid.getUidValue());
             } catch (Exception e) {
                 OktaUtils.wrapGeneralError("Could not delete Application " + uid.getUidValue(), e);
             }
@@ -546,7 +546,7 @@ public class OktaConnector implements Connector, PoolableConnector,
                                 Group group = groupApi.getGroup(item.getTarget().get(0).getId());
                                 connObj = fromGroup(group, attributesToGet);
                             } else {
-                                Application app = applicationApi.getApplication(item.getTarget().get(0).getId(), null);
+                                Application app = appApi.getApplication(item.getTarget().get(0).getId(), null);
                                 connObj = fromApplication(app, attributesToGet);
                             }
                         } catch (Exception ex) {
@@ -672,21 +672,20 @@ public class OktaConnector implements Connector, PoolableConnector,
                     options.getPagedResultsCookie(),
                     handler,
                     userApi::getUser,
-                    f -> userApi.listUsersWithPaginationInfo(
-                            null, options.getPagedResultsCookie(), options.getPageSize(), f, null, null, null),
+                    f -> OktaPaginationApis.listUsers(
+                            userApi, null, options.getPagedResultsCookie(), options.getPageSize(), f, null, null, null),
                     f -> userApi.listUsers(null, null, null, f, null, null, null),
                     o -> fromUser(o, attributesToGet));
         } else if (APPLICATION.equals(objectClass)) {
-            doExecuteQuery(
-                    objectClass,
+            doExecuteQuery(objectClass,
                     filter,
                     options.getPageSize(),
                     options.getPagedResultsCookie(),
                     handler,
-                    id -> applicationApi.getApplication(id, null),
-                    f -> applicationApi.listApplicationsWithPaginationInfo(
-                            null, options.getPagedResultsCookie(), options.getPageSize(), f, null, null),
-                    f -> applicationApi.listApplications(null, null, null, f, null, null),
+                    id -> appApi.getApplication(id, null),
+                    f -> OktaPaginationApis.listApplications(
+                            appApi, null, options.getPagedResultsCookie(), options.getPageSize(), f, null, null),
+                    f -> appApi.listApplications(null, null, null, f, null, null),
                     o -> fromApplication(o, attributesToGet));
         } else if (ObjectClass.GROUP.equals(objectClass)) {
             doExecuteQuery(
@@ -696,8 +695,8 @@ public class OktaConnector implements Connector, PoolableConnector,
                     options.getPagedResultsCookie(),
                     handler,
                     groupApi::getGroup,
-                    f -> groupApi.listGroupsWithPaginationInfo(
-                            null, f, options.getPagedResultsCookie(), options.getPageSize(), null, null),
+                    f -> OktaPaginationApis.listGroups(
+                            groupApi, null, f, options.getPagedResultsCookie(), options.getPageSize(), null, null),
                     f -> groupApi.listGroups(null, f, null, null, null, null),
                     o -> fromGroup(o, attributesToGet));
         } else {
@@ -772,8 +771,8 @@ public class OktaConnector implements Connector, PoolableConnector,
         builder.setObjectClass(APPLICATION);
         builder.setUid(application.getId());
         builder.setName(application.getId());
-        builder.addAttributes(OktaAttribute.buildApplicationAttributes(
-                applicationApi, application, schema.getSchema(), attributesToGet));
+        builder.addAttributes(OktaAttribute.buildApplicationAttributes(appApi, application, schema.getSchema(),
+                attributesToGet));
         return builder.build();
     }
 

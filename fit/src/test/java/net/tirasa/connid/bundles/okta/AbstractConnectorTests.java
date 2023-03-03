@@ -92,7 +92,8 @@ public abstract class AbstractConnectorTests {
             conn.init(conf);
             conn.test();
         } catch (Exception e) {
-            LOG.error(e, "While testing connector");
+            fail("Cannot initialize the connector");
+            LOG.error(e, "During connector initialization");
         }
 
         conn.schema();
