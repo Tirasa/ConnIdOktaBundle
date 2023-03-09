@@ -20,6 +20,7 @@ import com.okta.sdk.client.AuthorizationMode;
 import com.okta.sdk.client.ClientBuilder;
 import com.okta.sdk.client.Clients;
 import com.okta.sdk.error.ResourceException;
+import com.okta.sdk.impl.cache.DisabledCacheManager;
 import com.okta.sdk.resource.common.PagedList;
 import com.okta.sdk.resource.group.GroupBuilder;
 import com.okta.sdk.resource.user.UserBuilder;
@@ -169,7 +170,8 @@ public class OktaConnector implements Connector, PoolableConnector,
                         .setOrgUrl(this.configuration.getDomain())
                         .setRetryMaxAttempts(this.configuration.getRateLimitMaxRetries())
                         .setRetryMaxElapsed(this.configuration.getRetryMaxElapsed())
-                        .setConnectionTimeout(this.configuration.getRequestTimeout());
+                        .setConnectionTimeout(this.configuration.getRequestTimeout())
+                        .setCacheManager(new DisabledCacheManager());
                 if (this.configuration.getClientId() != null && this.configuration.getPrivateKeyPEM() != null) {
                     builder.setAuthorizationMode(AuthorizationMode.PRIVATE_KEY)
                             .setClientId(this.configuration.getClientId())

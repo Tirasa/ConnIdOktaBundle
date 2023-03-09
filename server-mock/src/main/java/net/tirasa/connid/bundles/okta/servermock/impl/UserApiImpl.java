@@ -26,6 +26,7 @@ import io.swagger.model.UpdateUserRequest;
 import io.swagger.model.User;
 import io.swagger.model.UserCredentials;
 import io.swagger.model.UserNextLogin;
+import io.swagger.model.UserProfile;
 import io.swagger.model.UserStatus;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -123,48 +124,48 @@ public class UserApiImpl extends AbstractApiImpl implements UserApi {
             final Boolean provider,
             final UserNextLogin nextLogin) {
 
-        User body = new User();
-        body.setCredentials(req.getCredentials());
-        body.setProfile(req.getProfile());
-        body.setType(req.getType());
+        User user = new User();
+        user.setCredentials(req.getCredentials());
+        user.setProfile(Optional.ofNullable(req.getProfile()).orElseGet(() -> new UserProfile()));
+        user.setType(req.getType());
 
         if (Boolean.TRUE.equals(activate)) {
-            body.setStatus(UserStatus.ACTIVE);
-            body.setActivated(new Date());
+            user.setStatus(UserStatus.ACTIVE);
+            user.setActivated(new Date());
             if (nextLogin != null && UserNextLogin.CHANGEPASSWORD.equals(nextLogin)) {
                 PasswordCredential expired = new PasswordCredential();
                 expired.setValue("EXPIRED");
-                body.getCredentials().setPassword(expired);
+                user.getCredentials().setPassword(expired);
             }
         } else {
-            body.setStatus(UserStatus.STAGED);
+            user.setStatus(UserStatus.STAGED);
         }
-        body.setId(UUID.randomUUID().toString());
-        body.setCreated(new Date());
-        body.setLastUpdated(new Date());
-        body.setStatusChanged(new Date());
+        user.setId(UUID.randomUUID().toString());
+        user.setCreated(new Date());
+        user.setLastUpdated(new Date());
+        user.setStatusChanged(new Date());
         List<String> passwords = new ArrayList<>();
-        if (body.getCredentials() != null) {
-            body.setPasswordChanged(new Date());
-            if (body.getCredentials().getPassword().getHash() != null) {
-                body.getCredentials().getPassword().
-                        setValue(body.getCredentials().getPassword().getHash().getValue());
-                body.getCredentials().getPassword().setHash(null);
+        if (user.getCredentials() != null) {
+            user.setPasswordChanged(new Date());
+            if (user.getCredentials().getPassword().getHash() != null) {
+                user.getCredentials().getPassword().
+                        setValue(user.getCredentials().getPassword().getHash().getValue());
+                user.getCredentials().getPassword().setHash(null);
             }
-            passwords.add(body.getCredentials().getPassword().getValue());
-            body.getCredentials().setPassword(null);
+            passwords.add(user.getCredentials().getPassword().getValue());
+            user.getCredentials().setPassword(null);
         }
-        USER_PASSWORD_REPOSITORY.put(body.getId(), passwords);
+        USER_PASSWORD_REPOSITORY.put(user.getId(), passwords);
 
         Optional.ofNullable(req.getGroupIds()).
                 ifPresent(groupIds -> groupIds.stream().filter(g -> !EVERYONE_ID.equals(g)).
-                forEach(g -> GROUP_USER_REPOSITORY.add(Pair.of(g, body.getId()))));
-        GROUP_USER_REPOSITORY.add(Pair.of(EVERYONE_ID, body.getId()));
+                forEach(g -> GROUP_USER_REPOSITORY.add(Pair.of(g, user.getId()))));
+        GROUP_USER_REPOSITORY.add(Pair.of(EVERYONE_ID, user.getId()));
 
-        USER_IDP_REPOSITORY.put(body.getId(), new HashSet<>(Arrays.asList("6e77c44bf27d4750a10f1489ce4100df")));
-        USER_REPOSITORY.add(body);
-        createLogEvent("user.lifecycle.create", body.getId());
-        return Response.status(Response.Status.CREATED).entity(body).build();
+        USER_IDP_REPOSITORY.put(user.getId(), new HashSet<>(Arrays.asList("6e77c44bf27d4750a10f1489ce4100df")));
+        USER_REPOSITORY.add(user);
+        createLogEvent("user.lifecycle.create", user.getId());
+        return Response.status(Response.Status.CREATED).entity(user).build();
     }
 
     @Override
@@ -317,9 +318,13 @@ public class UserApiImpl extends AbstractApiImpl implements UserApi {
                     + "&limit=" + limit + ">; rel=\"next\"";
         }
 
-        return "<" + uriInfo.getBaseUri().toString() + "api/v1/users?after="
-                + repository.get(repository.size() - 1).getId()
-                + "&limit=" + limit + ">; rel=\"self\"";
+        StringBuilder queryString = new StringBuilder().append('?');
+        if (!repository.isEmpty()) {
+            queryString.append("after=").append(repository.get(repository.size() - 1).getId()).append('&');
+        }
+        queryString.append("limit=").append(limit).append(">; rel=\"self\"");
+
+        return "<" + uriInfo.getBaseUri().toString() + "api/v1/users?" + queryString.toString();
     }
 
     @Override
@@ -333,9 +338,16 @@ public class UserApiImpl extends AbstractApiImpl implements UserApi {
             final String sortOrder) {
 
         if (search != null) {
-            return Response.ok().entity(searchUsers(USER_REPOSITORY, search)).build();
-        } else if (filter != null) {
-            return Response.ok().entity(searchUsers(USER_REPOSITORY, filter)).build();
+            return Response.ok().
+                    entity(searchUsers(USER_REPOSITORY, search)).
+                    header("link", nextPage(limit, 0, USER_REPOSITORY)).
+                    build();
+        }
+        if (filter != null) {
+            return Response.ok().
+                    entity(searchUsers(USER_REPOSITORY, filter)).
+                    header("link", nextPage(limit, 0, USER_REPOSITORY)).
+                    build();
         }
 
         Predicate<? super User> predicate = q == null
@@ -492,10 +504,10 @@ public class UserApiImpl extends AbstractApiImpl implements UserApi {
         if (found.isPresent()) {
             User user = found.get();
             user.setLastUpdated(new Date());
-            user.setProfile(req.getProfile());
+            Optional.ofNullable(req.getProfile()).ifPresent(user::setProfile);
 
             if (req.getCredentials() != null && req.getCredentials().getPassword() != null) {
-                if (user.getCredentials().getPassword().getValue() != null
+                if (req.getCredentials().getPassword().getValue() != null
                         && !USER_PASSWORD_REPOSITORY.get(userId).
                                 contains(req.getCredentials().getPassword().getValue())) {
 
@@ -508,7 +520,6 @@ public class UserApiImpl extends AbstractApiImpl implements UserApi {
                 } else {
                     return Response.status(Response.Status.CONFLICT).build();
                 }
-                user.getCredentials().setPassword(null);
             }
 
             createLogEvent("user.lifecycle.update", userId);
