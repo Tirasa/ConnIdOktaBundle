@@ -622,8 +622,18 @@ public class OktaConnector implements Connector, PoolableConnector,
             try {
                 if (pageSize != null) {
                     PagedList<T> response = pagedSearchFunction.apply(theFilter);
-                    afterCookie = response.getItems().size() >= pageSize ? response.getNextPage() : null;
                     objects = response.getItems();
+
+                    if (response.getItems().size() >= pageSize) {
+                        String nextPage = response.getNextPage();
+                        int startIdx = nextPage.indexOf("after=");
+                        if (startIdx != -1) {
+                            int endIdx = nextPage.indexOf('&', startIdx);
+                            afterCookie = endIdx == -1
+                                    ? nextPage.substring(startIdx + 6)
+                                    : nextPage.substring(startIdx + 6, endIdx);
+                        }
+                    }
                 } else {
                     objects = searchFunction.apply(theFilter);
                 }
