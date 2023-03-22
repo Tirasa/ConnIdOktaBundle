@@ -18,25 +18,42 @@ package net.tirasa.connid.bundles.okta;
 import com.okta.sdk.resource.common.PagedList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import org.openapitools.client.api.ApplicationApi;
 import org.openapitools.client.api.GroupApi;
 import org.openapitools.client.api.UserApi;
 import org.openapitools.client.model.Application;
 import org.openapitools.client.model.Group;
 import org.openapitools.client.model.User;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClientException;
 
 public class OktaPaginationApis {
 
-    @SuppressWarnings("rawtypes")
-    public static PagedList listUsers(
+    private static <T> PagedList<T> constructPagedList(final ResponseEntity<List<T>> responseEntity) {
+        PagedList<T> pagedList = new PagedList<>();
+
+        pagedList.addItems(responseEntity.getBody());
+
+        for (String link : Optional.ofNullable(responseEntity.getHeaders().get("link")).
+                orElse(Collections.emptyList())) {
+
+            String[] parts = link.split("; *");
+            String url = parts[0]
+                    .replaceAll("<", "")
+                    .replaceAll(">", "");
+            String rel = parts[1];
+            if (rel.equals("rel=\"next\"")) {
+                pagedList.setNextPage(url);
+            } else if (rel.equals("rel=\"self\"")) {
+                pagedList.setSelf(url);
+            }
+        }
+
+        return pagedList;
+    }
+
+    public static PagedList<User> listUsers(
             final UserApi userApi,
             final String q,
             final String after,
@@ -46,49 +63,13 @@ public class OktaPaginationApis {
             final String sortBy,
             final String sortOrder) throws RestClientException {
 
-        Object localVarPostBody = null;
-
-        final MultiValueMap<String, String> localVarQueryParams = new LinkedMultiValueMap<>();
-        final HttpHeaders localVarHeaderParams = new HttpHeaders();
-        final MultiValueMap<String, String> localVarCookieParams = new LinkedMultiValueMap<>();
-        final MultiValueMap<String, Object> localVarFormParams = new LinkedMultiValueMap<>();
-
-        localVarQueryParams.putAll(userApi.getApiClient().parameterToMultiValueMap(null, "q", q));
-        localVarQueryParams.putAll(userApi.getApiClient().parameterToMultiValueMap(null, "after", after));
-        localVarQueryParams.putAll(userApi.getApiClient().parameterToMultiValueMap(null, "limit", limit));
-        localVarQueryParams.putAll(userApi.getApiClient().parameterToMultiValueMap(null, "filter", filter));
-        localVarQueryParams.putAll(userApi.getApiClient().parameterToMultiValueMap(null, "search", search));
-        localVarQueryParams.putAll(userApi.getApiClient().parameterToMultiValueMap(null, "sortBy", sortBy));
-        localVarQueryParams.putAll(userApi.getApiClient().parameterToMultiValueMap(null, "sortOrder", sortOrder));
-
-        final String[] localVarAccepts = { "application/json" };
-        final List<MediaType> localVarAccept = userApi.getApiClient().selectHeaderAccept(localVarAccepts);
-        final String[] localVarContentTypes = {};
-        final MediaType localVarContentType = userApi.getApiClient().selectHeaderContentType(localVarContentTypes);
-
-        String[] localVarAuthNames = new String[] { "apiToken", "oauth2" };
-
-        ParameterizedTypeReference<List<User>> localReturnType = new ParameterizedTypeReference<List<User>>() {
-        };
-        ResponseEntity<List<User>> responseEntity = userApi.getApiClient().invokeAPI(
-                "/api/v1/users",
-                HttpMethod.GET,
-                Collections.<String, Object>emptyMap(),
-                localVarQueryParams,
-                localVarPostBody,
-                localVarHeaderParams,
-                localVarCookieParams,
-                localVarFormParams,
-                localVarAccept,
-                localVarContentType,
-                localVarAuthNames,
-                localReturnType);
-        return PagedList.constructPagedList(responseEntity);
+        ResponseEntity<List<User>> responseEntity =
+                userApi.listUsersWithHttpInfo(q, after, limit, filter, search, sortBy, sortOrder);
+        return constructPagedList(responseEntity);
     }
 
-    @SuppressWarnings("rawtypes")
-    public static PagedList listApplications(
-            final ApplicationApi apApi,
+    public static PagedList<Application> listApplications(
+            final ApplicationApi applicationApi,
             final String q,
             final String after,
             final Integer limit,
@@ -96,49 +77,12 @@ public class OktaPaginationApis {
             final String expand,
             final Boolean includeNonDeleted) throws RestClientException {
 
-        Object localVarPostBody = null;
-
-        final MultiValueMap<String, String> localVarQueryParams = new LinkedMultiValueMap<>();
-        final HttpHeaders localVarHeaderParams = new HttpHeaders();
-        final MultiValueMap<String, String> localVarCookieParams = new LinkedMultiValueMap<>();
-        final MultiValueMap<String, Object> localVarFormParams = new LinkedMultiValueMap<>();
-
-        localVarQueryParams.putAll(apApi.getApiClient().parameterToMultiValueMap(null, "q", q));
-        localVarQueryParams.putAll(apApi.getApiClient().parameterToMultiValueMap(null, "after", after));
-        localVarQueryParams.putAll(apApi.getApiClient().parameterToMultiValueMap(null, "limit", limit));
-        localVarQueryParams.putAll(apApi.getApiClient().parameterToMultiValueMap(null, "filter", filter));
-        localVarQueryParams.putAll(apApi.getApiClient().parameterToMultiValueMap(null, "expand", expand));
-        localVarQueryParams.putAll(apApi.getApiClient().
-                parameterToMultiValueMap(null, "includeNonDeleted", includeNonDeleted));
-
-        final String[] localVarAccepts = { "application/json" };
-        final List<MediaType> localVarAccept = apApi.getApiClient().selectHeaderAccept(localVarAccepts);
-        final String[] localVarContentTypes = {};
-        final MediaType localVarContentType = apApi.getApiClient().selectHeaderContentType(localVarContentTypes);
-
-        String[] localVarAuthNames = new String[] { "apiToken", "oauth2" };
-
-        ParameterizedTypeReference<List<Application>> localReturnType =
-                new ParameterizedTypeReference<List<Application>>() {
-        };
-        ResponseEntity<List<Application>> responseEntity = apApi.getApiClient().invokeAPI(
-                "/api/v1/apps",
-                HttpMethod.GET,
-                Collections.<String, Object>emptyMap(),
-                localVarQueryParams,
-                localVarPostBody,
-                localVarHeaderParams,
-                localVarCookieParams,
-                localVarFormParams,
-                localVarAccept,
-                localVarContentType,
-                localVarAuthNames,
-                localReturnType);
-        return PagedList.constructPagedList(responseEntity);
+        ResponseEntity<List<Application>> responseEntity =
+                applicationApi.listApplicationsWithHttpInfo(q, after, limit, filter, expand, includeNonDeleted);
+        return constructPagedList(responseEntity);
     }
 
-    @SuppressWarnings("rawtypes")
-    public static PagedList listGroups(
+    public static PagedList<Group> listGroups(
             final GroupApi groupApi,
             final String q,
             final String filter,
@@ -147,42 +91,8 @@ public class OktaPaginationApis {
             final String expand,
             final String search) throws RestClientException {
 
-        Object localVarPostBody = null;
-
-        final MultiValueMap<String, String> localVarQueryParams = new LinkedMultiValueMap<>();
-        final HttpHeaders localVarHeaderParams = new HttpHeaders();
-        final MultiValueMap<String, String> localVarCookieParams = new LinkedMultiValueMap<>();
-        final MultiValueMap<String, Object> localVarFormParams = new LinkedMultiValueMap<>();
-
-        localVarQueryParams.putAll(groupApi.getApiClient().parameterToMultiValueMap(null, "q", q));
-        localVarQueryParams.putAll(groupApi.getApiClient().parameterToMultiValueMap(null, "filter", filter));
-        localVarQueryParams.putAll(groupApi.getApiClient().parameterToMultiValueMap(null, "after", after));
-        localVarQueryParams.putAll(groupApi.getApiClient().parameterToMultiValueMap(null, "limit", limit));
-        localVarQueryParams.putAll(groupApi.getApiClient().parameterToMultiValueMap(null, "expand", expand));
-        localVarQueryParams.putAll(groupApi.getApiClient().parameterToMultiValueMap(null, "search", search));
-
-        final String[] localVarAccepts = { "application/json" };
-        final List<MediaType> localVarAccept = groupApi.getApiClient().selectHeaderAccept(localVarAccepts);
-        final String[] localVarContentTypes = {};
-        final MediaType localVarContentType = groupApi.getApiClient().selectHeaderContentType(localVarContentTypes);
-
-        String[] localVarAuthNames = new String[] { "apiToken", "oauth2" };
-
-        ParameterizedTypeReference<List<Group>> localReturnType = new ParameterizedTypeReference<List<Group>>() {
-        };
-        ResponseEntity<List<Group>> responseEntity = groupApi.getApiClient().invokeAPI(
-                "/api/v1/groups",
-                HttpMethod.GET,
-                Collections.<String, Object>emptyMap(),
-                localVarQueryParams,
-                localVarPostBody,
-                localVarHeaderParams,
-                localVarCookieParams,
-                localVarFormParams,
-                localVarAccept,
-                localVarContentType,
-                localVarAuthNames,
-                localReturnType);
-        return PagedList.constructPagedList(responseEntity);
+        ResponseEntity<List<Group>> responseEntity =
+                groupApi.listGroupsWithHttpInfo(q, filter, after, limit, expand, search);
+        return constructPagedList(responseEntity);
     }
 }

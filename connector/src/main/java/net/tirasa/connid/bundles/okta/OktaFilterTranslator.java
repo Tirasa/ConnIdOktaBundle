@@ -15,9 +15,11 @@
  */
 package net.tirasa.connid.bundles.okta;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
-
 import net.tirasa.connid.bundles.okta.utils.OktaAttribute;
 import net.tirasa.connid.bundles.okta.utils.OktaFilter;
 import net.tirasa.connid.bundles.okta.utils.OktaFilterOp;
@@ -36,8 +38,6 @@ import org.identityconnectors.framework.common.objects.filter.GreaterThanOrEqual
 import org.identityconnectors.framework.common.objects.filter.LessThanFilter;
 import org.identityconnectors.framework.common.objects.filter.LessThanOrEqualFilter;
 import org.identityconnectors.framework.common.objects.filter.StartsWithFilter;
-
-import static net.tirasa.connid.bundles.okta.OktaConnector.APPLICATION;
 
 /**
  * This is an implementation of AbstractFilterTranslator that gives a concrete representation
@@ -156,14 +156,12 @@ public class OktaFilterTranslator extends AbstractFilterTranslator<OktaFilter> {
             if (OktaFilter.USER_NAME_ATTRS.contains(name)) {
                 return "profile.login";
             }
-            return  "profile." + filter.getName();
-
-        } else if (APPLICATION.equals(objectClass)) {
+            return "profile." + filter.getName();
+        } else if (OktaConnector.APPLICATION.equals(objectClass)) {
             if (OktaFilter.ID_ATTRS.contains(name) || Name.NAME.equals(name)) {
                 return OktaAttribute.ID;
             }
-            return  filter.getName();
-
+            return filter.getName();
         } else if (ObjectClass.GROUP.equals(objectClass)) {
             if (OktaFilter.ID_ATTRS.contains(name)) {
                 return OktaAttribute.ID;
@@ -171,12 +169,11 @@ public class OktaFilterTranslator extends AbstractFilterTranslator<OktaFilter> {
             if (OktaFilter.GROUP_NAME_ATTRS.contains(name)) {
                 return "profile.name";
             }
-            return  "profile." + filter.getName();
-
+            return "profile." + filter.getName();
         } else {
             LOG.warn("Search of type {0} is not supported", objectClass.getObjectClassValue());
-            throw new UnsupportedOperationException("Search of type" + objectClass.getObjectClassValue()
-                    + " is not supported");
+            throw new UnsupportedOperationException(
+                    "Search of type" + objectClass.getObjectClassValue() + " is not supported");
         }
     }
 
@@ -185,7 +182,12 @@ public class OktaFilterTranslator extends AbstractFilterTranslator<OktaFilter> {
         if (attrValue == null) {
             return null;
         }
-        return attrValue.toString();
+        try {
+            return URLEncoder.encode(attrValue.toString(), StandardCharsets.UTF_8.name());
+        } catch (UnsupportedEncodingException e) {
+            LOG.warn(e, "Could not URL-encode {0} to UTF-8", attrValue);
+            return attrValue.toString();
+        }
     }
 
     private void checkIfNot(final boolean not) {
