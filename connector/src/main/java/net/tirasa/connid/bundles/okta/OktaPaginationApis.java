@@ -28,7 +28,7 @@ import org.openapitools.client.model.User;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestClientException;
 
-public class OktaPaginationApis {
+public final class OktaPaginationApis {
 
     private static <T> PagedList<T> constructPagedList(final ResponseEntity<List<T>> responseEntity) {
         PagedList<T> pagedList = new PagedList<>();
@@ -94,5 +94,9 @@ public class OktaPaginationApis {
         ResponseEntity<List<Group>> responseEntity =
                 groupApi.listGroupsWithHttpInfo(q, filter, after, limit, expand, search);
         return constructPagedList(responseEntity);
+    }
+
+    private OktaPaginationApis() {
+        // private constructor for static utility class
     }
 }

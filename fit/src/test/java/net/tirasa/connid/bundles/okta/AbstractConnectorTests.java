@@ -53,11 +53,11 @@ public abstract class AbstractConnectorTests {
 
     private static final Log LOG = Log.getLog(AbstractConnectorTests.class);
 
-    protected static OktaConfiguration conf;
+    protected static OktaConfiguration CONF;
 
-    protected static OktaConnector conn;
+    protected static OktaConnector CONN;
 
-    protected static ConnectorFacade connector;
+    protected static ConnectorFacade FACADE;
 
     protected static final Properties PROPS = new Properties();
 
@@ -76,10 +76,10 @@ public abstract class AbstractConnectorTests {
             fail("Could not load okta.properties: " + e.getMessage());
         }
 
-        conf = new OktaConfiguration();
-        conf.setDomain(PROPS.getProperty("domain"));
-        conf.setOktaApiToken(PROPS.getProperty("oktaApiToken"));
-        conf.setUserEvents(
+        CONF = new OktaConfiguration();
+        CONF.setDomain(PROPS.getProperty("domain"));
+        CONF.setOktaApiToken(PROPS.getProperty("oktaApiToken"));
+        CONF.setUserEvents(
                 "user.lifecycle.create",
                 "user.lifecycle.update",
                 "user.lifecycle.delete",
@@ -87,22 +87,22 @@ public abstract class AbstractConnectorTests {
                 "group.user_membership.remove");
 
         try {
-            conf.validate();
-            conn = new OktaConnector();
-            conn.init(conf);
-            conn.test();
+            CONF.validate();
+            CONN = new OktaConnector();
+            CONN.init(CONF);
+            CONN.test();
         } catch (Exception e) {
             fail("Cannot initialize the connector");
             LOG.error(e, "During connector initialization");
         }
 
-        conn.schema();
+        CONN.schema();
 
-        connector = OktaConnectorTests.newFacade();
+        FACADE = OktaConnectorTests.newFacade();
 
-        assertNotNull(conf);
-        assertNotNull(conf.getDomain());
-        assertNotNull(conf.getOktaApiToken());
+        assertNotNull(CONF);
+        assertNotNull(CONF.getDomain());
+        assertNotNull(CONF.getOktaApiToken());
     }
 
     protected static void cleanUserTestData(final UserApi client, final String userId) {
@@ -176,27 +176,27 @@ public abstract class AbstractConnectorTests {
     }
 
     public static void createSearchTestData() {
-        OperationOptions operationOption =
-                new OperationOptionsBuilder().setAttributesToGet(OktaAttribute.EMAIL, OktaAttribute.MOBILEPHONE).build();
-        Uid user = connector.create(ObjectClass.ACCOUNT, createUserAttrs("Password123"), operationOption);
+        OperationOptions oo = new OperationOptionsBuilder()
+                .setAttributesToGet(OktaAttribute.EMAIL, OktaAttribute.MOBILEPHONE).build();
+        Uid user = FACADE.create(ObjectClass.ACCOUNT, createUserAttrs("Password123"), oo);
         USERS.add(user.getUidValue());
 
-        user = connector.create(ObjectClass.ACCOUNT, createUserAttrs("Password123"), operationOption);
+        user = FACADE.create(ObjectClass.ACCOUNT, createUserAttrs("Password123"), oo);
         USERS.add(user.getUidValue());
 
-        Group groupTest = createGroup(conn.getGroupApi());
+        Group groupTest = createGroup(CONN.getGroupApi());
         assertNotNull(groupTest);
         GROUPS.add(groupTest.getId());
 
-        groupTest = createGroup(conn.getGroupApi());
+        groupTest = createGroup(CONN.getGroupApi());
         assertNotNull(groupTest);
         GROUPS.add(groupTest.getId());
 
-        Application app = createApplication(conn.getApplicationApi());
+        Application app = createApplication(CONN.getApplicationApi());
         assertNotNull(app);
         APPLICATIONS.add(app.getId());
 
-        app = createApplication(conn.getApplicationApi());
+        app = createApplication(CONN.getApplicationApi());
         assertNotNull(app);
         APPLICATIONS.add(app.getId());
     }

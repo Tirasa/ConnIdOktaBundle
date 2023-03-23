@@ -28,17 +28,18 @@ public enum OktaEventType {
     APPLICATION_LIFECYCLE_DELETE("application.lifecycle.delete", SyncDeltaType.DELETE),
     APPLICATION_LIFECYCLE_UPDATE("application.lifecycle.update", SyncDeltaType.CREATE_OR_UPDATE),
     APPLICATION_USER_MEMBERSHIP_ADD("application.user_membership.add", SyncDeltaType.CREATE_OR_UPDATE),
-    APPLICATION_USER_MEMBERSHIP_CHANGE_USERNAME("application.user_membership.change_username",
-            SyncDeltaType.CREATE_OR_UPDATE),
+    APPLICATION_USER_MEMBERSHIP_CHANGE_USERNAME(
+            "application.user_membership.change_username", SyncDeltaType.CREATE_OR_UPDATE),
     APPLICATION_USER_MEMBERSHIP_REMOVE("application.user_membership.remove", SyncDeltaType.CREATE_OR_UPDATE),
     GROUP_APPLICATION_ASSIGNMENT_ADD("group.application_assignment.add", SyncDeltaType.CREATE_OR_UPDATE),
     GROUP_APPLICATION_ASSIGNMENT_REMOVE("group.application_assignment.remove", SyncDeltaType.CREATE_OR_UPDATE),
-    GROUP_APPLICATION_ASSIGNMENT_SKIP_ASSIGNMENT_RECONCILE("group.application_assignment.skip_assignment_reconcile",
-            SyncDeltaType.CREATE_OR_UPDATE),
+    GROUP_APPLICATION_ASSIGNMENT_SKIP_ASSIGNMENT_RECONCILE(
+            "group.application_assignment.skip_assignment_reconcile", SyncDeltaType.CREATE_OR_UPDATE),
     GROUP_APPLICATION_ASSIGNMENT_UPDATE("group.application_assignment.update", SyncDeltaType.CREATE_OR_UPDATE),
     GROUP_PRIVILEGE_GRANT("group.privilege.grant", SyncDeltaType.CREATE_OR_UPDATE),
     GROUP_PRIVILEGE_REVOKE("group.privilege.revoke", SyncDeltaType.CREATE_OR_UPDATE),
-    GROUP_USER_MEMBERSHIP_RULE_ADD_EXCLUSION("group.user_membership.rule.add_exclusion", SyncDeltaType.CREATE_OR_UPDATE),
+    GROUP_USER_MEMBERSHIP_RULE_ADD_EXCLUSION(
+            "group.user_membership.rule.add_exclusion", SyncDeltaType.CREATE_OR_UPDATE),
     GROUP_USER_MEMBERSHIP_RULE_DEACTIVATED("group.user_membership.rule.deactivated", SyncDeltaType.CREATE_OR_UPDATE),
     GROUP_USER_MEMBERSHIP_RULE_ERROR("group.user_membership.rule.error", SyncDeltaType.CREATE_OR_UPDATE),
     GROUP_USER_MEMBERSHIP_RULE_EVALUATION("group.user_membership.rule.evaluation", SyncDeltaType.CREATE_OR_UPDATE),
@@ -73,7 +74,7 @@ public enum OktaEventType {
 
     private final SyncDeltaType syncDeltaType;
 
-    private OktaEventType(final String name, final SyncDeltaType syncDeltaType) {
+    OktaEventType(final String name, final SyncDeltaType syncDeltaType) {
         this.name = name;
         this.syncDeltaType = syncDeltaType;
     }
@@ -89,15 +90,15 @@ public enum OktaEventType {
     public static OktaEventType getValueByName(final String name) {
         return Arrays.stream(values()).filter(item -> item.getName().equals(name)).findFirst().orElse(null);
     }
-    
+
     public static Set<String> getDeleteEventType() {
-        return Arrays.stream(values()).filter(item -> 
-                SyncDeltaType.DELETE.equals(item.getSyncDeltaType())).map(
-                        event -> event.getName()).collect(Collectors.toSet());
+        return Arrays.stream(values()).filter(item
+                -> SyncDeltaType.DELETE.equals(item.getSyncDeltaType())).map(
+                event -> event.getName()).collect(Collectors.toSet());
     }
-    
+
     public static Set<String> getMembershipOperationEventType() {
-        return Arrays.stream(values()).filter(item -> 
-                item.name().contains("MEMBERSHIP")).map(event -> event.getName()).collect(Collectors.toSet());
+        return Arrays.stream(values()).filter(item
+                -> item.name().contains("MEMBERSHIP")).map(event -> event.getName()).collect(Collectors.toSet());
     }
 }

@@ -70,14 +70,14 @@ public class OktaConnectorTests extends AbstractConnectorTests {
 
     @AfterClass
     public static void cleanTestData() {
-        USERS.stream().forEach(item -> cleanUserTestData(conn.getUserApi(), item));
-        GROUPS.stream().forEach(item -> cleanGroupTestData(conn.getGroupApi(), item));
-        APPLICATIONS.stream().forEach(item -> cleanApplicationTestData(conn.getApplicationApi(), item));
+        USERS.stream().forEach(item -> cleanUserTestData(CONN.getUserApi(), item));
+        GROUPS.stream().forEach(item -> cleanGroupTestData(CONN.getGroupApi(), item));
+        APPLICATIONS.stream().forEach(item -> cleanApplicationTestData(CONN.getApplicationApi(), item));
     }
 
     protected static ConnectorFacade newFacade() {
         ConnectorFacadeFactory factory = ConnectorFacadeFactory.getInstance();
-        APIConfiguration impl = TestHelpers.createTestConfiguration(OktaConnector.class, conf);
+        APIConfiguration impl = TestHelpers.createTestConfiguration(OktaConnector.class, CONF);
         impl.getResultsHandlerConfiguration().setFilteredResultsHandlerInValidationMode(true);
         return factory.newInstance(impl);
     }
@@ -95,7 +95,7 @@ public class OktaConnectorTests extends AbstractConnectorTests {
     public void searchUser() {
         ToListResultsHandler handler = new ToListResultsHandler();
 
-        SearchResult result = connector.search(
+        SearchResult result = FACADE.search(
                 ObjectClass.ACCOUNT, null, handler, new OperationOptionsBuilder().build());
         assertNotNull(result);
         assertNull(result.getPagedResultsCookie());
@@ -103,7 +103,7 @@ public class OktaConnectorTests extends AbstractConnectorTests {
 
         assertFalse(handler.getObjects().isEmpty());
 
-        result = connector.search(
+        result = FACADE.search(
                 ObjectClass.ACCOUNT, null, handler, new OperationOptionsBuilder().setPageSize(1).build());
 
         assertNotNull(result);
@@ -130,13 +130,13 @@ public class OktaConnectorTests extends AbstractConnectorTests {
             userAttrs.add(mobilePhone);
             userAttrs.add(password);
 
-            Uid created = connector.create(ObjectClass.ACCOUNT, userAttrs, operationOption);
+            Uid created = FACADE.create(ObjectClass.ACCOUNT, userAttrs, operationOption);
             USERS.add(created.getUidValue());
             assertNotNull(created);
 
             // GET USER
             Filter filter = FilterBuilder.equalTo(AttributeBuilder.build("email", username + "@tirasa.net"));
-            connector.search(ObjectClass.ACCOUNT, filter, handler, operationOption);
+            FACADE.search(ObjectClass.ACCOUNT, filter, handler, operationOption);
             assertNotNull(handler.getObjects());
             assertFalse(handler.getObjects().isEmpty());
             assertEquals(handler.getObjects().get(0).getUid().getUidValue(), created.getUidValue());
@@ -150,12 +150,12 @@ public class OktaConnectorTests extends AbstractConnectorTests {
             userAttrs.remove(mobilePhone);
             userAttrs.remove(password);
             userAttrs.add(newMobilePhone);
-            Uid updated = connector.update(ObjectClass.ACCOUNT, created, userAttrs, operationOption);
+            Uid updated = FACADE.update(ObjectClass.ACCOUNT, created, userAttrs, operationOption);
             assertNotNull(updated);
 
             // GET USER
             handler = new ToListResultsHandler();
-            connector.search(ObjectClass.ACCOUNT, filter, handler, operationOption);
+            FACADE.search(ObjectClass.ACCOUNT, filter, handler, operationOption);
             assertNotNull(handler.getObjects());
             assertFalse(handler.getObjects().isEmpty());
             assertEquals(handler.getObjects().get(0).getUid().getUidValue(), created.getUidValue());
@@ -165,11 +165,11 @@ public class OktaConnectorTests extends AbstractConnectorTests {
                             handler.getObjects().get(0).getAttributeByName(OktaAttribute.MOBILEPHONE)));
 
             // DELETE USER
-            connector.delete(ObjectClass.ACCOUNT, updated, operationOption);
+            FACADE.delete(ObjectClass.ACCOUNT, updated, operationOption);
 
             // CHECK IF USER EXISTS
             handler = new ToListResultsHandler();
-            connector.search(ObjectClass.ACCOUNT, filter, handler, operationOption);
+            FACADE.search(ObjectClass.ACCOUNT, filter, handler, operationOption);
             assertTrue(handler.getObjects().isEmpty());
         } catch (Exception e) {
             LOG.error(e, "While running test");
@@ -194,13 +194,13 @@ public class OktaConnectorTests extends AbstractConnectorTests {
             userAttrs.add(AttributeBuilder.build(OktaAttribute.LASTNAME, "Test"));
             userAttrs.add(password);
 
-            Uid created = connector.create(ObjectClass.ACCOUNT, userAttrs, operationOption);
+            Uid created = FACADE.create(ObjectClass.ACCOUNT, userAttrs, operationOption);
             assertNotNull(created);
             USERS.add(created.getUidValue());
 
             // GET USER
             Filter filter = FilterBuilder.equalTo(AttributeBuilder.build("email", username + "@tirasa.net"));
-            connector.search(ObjectClass.ACCOUNT, filter, handler, operationOption);
+            FACADE.search(ObjectClass.ACCOUNT, filter, handler, operationOption);
             assertNotNull(handler.getObjects());
             assertFalse(handler.getObjects().isEmpty());
             assertEquals(handler.getObjects().get(0).getUid().getUidValue(), created.getUidValue());
@@ -209,7 +209,7 @@ public class OktaConnectorTests extends AbstractConnectorTests {
             // UPDATE USER
             userAttrs.remove(password);
             userAttrs.add(newPassword);
-            Uid updated = connector.update(ObjectClass.ACCOUNT, created, userAttrs, operationOption);
+            Uid updated = FACADE.update(ObjectClass.ACCOUNT, created, userAttrs, operationOption);
             assertNotNull(updated);
         } catch (Exception e) {
             fail();
@@ -225,7 +225,7 @@ public class OktaConnectorTests extends AbstractConnectorTests {
                         OktaAttribute.MOBILEPHONE,
                         OktaAttribute.OKTA_GROUPS).build();
         try {
-            Group groupCreate = createGroup(conn.getGroupApi());
+            Group groupCreate = createGroup(CONN.getGroupApi());
             assertNotNull(groupCreate.getId());
             GROUPS.add(groupCreate.getId());
 
@@ -239,22 +239,22 @@ public class OktaConnectorTests extends AbstractConnectorTests {
             userAttrs.add(password);
             userAttrs.add(AttributeBuilder.build(OktaAttribute.OKTA_GROUPS, groupCreate.getId()));
 
-            Uid created = connector.create(ObjectClass.ACCOUNT, userAttrs, operationOption);
+            Uid created = FACADE.create(ObjectClass.ACCOUNT, userAttrs, operationOption);
             assertNotNull(created);
             USERS.add(created.getUidValue());
 
-            Set<String> assignedGroups = getUserGroups(conn.getUserApi(), created.getUidValue());
+            Set<String> assignedGroups = getUserGroups(CONN.getUserApi(), created.getUidValue());
             assertTrue(assignedGroups.contains(groupCreate.getId()));
 
             // GET USER
             Filter filter = FilterBuilder.equalTo(AttributeBuilder.build("email", username + "@tirasa.net"));
-            connector.search(ObjectClass.ACCOUNT, filter, handler, operationOption);
+            FACADE.search(ObjectClass.ACCOUNT, filter, handler, operationOption);
             assertNotNull(handler.getObjects());
             assertFalse(handler.getObjects().isEmpty());
             assertEquals(handler.getObjects().get(0).getUid().getUidValue(), created.getUidValue());
             LOG.info("Created User with id {0} on Okta", handler.getObjects().get(0).getUid());
 
-            Group groupUpdate = createGroup(conn.getGroupApi());
+            Group groupUpdate = createGroup(CONN.getGroupApi());
             assertNotNull(groupUpdate.getId());
             GROUPS.add(groupUpdate.getId());
 
@@ -262,10 +262,10 @@ public class OktaConnectorTests extends AbstractConnectorTests {
             userAttrs.remove(password);
             userAttrs.add(AttributeBuilder.build(OktaAttribute.OKTA_GROUPS, groupUpdate.getId()));
 
-            Uid updated = connector.update(ObjectClass.ACCOUNT, created, userAttrs, operationOption);
+            Uid updated = FACADE.update(ObjectClass.ACCOUNT, created, userAttrs, operationOption);
             assertNotNull(updated);
 
-            assignedGroups = getUserGroups(conn.getUserApi(), updated.getUidValue());
+            assignedGroups = getUserGroups(CONN.getUserApi(), updated.getUidValue());
             assertTrue(assignedGroups.contains(groupUpdate.getId()));
         } catch (Exception e) {
             LOG.error(e, "While running test");
@@ -280,8 +280,8 @@ public class OktaConnectorTests extends AbstractConnectorTests {
         OperationOptions operationOption = new OperationOptionsBuilder().
                 setAttributesToGet(OktaAttribute.EMAIL, OktaAttribute.MOBILEPHONE).build();
         try {
-            Group groupOne = createGroup(conn.getGroupApi());
-            Group groupTwo = createGroup(conn.getGroupApi());
+            Group groupOne = createGroup(CONN.getGroupApi());
+            Group groupTwo = createGroup(CONN.getGroupApi());
             assertNotNull(groupOne.getId());
             assertNotNull(groupTwo.getId());
             GROUPS.add(groupOne.getId());
@@ -297,17 +297,17 @@ public class OktaConnectorTests extends AbstractConnectorTests {
             userAttrs.add(password);
             userAttrs.add(AttributeBuilder.build(OktaAttribute.OKTA_GROUPS, groupOne.getId(), groupTwo.getId()));
 
-            Uid created = connector.create(ObjectClass.ACCOUNT, userAttrs, operationOption);
+            Uid created = FACADE.create(ObjectClass.ACCOUNT, userAttrs, operationOption);
             assertNotNull(created);
             USERS.add(created.getUidValue());
 
-            Set<String> assignedGroups = getUserGroups(conn.getUserApi(), created.getUidValue());
+            Set<String> assignedGroups = getUserGroups(CONN.getUserApi(), created.getUidValue());
             assertTrue(assignedGroups.contains(groupOne.getId()));
             assertTrue(assignedGroups.contains(groupTwo.getId()));
 
             // GET USER
             Filter filter = FilterBuilder.equalTo(AttributeBuilder.build("email", username + "@tirasa.net"));
-            connector.search(ObjectClass.ACCOUNT, filter, handler, operationOption);
+            FACADE.search(ObjectClass.ACCOUNT, filter, handler, operationOption);
             assertNotNull(handler.getObjects());
             assertFalse(handler.getObjects().isEmpty());
             assertEquals(handler.getObjects().get(0).getUid().getUidValue(), created.getUidValue());
@@ -317,10 +317,10 @@ public class OktaConnectorTests extends AbstractConnectorTests {
             userAttrs.remove(password);
             userAttrs.add(AttributeBuilder.build(OktaAttribute.OKTA_GROUPS));
 
-            Uid updated = connector.update(ObjectClass.ACCOUNT, created, userAttrs, operationOption);
+            Uid updated = FACADE.update(ObjectClass.ACCOUNT, created, userAttrs, operationOption);
             assertNotNull(updated);
 
-            assignedGroups = getUserGroups(conn.getUserApi(), updated.getUidValue());
+            assignedGroups = getUserGroups(CONN.getUserApi(), updated.getUidValue());
             assertFalse(assignedGroups.contains(groupOne.getId()));
             assertFalse(assignedGroups.contains(groupTwo.getId()));
         } catch (Exception e) {
@@ -333,7 +333,7 @@ public class OktaConnectorTests extends AbstractConnectorTests {
     public void searchApplication() {
         ToListResultsHandler handler = new ToListResultsHandler();
 
-        SearchResult result = connector.
+        SearchResult result = FACADE.
                 search(OktaConnector.APPLICATION, null, handler, new OperationOptionsBuilder().build());
         assertNotNull(result);
         assertNull(result.getPagedResultsCookie());
@@ -341,7 +341,7 @@ public class OktaConnectorTests extends AbstractConnectorTests {
 
         assertFalse(handler.getObjects().isEmpty());
 
-        result = connector.
+        result = FACADE.
                 search(OktaConnector.APPLICATION, null, handler, new OperationOptionsBuilder().setPageSize(1).build());
 
         assertNotNull(result);
@@ -353,7 +353,7 @@ public class OktaConnectorTests extends AbstractConnectorTests {
     public void searchGroup() {
         ToListResultsHandler handler = new ToListResultsHandler();
 
-        SearchResult result = connector.
+        SearchResult result = FACADE.
                 search(ObjectClass.GROUP, null, handler, new OperationOptionsBuilder().build());
         assertNotNull(result);
         assertNull(result.getPagedResultsCookie());
@@ -361,7 +361,7 @@ public class OktaConnectorTests extends AbstractConnectorTests {
 
         assertFalse(handler.getObjects().isEmpty());
 
-        result = connector.
+        result = FACADE.
                 search(ObjectClass.GROUP, null, handler, new OperationOptionsBuilder().setPageSize(1).build());
 
         assertNotNull(result);
@@ -384,13 +384,13 @@ public class OktaConnectorTests extends AbstractConnectorTests {
         userAttrs.add(AttributeBuilder.build(OktaAttribute.LASTNAME, "Test"));
         userAttrs.add(password);
 
-        Uid created = connector.create(ObjectClass.ACCOUNT, userAttrs, operationOption);
+        Uid created = FACADE.create(ObjectClass.ACCOUNT, userAttrs, operationOption);
         assertNotNull(created);
         USERS.add(created.getUidValue());
 
         // GET USER
         Filter filter = FilterBuilder.equalTo(AttributeBuilder.build("login", username + "@tirasa.net"));
-        connector.search(ObjectClass.ACCOUNT, filter, handler, operationOption);
+        FACADE.search(ObjectClass.ACCOUNT, filter, handler, operationOption);
         assertNotNull(handler.getObjects());
         assertFalse(handler.getObjects().isEmpty());
         assertEquals(handler.getObjects().get(0).getUid().getUidValue(), created.getUidValue());
@@ -399,7 +399,7 @@ public class OktaConnectorTests extends AbstractConnectorTests {
 
         // SEARCH USER
         filter = FilterBuilder.equalTo(AttributeBuilder.build("email", username + "@tirasa.net"));
-        connector.search(ObjectClass.ACCOUNT, filter, handler, operationOption);
+        FACADE.search(ObjectClass.ACCOUNT, filter, handler, operationOption);
         assertNotNull(handler.getObjects());
         assertFalse(handler.getObjects().isEmpty());
         assertEquals(handler.getObjects().get(0).getUid().getUidValue(), created.getUidValue());
@@ -412,8 +412,8 @@ public class OktaConnectorTests extends AbstractConnectorTests {
         OperationOptionsBuilder operationOptionBuilder = new OperationOptionsBuilder().
                 setAttributesToGet(OktaAttribute.EMAIL, OktaAttribute.MOBILEPHONE, OktaAttribute.OKTA_GROUPS);
 
-        SyncToken token = connector.getLatestSyncToken(ObjectClass.ACCOUNT);
-        connector.sync(ObjectClass.ACCOUNT, token, handler, operationOptionBuilder.build());
+        SyncToken token = FACADE.getLatestSyncToken(ObjectClass.ACCOUNT);
+        FACADE.sync(ObjectClass.ACCOUNT, token, handler, operationOptionBuilder.build());
 
         assertTrue(handler.getDeleted().isEmpty());
         assertTrue(handler.getUpdated().isEmpty());
@@ -421,9 +421,9 @@ public class OktaConnectorTests extends AbstractConnectorTests {
         handler.clear();
 
         // user added sync
-        Uid newUser = connector.create(
+        Uid newUser = FACADE.create(
                 ObjectClass.ACCOUNT, createUserAttrs("Password123"), operationOptionBuilder.build());
-        connector.sync(ObjectClass.ACCOUNT, token, handler, operationOptionBuilder.build());
+        FACADE.sync(ObjectClass.ACCOUNT, token, handler, operationOptionBuilder.build());
         assertFalse(token.equals(handler.getLatestReceivedToken()));
 
         token = handler.getLatestReceivedToken();
@@ -443,7 +443,7 @@ public class OktaConnectorTests extends AbstractConnectorTests {
         handler.clear();
 
         // check with updated token and without any modification
-        connector.sync(ObjectClass.ACCOUNT, token, handler, operationOptionBuilder.build());
+        FACADE.sync(ObjectClass.ACCOUNT, token, handler, operationOptionBuilder.build());
         assertEquals(token, handler.getLatestReceivedToken());
 
         token = handler.getLatestReceivedToken();
@@ -452,11 +452,11 @@ public class OktaConnectorTests extends AbstractConnectorTests {
         assertTrue(handler.getUpdated().isEmpty());
 
         // created a new user without memberships
-        Uid created = connector.create(ObjectClass.ACCOUNT,
+        Uid created = FACADE.create(ObjectClass.ACCOUNT,
                 createUserAttrs("Password123"), operationOptionBuilder.build());
         handler.clear();
 
-        connector.sync(ObjectClass.ACCOUNT, token, handler, operationOptionBuilder.build());
+        FACADE.sync(ObjectClass.ACCOUNT, token, handler, operationOptionBuilder.build());
         assertFalse(token.equals(handler.getLatestReceivedToken()));
 
         token = handler.getLatestReceivedToken();
@@ -465,11 +465,11 @@ public class OktaConnectorTests extends AbstractConnectorTests {
         assertFalse(handler.getUpdated().isEmpty());
 
         // add membership to existing user
-        Group group = createGroup(conn.getGroupApi());
-        conn.getGroupApi().assignUserToGroup(group.getId(), created.getUidValue());
+        Group group = createGroup(CONN.getGroupApi());
+        CONN.getGroupApi().assignUserToGroup(group.getId(), created.getUidValue());
         handler.clear();
 
-        connector.sync(ObjectClass.ACCOUNT, token, handler, operationOptionBuilder.build());
+        FACADE.sync(ObjectClass.ACCOUNT, token, handler, operationOptionBuilder.build());
         assertFalse(token.equals(handler.getLatestReceivedToken()));
 
         token = handler.getLatestReceivedToken();
@@ -480,11 +480,11 @@ public class OktaConnectorTests extends AbstractConnectorTests {
         handler.clear();
 
         // sync user delete
-        assertTrue(Arrays.asList(conf.getUserEvents()).contains("user.lifecycle.delete"));
+        assertTrue(Arrays.asList(CONF.getUserEvents()).contains("user.lifecycle.delete"));
 
-        connector.delete(ObjectClass.ACCOUNT, created, operationOptionBuilder.build());
+        FACADE.delete(ObjectClass.ACCOUNT, created, operationOptionBuilder.build());
 
-        connector.sync(ObjectClass.ACCOUNT, token, handler, operationOptionBuilder.build());
+        FACADE.sync(ObjectClass.ACCOUNT, token, handler, operationOptionBuilder.build());
         token = handler.getLatestReceivedToken();
         assertNotNull(token);
 
@@ -514,13 +514,13 @@ public class OktaConnectorTests extends AbstractConnectorTests {
             userAttrs.add(mobilePhone);
             userAttrs.add(password);
 
-            Uid created = connector.create(ObjectClass.ACCOUNT, userAttrs, operationOption);
+            Uid created = FACADE.create(ObjectClass.ACCOUNT, userAttrs, operationOption);
             USERS.add(created.getUidValue());
             assertNotNull(created);
 
             // GET USER
             Filter filter = FilterBuilder.equalTo(AttributeBuilder.build("email", username + "@tirasa.net"));
-            connector.search(ObjectClass.ACCOUNT, filter, handler, operationOption);
+            FACADE.search(ObjectClass.ACCOUNT, filter, handler, operationOption);
             assertNotNull(handler.getObjects());
             assertFalse(handler.getObjects().isEmpty());
             assertEquals(handler.getObjects().get(0).getUid().getUidValue(), created.getUidValue());
@@ -532,25 +532,25 @@ public class OktaConnectorTests extends AbstractConnectorTests {
             userAttrs.remove(password);
             Attribute enable = AttributeBuilder.build(OperationalAttributes.ENABLE_NAME, false);
             userAttrs.add(enable);
-            Uid updated = connector.update(ObjectClass.ACCOUNT, created, userAttrs, operationOption);
+            Uid updated = FACADE.update(ObjectClass.ACCOUNT, created, userAttrs, operationOption);
 
             assertNotNull(updated);
             assertTrue(AttributeUtil.isEnabled(handler.getObjects().get(0)));
 
             //GET USER
             handler = new ToListResultsHandler();
-            connector.search(ObjectClass.ACCOUNT, filter, handler, operationOption);
+            FACADE.search(ObjectClass.ACCOUNT, filter, handler, operationOption);
             assertNotNull(handler.getObjects());
             assertFalse(handler.getObjects().isEmpty());
             assertFalse(AttributeUtil.isEnabled(handler.getObjects().get(0)));
 
             userAttrs.remove(enable);
             userAttrs.add(AttributeBuilder.build(OperationalAttributes.ENABLE_NAME, true));
-            connector.update(ObjectClass.ACCOUNT, created, userAttrs, operationOption);
+            FACADE.update(ObjectClass.ACCOUNT, created, userAttrs, operationOption);
 
             //GET USER
             handler = new ToListResultsHandler();
-            connector.search(ObjectClass.ACCOUNT, filter, handler, operationOption);
+            FACADE.search(ObjectClass.ACCOUNT, filter, handler, operationOption);
             assertNotNull(handler.getObjects());
             assertFalse(handler.getObjects().isEmpty());
             assertTrue(AttributeUtil.isEnabled(handler.getObjects().get(0)));
@@ -581,19 +581,19 @@ public class OktaConnectorTests extends AbstractConnectorTests {
         userAttrs.add(mobilePhone);
         userAttrs.add(password);
 
-        Uid created = connector.create(ObjectClass.ACCOUNT, userAttrs, operationOption);
+        Uid created = FACADE.create(ObjectClass.ACCOUNT, userAttrs, operationOption);
         USERS.add(created.getUidValue());
         assertNotNull(created);
 
-        User user = conn.getUserApi().getUser(created.getUidValue());
+        User user = CONN.getUserApi().getUser(created.getUidValue());
         assertEquals(UserStatus.STAGED, user.getStatus());
     }
 
     @Test
     public void changePasswordWithOldValidation() {
         ToListResultsHandler handler = new ToListResultsHandler();
-        OperationOptions operationOption =
-                new OperationOptionsBuilder().setAttributesToGet(OktaAttribute.EMAIL, OktaAttribute.MOBILEPHONE).build();
+        OperationOptions oo = new OperationOptionsBuilder().
+                setAttributesToGet(OktaAttribute.EMAIL, OktaAttribute.MOBILEPHONE).build();
         try {
             // CREATE USER
             String username = UUID.randomUUID().toString();
@@ -606,13 +606,13 @@ public class OktaConnectorTests extends AbstractConnectorTests {
             userAttrs.add(AttributeBuilder.build(OktaAttribute.LASTNAME, "Test"));
             userAttrs.add(password);
 
-            Uid created = connector.create(ObjectClass.ACCOUNT, userAttrs, operationOption);
+            Uid created = FACADE.create(ObjectClass.ACCOUNT, userAttrs, oo);
             assertNotNull(created);
             USERS.add(created.getUidValue());
 
             // GET USER
             Filter filter = FilterBuilder.equalTo(AttributeBuilder.build("email", username + "@tirasa.net"));
-            connector.search(ObjectClass.ACCOUNT, filter, handler, operationOption);
+            FACADE.search(ObjectClass.ACCOUNT, filter, handler, oo);
             assertNotNull(handler.getObjects());
             assertFalse(handler.getObjects().isEmpty());
             assertEquals(handler.getObjects().get(0).getUid().getUidValue(), created.getUidValue());
@@ -626,7 +626,7 @@ public class OktaConnectorTests extends AbstractConnectorTests {
             userAttrs.add(currentPassword);
             userAttrs.add(newPassword);
 
-            Uid updated = connector.update(ObjectClass.ACCOUNT, created, userAttrs, operationOption);
+            Uid updated = FACADE.update(ObjectClass.ACCOUNT, created, userAttrs, oo);
             assertNotNull(updated);
         } catch (Exception e) {
             fail();
@@ -637,8 +637,8 @@ public class OktaConnectorTests extends AbstractConnectorTests {
     @Test
     public void oldPasswordNotValid() {
         ToListResultsHandler handler = new ToListResultsHandler();
-        OperationOptions operationOption =
-                new OperationOptionsBuilder().setAttributesToGet(OktaAttribute.EMAIL, OktaAttribute.MOBILEPHONE).build();
+        OperationOptions oo = new OperationOptionsBuilder().
+                setAttributesToGet(OktaAttribute.EMAIL, OktaAttribute.MOBILEPHONE).build();
         try {
             // CREATE USER
             String username = UUID.randomUUID().toString();
@@ -651,13 +651,13 @@ public class OktaConnectorTests extends AbstractConnectorTests {
             userAttrs.add(AttributeBuilder.build(OktaAttribute.LASTNAME, "Test"));
             userAttrs.add(password);
 
-            Uid created = connector.create(ObjectClass.ACCOUNT, userAttrs, operationOption);
+            Uid created = FACADE.create(ObjectClass.ACCOUNT, userAttrs, oo);
             assertNotNull(created);
             USERS.add(created.getUidValue());
 
             // GET USER
             Filter filter = FilterBuilder.equalTo(AttributeBuilder.build("email", username + "@tirasa.net"));
-            connector.search(ObjectClass.ACCOUNT, filter, handler, operationOption);
+            FACADE.search(ObjectClass.ACCOUNT, filter, handler, oo);
             assertNotNull(handler.getObjects());
             assertFalse(handler.getObjects().isEmpty());
             assertEquals(handler.getObjects().get(0).getUid().getUidValue(), created.getUidValue());
@@ -671,7 +671,7 @@ public class OktaConnectorTests extends AbstractConnectorTests {
             userAttrs.add(currentPassword);
             userAttrs.add(newPassword);
 
-            connector.update(ObjectClass.ACCOUNT, created, userAttrs, operationOption);
+            FACADE.update(ObjectClass.ACCOUNT, created, userAttrs, oo);
             fail();
         } catch (Exception e) {
             LOG.error(e, "While running test");

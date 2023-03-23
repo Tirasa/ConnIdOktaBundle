@@ -18,9 +18,7 @@ package net.tirasa.connid.bundles.okta;
 import com.okta.sdk.authc.credentials.TokenClientCredentials;
 import com.okta.sdk.client.AuthorizationMode;
 import com.okta.sdk.client.ClientBuilder;
-import com.okta.sdk.client.Clients;
 import com.okta.sdk.error.ResourceException;
-import com.okta.sdk.impl.cache.DisabledCacheManager;
 import com.okta.sdk.resource.common.PagedList;
 import com.okta.sdk.resource.group.GroupBuilder;
 import com.okta.sdk.resource.user.UserBuilder;
@@ -132,8 +130,6 @@ public class OktaConnector implements Connector, PoolableConnector,
 
     private OktaConfiguration configuration;
 
-    private ApiClient client;
-
     private UserApi userApi;
 
     private GroupApi groupApi;
@@ -165,13 +161,12 @@ public class OktaConnector implements Connector, PoolableConnector,
     public void init(final Configuration configuration) {
         this.configuration = (OktaConfiguration) configuration;
         try {
-            if (client == null) {
-                ClientBuilder builder = Clients.builder()
+            if (userApi == null || groupApi == null || appApi == null || systemLogApi == null || schema == null) {
+                ClientBuilder builder = new ConnIdClientBuilder()
                         .setOrgUrl(this.configuration.getDomain())
                         .setRetryMaxAttempts(this.configuration.getRateLimitMaxRetries())
                         .setRetryMaxElapsed(this.configuration.getRetryMaxElapsed())
-                        .setConnectionTimeout(this.configuration.getRequestTimeout())
-                        .setCacheManager(new DisabledCacheManager());
+                        .setConnectionTimeout(this.configuration.getRequestTimeout());
                 if (this.configuration.getClientId() != null && this.configuration.getPrivateKeyPEM() != null) {
                     builder.setAuthorizationMode(AuthorizationMode.PRIVATE_KEY)
                             .setClientId(this.configuration.getClientId())
@@ -182,18 +177,15 @@ public class OktaConnector implements Connector, PoolableConnector,
                     builder.setClientCredentials(new TokenClientCredentials(this.configuration.getOktaApiToken()));
                 }
 
-                this.client = builder.build();
+                ApiClient client = builder.build();
                 this.userApi = new UserApi(client);
                 this.groupApi = new GroupApi(client);
                 this.appApi = new ApplicationApi(client);
                 this.systemLogApi = new SystemLogApi(client);
+                this.schema = new OktaSchema(new SchemaApi(client));
             }
         } catch (Exception ex) {
             OktaUtils.wrapGeneralError("Could not create Okta client", ex);
-        }
-
-        if (schema == null) {
-            this.schema = new OktaSchema(new SchemaApi(client));
         }
 
         LOG.ok("Connector {0} successfully inited", getClass().getName());
@@ -583,7 +575,7 @@ public class OktaConnector implements Connector, PoolableConnector,
 
     @Override
     public FilterTranslator<OktaFilter> createFilterTranslator(
-            ObjectClass oclass, final OperationOptions options) {
+            final ObjectClass oclass, final OperationOptions options) {
 
         LOG.info("check the ObjectClass");
         if (oclass == null) {
@@ -990,7 +982,7 @@ public class OktaConnector implements Connector, PoolableConnector,
         }
     }
 
-    private void selfPasswordUpdate(String userId, final String oldPassword, final String newPassword) {
+    private void selfPasswordUpdate(final String userId, final String oldPassword, final String newPassword) {
         try {
             PasswordCredential oldPwd = new PasswordCredential();
             oldPwd.setValue(oldPassword);

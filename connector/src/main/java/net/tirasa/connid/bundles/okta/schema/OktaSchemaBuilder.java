@@ -43,7 +43,7 @@ class OktaSchemaBuilder {
 
     private Schema schema;
 
-    public OktaSchemaBuilder(final SchemaApi schemaApi) {
+    protected OktaSchemaBuilder(final SchemaApi schemaApi) {
         this.schemaApi = schemaApi;
     }
 

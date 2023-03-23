@@ -75,7 +75,7 @@ public class OktaConfiguration extends AbstractConfiguration implements Stateful
         return clientId;
     }
 
-    public void setClientId(String clientId) {
+    public void setClientId(final String clientId) {
         this.clientId = clientId;
     }
 
@@ -86,7 +86,7 @@ public class OktaConfiguration extends AbstractConfiguration implements Stateful
         return privateKeyPEM;
     }
 
-    public void setPrivateKeyPEM(String privateKeyPEM) {
+    public void setPrivateKeyPEM(final String privateKeyPEM) {
         this.privateKeyPEM = privateKeyPEM;
     }
 

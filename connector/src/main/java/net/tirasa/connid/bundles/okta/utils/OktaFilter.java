@@ -23,7 +23,9 @@ import org.identityconnectors.framework.common.objects.Uid;
 public class OktaFilter {
 
     public static final List<String> ID_ATTRS = Arrays.asList(OktaAttribute.ID, Uid.NAME);
+
     public static final List<String> USER_NAME_ATTRS = Arrays.asList(OktaAttribute.LOGIN, Name.NAME);
+
     public static final List<String> GROUP_NAME_ATTRS = Arrays.asList(OktaAttribute.NAME, Name.NAME);
 
     private final OktaFilterOp filterOp;
@@ -117,10 +119,12 @@ public class OktaFilter {
                 builder.append(' ');
                 builder.append(filterOp);
                 break;
+
+            default:
         }
     }
 
-    private String escape(String value) {
+    private String escape(final String value) {
         return value.replace("\"", "\\\"");
     }
 }

@@ -15,7 +15,6 @@
  */
 package net.tirasa.connid.bundles.okta;
 
-import static net.tirasa.connid.bundles.okta.AbstractConnectorTests.connector;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
@@ -40,11 +39,11 @@ public class OktaRateLimitsTests extends AbstractConnectorTests {
 
     private void exec() {
         ToListResultsHandler handler = new ToListResultsHandler();
-        SearchResult result = connector.search(
+        SearchResult result = FACADE.search(
                 ObjectClass.ACCOUNT, null, handler, new OperationOptionsBuilder().build());
         assertNotNull(result);
 
-        result = connector.search(
+        result = FACADE.search(
                 ObjectClass.ACCOUNT, null, handler, new OperationOptionsBuilder().setPageSize(1).build());
         assertNotNull(result);
     }

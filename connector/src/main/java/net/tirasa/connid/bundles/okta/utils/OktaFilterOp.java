@@ -29,9 +29,9 @@ public enum OktaFilterOp {
     LESS_THAN("lt"),
     LESS_OR_EQUAL("le");
 
-    private String stringValue;
+    private final String stringValue;
 
-    private OktaFilterOp(final String stringValue) {
+    OktaFilterOp(final String stringValue) {
         this.stringValue = stringValue;
     }
 
@@ -39,6 +39,7 @@ public enum OktaFilterOp {
         return stringValue;
     }
 
+    @Override
     public String toString() {
         return getStringValue();
     }

@@ -15,11 +15,9 @@
  */
 package net.tirasa.connid.bundles.okta;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import net.tirasa.connid.bundles.okta.utils.OktaAttribute;
 import net.tirasa.connid.bundles.okta.utils.OktaFilter;
 import net.tirasa.connid.bundles.okta.utils.OktaFilterOp;
@@ -178,16 +176,8 @@ public class OktaFilterTranslator extends AbstractFilterTranslator<OktaFilter> {
     }
 
     private String getFilterValue(final AttributeFilter filter) {
-        Object attrValue = AttributeUtil.getSingleValue(filter.getAttribute());
-        if (attrValue == null) {
-            return null;
-        }
-        try {
-            return URLEncoder.encode(attrValue.toString(), StandardCharsets.UTF_8.name());
-        } catch (UnsupportedEncodingException e) {
-            LOG.warn(e, "Could not URL-encode {0} to UTF-8", attrValue);
-            return attrValue.toString();
-        }
+        return Optional.ofNullable(AttributeUtil.getSingleValue(filter.getAttribute())).
+                map(Object::toString).orElse(null);
     }
 
     private void checkIfNot(final boolean not) {

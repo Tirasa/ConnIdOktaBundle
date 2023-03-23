@@ -376,7 +376,11 @@ public final class OktaAttribute {
         return "profile." + name;
     }
 
-    public static boolean isDefaultEveryoneGroup(Group group) {
+    public static boolean isDefaultEveryoneGroup(final Group group) {
         return group.getType().name().equals("BUILT_IN") && group.getProfile().getName().equals("Everyone");
+    }
+
+    private OktaAttribute() {
+        // private constructor for static utility class
     }
 }

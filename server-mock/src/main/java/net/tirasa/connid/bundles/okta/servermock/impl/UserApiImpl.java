@@ -28,9 +28,6 @@ import io.swagger.model.UserCredentials;
 import io.swagger.model.UserNextLogin;
 import io.swagger.model.UserProfile;
 import io.swagger.model.UserStatus;
-import java.lang.reflect.InvocationTargetException;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -477,14 +474,12 @@ public class UserApiImpl extends AbstractApiImpl implements UserApi {
     }
 
     @Override
-    public Response unlockUser(String userId) {
-        // TODO: Implement...
-
+    public Response unlockUser(final String userId) {
         return Response.ok().entity("magic!").build();
     }
 
     @Override
-    public Response unsuspendUser(String userId) {
+    public Response unsuspendUser(final String userId) {
         Optional<User> found = USER_REPOSITORY.stream()
                 .filter(user -> StringUtils.equals(userId, user.getId()))
                 .findFirst();
@@ -552,7 +547,7 @@ public class UserApiImpl extends AbstractApiImpl implements UserApi {
             try {
                 return user.getStatus() != UserStatus.DEPROVISIONED
                         && StringUtils.equals(
-                                URLDecoder.decode(StringUtils.remove(split[2], "\""), StandardCharsets.UTF_8.name()),
+                                StringUtils.remove(split[2], "\""),
                                 BeanUtils.getProperty(user, split[0]));
             } catch (Exception e) {
                 return false;

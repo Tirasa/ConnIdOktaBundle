@@ -28,7 +28,7 @@ import org.identityconnectors.framework.common.exceptions.PermissionDeniedExcept
 import org.identityconnectors.framework.common.exceptions.RetryableException;
 import org.identityconnectors.framework.common.exceptions.UnknownUidException;
 
-public class OktaUtils {
+public final class OktaUtils {
 
     private static final Log LOG = Log.getLog(OktaUtils.class);
 
@@ -42,12 +42,13 @@ public class OktaUtils {
         throw new ConnectorException(message, ex);
     }
 
-    public static void wrapGeneralError(final String message, Exception ex) {
+    public static void wrapGeneralError(final String message, final Exception ex) {
         LOG.error(ex, message);
+        Exception wrapped = ex;
         if (ex instanceof ResourceException) {
-            ex = wrapResourceException((ResourceException) ex);
+            wrapped = wrapResourceException((ResourceException) ex);
         }
-        throw ConnectorException.wrap(ex);
+        throw ConnectorException.wrap(wrapped);
     }
 
     private static Exception wrapResourceException(final ResourceException e) {
@@ -69,12 +70,17 @@ public class OktaUtils {
 
             case 401:
                 return new ConnectorSecurityException(e);
+
             case 403:
                 return new PermissionDeniedException(e);
+
             case 404:
                 return new UnknownUidException(e);
+
             case 429:
                 return RetryableException.wrap(e.getMessage(), e);
+
+            default:
         }
         return e;
     }
@@ -90,5 +96,9 @@ public class OktaUtils {
 
     public static OffsetDateTime convertToDate(final long source) {
         return Instant.ofEpochMilli(source).atOffset(ZoneOffset.UTC);
+    }
+
+    private OktaUtils() {
+        // private constructor for static utility class
     }
 }
