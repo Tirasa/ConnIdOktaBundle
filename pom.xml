@@ -84,7 +84,7 @@
     <spring.version>5.3.25</spring.version>
     <jackson.version>2.14.2</jackson.version>
     <javax.validation.version>2.0.1.Final</javax.validation.version>
-    <apache.cxf.version>3.5.5</apache.cxf.version>
+    <apache.cxf.version>4.0.0</apache.cxf.version>
     <swagger-annotations.version>2.2.8</swagger-annotations.version>
 
     <log.directory>${project.build.directory}/log</log.directory>
