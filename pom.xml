@@ -80,7 +80,7 @@
     <okta.version>10.3.0</okta.version>
 
     <swagger-codegen.plugin.version>3.0.41</swagger-codegen.plugin.version>
-    <javax.servlet.version>3.1.0</javax.servlet.version>
+    <javax.servlet.version>4.0.1</javax.servlet.version>
     <spring.version>5.3.25</spring.version>
     <jackson.version>2.14.2</jackson.version>
     <javax.validation.version>2.0.1.Final</javax.validation.version>
