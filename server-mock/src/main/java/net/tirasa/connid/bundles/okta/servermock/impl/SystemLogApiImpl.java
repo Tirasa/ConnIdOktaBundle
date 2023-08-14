@@ -15,8 +15,6 @@
  */
 package net.tirasa.connid.bundles.okta.servermock.impl;
 
-import static net.tirasa.connid.bundles.okta.servermock.impl.AbstractApiImpl.EVENT_REPOSITORY;
-
 import io.swagger.api.SystemLogApi;
 import io.swagger.model.LogEvent;
 import java.util.Arrays;
@@ -28,7 +26,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.ws.rs.core.Response;
 
-public class SystemLogApiImpl implements SystemLogApi {
+public class SystemLogApiImpl extends AbstractApiImpl implements SystemLogApi {
 
     @Override
     public Response listLogEvents(

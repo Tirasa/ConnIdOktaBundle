@@ -15,6 +15,16 @@
  */
 package net.tirasa.connid.bundles.okta.utils;
 
+import com.okta.sdk.resource.api.ApplicationApi;
+import com.okta.sdk.resource.api.GroupApi;
+import com.okta.sdk.resource.api.UserApi;
+import com.okta.sdk.resource.model.Application;
+import com.okta.sdk.resource.model.ApplicationLifecycleStatus;
+import com.okta.sdk.resource.model.Group;
+import com.okta.sdk.resource.model.GroupType;
+import com.okta.sdk.resource.model.User;
+import com.okta.sdk.resource.model.UserProfile;
+import com.okta.sdk.resource.model.UserStatus;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -31,15 +41,6 @@ import org.identityconnectors.framework.common.objects.ObjectClassInfo;
 import org.identityconnectors.framework.common.objects.OperationalAttributes;
 import org.identityconnectors.framework.common.objects.Schema;
 import org.identityconnectors.framework.common.objects.Uid;
-import org.openapitools.client.api.ApplicationApi;
-import org.openapitools.client.api.GroupApi;
-import org.openapitools.client.api.UserApi;
-import org.openapitools.client.model.Application;
-import org.openapitools.client.model.ApplicationLifecycleStatus;
-import org.openapitools.client.model.Group;
-import org.openapitools.client.model.User;
-import org.openapitools.client.model.UserProfile;
-import org.openapitools.client.model.UserStatus;
 
 public final class OktaAttribute {
 
@@ -377,7 +378,7 @@ public final class OktaAttribute {
     }
 
     public static boolean isDefaultEveryoneGroup(final Group group) {
-        return group.getType().name().equals("BUILT_IN") && group.getProfile().getName().equals("Everyone");
+        return GroupType.BUILT_IN == group.getType() && "Everyone".equals(group.getProfile().getName());
     }
 
     private OktaAttribute() {

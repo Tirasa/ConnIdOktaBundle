@@ -15,7 +15,7 @@
  */
 package net.tirasa.connid.bundles.okta.utils;
 
-import com.okta.sdk.error.ResourceException;
+import com.okta.sdk.resource.client.ApiException;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -37,7 +37,7 @@ public final class OktaUtils {
         throw new ConnectorException(message);
     }
 
-    public static void handleGeneralError(final String message, final Exception ex) {
+    public static void handleGeneralError(final String message, final Throwable ex) {
         LOG.error(ex, message);
         throw new ConnectorException(message, ex);
     }
@@ -45,22 +45,20 @@ public final class OktaUtils {
     public static void wrapGeneralError(final String message, final Exception ex) {
         LOG.error(ex, message);
         Exception wrapped = ex;
-        if (ex instanceof ResourceException) {
-            wrapped = wrapResourceException((ResourceException) ex);
+        if (ex instanceof ApiException) {
+            wrapped = wrapResourceException((ApiException) ex);
         }
         throw ConnectorException.wrap(wrapped);
     }
 
-    private static Exception wrapResourceException(final ResourceException e) {
+    private static Exception wrapResourceException(final ApiException e) {
         // Error handling based on status code
         // https://developer.okta.com/docs/reference/error-codes/
-        switch (e.getStatus()) {
+        switch (e.getCode()) {
             case 400:
-                if (e.getError().getCode().equals("E0000001")) {
-                    boolean isAlreadyExists = e.getError().getCauses().stream()
-                            .anyMatch(x -> x.getSummary().endsWith(
-                            "An object with this field already exists in the current organization"));
-                    if (isAlreadyExists) {
+                if (e.getResponseBody().contains("E0000001")) {
+                    if (e.getResponseBody().contains(
+                            "An object with this field already exists in the current organization")) {
                         return new AlreadyExistsException(e);
                     }
                 } else {

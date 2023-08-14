@@ -163,4 +163,9 @@ public class IdentityProviderApiImpl extends AbstractApiImpl implements Identity
     public Response replaceIdentityProvider(final IdentityProvider body, final String idpId) {
         return Response.ok().entity("magic!").build();
     }
+
+    @Override
+    public Response publishCsrForIdentityProvider(final Object body, final String idpId, final String idpCsrId) {
+        return Response.ok().entity("magic!").build();
+    }
 }

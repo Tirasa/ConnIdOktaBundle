@@ -22,6 +22,9 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.okta.sdk.resource.model.Group;
+import com.okta.sdk.resource.model.User;
+import com.okta.sdk.resource.model.UserStatus;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -53,9 +56,6 @@ import org.identityconnectors.test.common.ToListResultsHandler;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.openapitools.client.model.Group;
-import org.openapitools.client.model.User;
-import org.openapitools.client.model.UserStatus;
 
 public class OktaConnectorTests extends AbstractConnectorTests {
 
@@ -324,8 +324,8 @@ public class OktaConnectorTests extends AbstractConnectorTests {
             assertFalse(assignedGroups.contains(groupOne.getId()));
             assertFalse(assignedGroups.contains(groupTwo.getId()));
         } catch (Exception e) {
-            fail(e.getMessage());
             LOG.error(e, "While running test");
+            fail(e.getMessage());
         }
     }
 
@@ -333,16 +333,16 @@ public class OktaConnectorTests extends AbstractConnectorTests {
     public void searchApplication() {
         ToListResultsHandler handler = new ToListResultsHandler();
 
-        SearchResult result = FACADE.
-                search(OktaConnector.APPLICATION, null, handler, new OperationOptionsBuilder().build());
+        SearchResult result = FACADE.search(
+                OktaConnector.APPLICATION, null, handler, new OperationOptionsBuilder().build());
         assertNotNull(result);
         assertNull(result.getPagedResultsCookie());
         assertEquals(-1, result.getRemainingPagedResults());
 
         assertFalse(handler.getObjects().isEmpty());
 
-        result = FACADE.
-                search(OktaConnector.APPLICATION, null, handler, new OperationOptionsBuilder().setPageSize(1).build());
+        result = FACADE.search(
+                OktaConnector.APPLICATION, null, handler, new OperationOptionsBuilder().setPageSize(1).build());
 
         assertNotNull(result);
         assertNotNull(result.getPagedResultsCookie());
@@ -353,16 +353,16 @@ public class OktaConnectorTests extends AbstractConnectorTests {
     public void searchGroup() {
         ToListResultsHandler handler = new ToListResultsHandler();
 
-        SearchResult result = FACADE.
-                search(ObjectClass.GROUP, null, handler, new OperationOptionsBuilder().build());
+        SearchResult result = FACADE.search(
+                ObjectClass.GROUP, null, handler, new OperationOptionsBuilder().build());
         assertNotNull(result);
         assertNull(result.getPagedResultsCookie());
         assertEquals(-1, result.getRemainingPagedResults());
 
         assertFalse(handler.getObjects().isEmpty());
 
-        result = FACADE.
-                search(ObjectClass.GROUP, null, handler, new OperationOptionsBuilder().setPageSize(1).build());
+        result = FACADE.search(
+                ObjectClass.GROUP, null, handler, new OperationOptionsBuilder().setPageSize(1).build());
 
         assertNotNull(result);
         assertNotNull(result.getPagedResultsCookie());
@@ -495,11 +495,10 @@ public class OktaConnectorTests extends AbstractConnectorTests {
     @Test
     public void suspendUnsuspend() {
         ToListResultsHandler handler = new ToListResultsHandler();
-        OperationOptions operationOption =
-                new OperationOptionsBuilder().setAttributesToGet(
-                        OktaAttribute.EMAIL,
-                        OktaAttribute.MOBILEPHONE,
-                        OperationalAttributes.ENABLE_NAME).build();
+        OperationOptions operationOption = new OperationOptionsBuilder().setAttributesToGet(
+                OktaAttribute.EMAIL,
+                OktaAttribute.MOBILEPHONE,
+                OperationalAttributes.ENABLE_NAME).build();
         try {
             // CREATE USER
             String username = UUID.randomUUID().toString();
@@ -629,8 +628,8 @@ public class OktaConnectorTests extends AbstractConnectorTests {
             Uid updated = FACADE.update(ObjectClass.ACCOUNT, created, userAttrs, oo);
             assertNotNull(updated);
         } catch (Exception e) {
-            fail();
             LOG.error(e, "While running test");
+            fail();
         }
     }
 

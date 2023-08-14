@@ -16,8 +16,8 @@
 package net.tirasa.connid.bundles.okta.servermock.impl;
 
 import io.swagger.api.GroupApi;
+import io.swagger.model.AssignGroupOwnerRequestBody;
 import io.swagger.model.Group;
-import io.swagger.model.GroupOwner;
 import io.swagger.model.GroupRule;
 import io.swagger.model.GroupType;
 import io.swagger.model.User;
@@ -62,10 +62,12 @@ public class GroupApiImpl extends AbstractApiImpl implements GroupApi {
         if (body.getId() == null) {
             body.setId(UUID.randomUUID().toString());
         }
+        if (body.getType() == null) {
+            body.setType(GroupType.OKTA_GROUP);
+        }
         body.setCreated(Date.from(Instant.now()));
         body.setLastMembershipUpdated(Date.from(Instant.now()));
         body.setLastUpdated(Date.from(Instant.now()));
-        body.setType(body.getType() == null ? GroupType.OKTA_GROUP : null);
         GROUP_REPOSITORY.add(body);
         return Response.status(Response.Status.CREATED).entity(body).build();
     }
@@ -151,7 +153,9 @@ public class GroupApiImpl extends AbstractApiImpl implements GroupApi {
             final String after,
             final Integer limit,
             final String expand,
-            final String search) {
+            final String search,
+            final String sortBy,
+            final String sortOrder) {
 
         if (filter != null) {
             List<Group> groups = searchGroup(filter);
@@ -187,8 +191,8 @@ public class GroupApiImpl extends AbstractApiImpl implements GroupApi {
         if (EVERYONE_ID.equals(groupId)) {
             return Response.status(Response.Status.FORBIDDEN).build();
         }
-        return GROUP_USER_REPOSITORY.removeIf(pair
-                -> StringUtils.equals(pair.getLeft(), groupId) && StringUtils.equals(pair.getRight(), userId))
+        return GROUP_USER_REPOSITORY.removeIf(pair -> StringUtils.equals(pair.getLeft(), groupId)
+                && StringUtils.equals(pair.getRight(), userId))
                 ? Response.noContent().build()
                 : Response.status(Response.Status.NOT_FOUND).build();
     }
@@ -227,7 +231,7 @@ public class GroupApiImpl extends AbstractApiImpl implements GroupApi {
     }
 
     @Override
-    public Response assignGroupOwner(final GroupOwner body, final String groupId) {
+    public Response assignGroupOwner(final AssignGroupOwnerRequestBody body, final String groupId) {
         return Response.ok().entity("magic!").build();
     }
 

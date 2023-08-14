@@ -15,8 +15,8 @@
  */
 package net.tirasa.connid.bundles.okta.schema;
 
+import com.okta.sdk.resource.api.SchemaApi;
 import org.identityconnectors.framework.common.objects.Schema;
-import org.openapitools.client.api.SchemaApi;
 
 public class OktaSchema {
 

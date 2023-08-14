@@ -18,15 +18,24 @@ package net.tirasa.connid.bundles.okta;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
+import com.okta.sdk.resource.api.ApplicationApi;
+import com.okta.sdk.resource.api.GroupApi;
+import com.okta.sdk.resource.api.UserApi;
 import com.okta.sdk.resource.group.GroupBuilder;
+import com.okta.sdk.resource.model.Application;
+import com.okta.sdk.resource.model.Group;
+import com.okta.sdk.resource.model.GroupProfile;
+import com.okta.sdk.resource.model.GroupType;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
+import net.tirasa.connid.bundles.okta.servermock.impl.AbstractApiImpl;
 import net.tirasa.connid.bundles.okta.utils.OktaAttribute;
 import org.identityconnectors.common.StringUtil;
 import org.identityconnectors.common.logging.Log;
@@ -43,11 +52,7 @@ import org.identityconnectors.framework.common.objects.SyncResultsHandler;
 import org.identityconnectors.framework.common.objects.SyncToken;
 import org.identityconnectors.framework.common.objects.Uid;
 import org.junit.BeforeClass;
-import org.openapitools.client.api.ApplicationApi;
-import org.openapitools.client.api.GroupApi;
-import org.openapitools.client.api.UserApi;
-import org.openapitools.client.model.Application;
-import org.openapitools.client.model.Group;
+import org.springframework.util.ReflectionUtils;
 
 public abstract class AbstractConnectorTests {
 
@@ -92,8 +97,8 @@ public abstract class AbstractConnectorTests {
             CONN.init(CONF);
             CONN.test();
         } catch (Exception e) {
-            fail("Cannot initialize the connector");
             LOG.error(e, "During connector initialization");
+            fail("Cannot initialize the connector");
         }
 
         CONN.schema();
@@ -103,6 +108,18 @@ public abstract class AbstractConnectorTests {
         assertNotNull(CONF);
         assertNotNull(CONF.getDomain());
         assertNotNull(CONF.getOktaApiToken());
+
+        Field groupId = ReflectionUtils.findField(Group.class, "id");
+        ReflectionUtils.makeAccessible(groupId);
+
+        GroupProfile profile = new GroupProfile();
+        profile.setName(AbstractApiImpl.EVERYONE);
+
+        Group group = new Group();
+        ReflectionUtils.setField(groupId, group, AbstractApiImpl.EVERYONE_ID);
+        group.setType(GroupType.BUILT_IN);
+        group.setProfile(profile);
+        CONN.getGroupApi().createGroup(group);
     }
 
     protected static void cleanUserTestData(final UserApi client, final String userId) {

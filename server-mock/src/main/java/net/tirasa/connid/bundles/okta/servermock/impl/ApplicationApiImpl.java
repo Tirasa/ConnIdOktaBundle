@@ -16,18 +16,10 @@
 package net.tirasa.connid.bundles.okta.servermock.impl;
 
 import io.swagger.api.ApplicationApi;
-import io.swagger.model.AppUser;
 import io.swagger.model.Application;
-import io.swagger.model.ApplicationGroupAssignment;
 import io.swagger.model.ApplicationLifecycleStatus;
-import io.swagger.model.CapabilitiesObject;
-import io.swagger.model.CsrMetadata;
-import io.swagger.model.OAuth2ScopeConsentGrant;
-import io.swagger.model.ProvisioningConnectionRequest;
-import io.swagger.model.User;
 import java.lang.reflect.InvocationTargetException;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -36,31 +28,11 @@ import java.util.stream.Collectors;
 import javax.ws.rs.core.Response;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 
 public class ApplicationApiImpl extends AbstractApiImpl implements ApplicationApi {
 
     @Override
     public Response activateApplication(final String appId) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response assignUserToApplication(final AppUser body, final String appId) {
-        if (APPLICATION_REPOSITORY.stream().anyMatch(app -> StringUtils.equals(appId, app.getId()))
-                && USER_REPOSITORY.stream().anyMatch(user -> StringUtils.equals(body.getId(), user.getId()))) {
-
-            APPLICATION_USER_REPOSITORY.add(Pair.of(appId, body.getId()));
-            createLogEvent("application.user_membership.add", body.getId());
-            return Response.ok().build();
-        } else {
-            return Response.status(Response.Status.BAD_REQUEST).build();
-        }
-    }
-
-    @Override
-    public Response cloneApplicationKey(final String appId, final String keyId, final String targetAid) {
         return Response.ok().entity("magic!").build();
     }
 
@@ -106,24 +78,6 @@ public class ApplicationApiImpl extends AbstractApiImpl implements ApplicationAp
     }
 
     @Override
-    public Response unassignUserFromApplication(final String appId, final String userId, final Boolean sendEmail) {
-        createLogEvent("application.user_membership.remove", appId);
-        return APPLICATION_USER_REPOSITORY.removeIf(pair -> StringUtils.equals(pair.getLeft(), appId)
-                && StringUtils.equals(pair.getRight(), userId)) ? Response.noContent().build() : Response.status(
-                Response.Status.NOT_FOUND).build();
-    }
-
-    @Override
-    public Response generateApplicationKey(final String appId, final Integer validityYears) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response generateCsrForApplication(final CsrMetadata body, final String appId) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
     public Response getApplication(final String appId, final String expand) {
         Optional<Application> found = APPLICATION_REPOSITORY.stream()
                 .filter(app -> StringUtils.equals(appId, app.getId()))
@@ -133,93 +87,6 @@ public class ApplicationApiImpl extends AbstractApiImpl implements ApplicationAp
         }
 
         return Response.status(Response.Status.NOT_FOUND).build();
-    }
-
-    @Override
-    public Response getApplicationGroupAssignment(final String appId, final String groupId, final String expand) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response getApplicationKey(final String appId, final String keyId) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response getApplicationUser(final String appId, final String userId, final String expand) {
-        Optional<Pair<String, String>> found = APPLICATION_USER_REPOSITORY.stream().
-                filter(pair -> StringUtils.equals(appId, pair.getLeft())
-                && StringUtils.equals(userId, pair.getRight())).
-                findFirst();
-        if (found.isPresent()) {
-            return Response.ok().
-                    entity(new UserApiImpl().getUser(found.get().getRight()).readEntity(User.class)).build();
-        }
-
-        return Response.status(Response.Status.NOT_FOUND).build();
-    }
-
-    @Override
-    public Response getCsrForApplication(final String appId, final String csrId) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response getOAuth2TokenForApplication(final String appId, final String tokenId, final String expand) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response getScopeConsentGrant(final String appId, final String grantId, final String expand) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response grantConsentToScope(final OAuth2ScopeConsentGrant body, final String appId) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response listApplicationGroupAssignments(
-            final String appId, final String q, final String after, final Integer limit, final String expand) {
-
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response listApplicationKeys(final String appId) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response listApplicationUsers(
-            final String appId,
-            final String q,
-            final String queryScope,
-            final String after,
-            final Integer limit,
-            final String filter,
-            final String expand) {
-
-        List<Pair<String, String>> foundAppUsers = APPLICATION_USER_REPOSITORY.stream().
-                filter(pair -> StringUtils.equals(appId, pair.getLeft())).
-                collect(Collectors.toList());
-        List<User> users = new ArrayList<>();
-        foundAppUsers.forEach(pair -> users.addAll(USER_REPOSITORY.stream().
-                filter(user -> StringUtils.equals(user.getId(), pair.getRight())).
-                collect(Collectors.toList())));
-
-        if (filter != null) {
-            return Response.ok().entity(new UserApiImpl().searchUsers(users, filter)).build();
-        }
-
-        return Response.ok().entity(USER_REPOSITORY.stream().
-                limit(limit == null ? DEFAULT_LIMIT : limit.longValue()).
-                filter(q == null ? user -> true : user -> user.getProfile().getFirstName().contains(q)
-                || user.getProfile().getLastName().contains(q)
-                || user.getProfile().getEmail().contains(q)).
-                collect(Collectors.toList())).
-                build();
     }
 
     private String nextPage(final long limit, final int after, final List<Application> repository) {
@@ -273,48 +140,6 @@ public class ApplicationApiImpl extends AbstractApiImpl implements ApplicationAp
     }
 
     @Override
-    public Response listCsrsForApplication(final String appId) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response listOAuth2TokensForApplication(
-            final String appId, final String expand, final String after, final Integer limit) {
-
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response listScopeConsentGrants(final String appId, final String expand) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response revokeCsrFromApplication(final String appId, final String csrId) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response revokeOAuth2TokenForApplication(final String appId, final String tokenId) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response revokeOAuth2TokensForApplication(final String appId) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response revokeScopeConsentGrant(final String appId, final String grantId) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response uploadApplicationLogo(final String appId, final Attachment fileDetail) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
     public Response replaceApplication(final Application body, final String appId) {
         Optional<Application> found = APPLICATION_REPOSITORY.stream()
                 .filter(app -> StringUtils.equals(appId, app.getId()))
@@ -332,43 +157,6 @@ public class ApplicationApiImpl extends AbstractApiImpl implements ApplicationAp
         return Response.status(Response.Status.NOT_FOUND).build();
     }
 
-    @Override
-    public Response updateApplicationUser(final AppUser body, final String appId, final String userId) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response activateDefaultProvisioningConnectionForApplication(final String appId) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response deactivateDefaultProvisioningConnectionForApplication(final String appId) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response getDefaultProvisioningConnectionForApplication(final String appId) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response getFeatureForApplication(final String appId, final String name) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response listFeaturesForApplication(final String appId) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response updateFeatureForApplication(
-            final CapabilitiesObject body, final String appId, final String name) {
-
-        return Response.status(Response.Status.NOT_FOUND).build();
-    }
-
     private List<Application> searchApplication(final String filter) {
         String[] split = filter.split(" ");
 
@@ -382,29 +170,5 @@ public class ApplicationApiImpl extends AbstractApiImpl implements ApplicationAp
                     }
                 }).
                 collect(Collectors.toList());
-    }
-
-    @Override
-    public Response assignApplicationPolicy(final String appId, final String policyId) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response assignGroupToApplication(
-            final String appId, final String groupId, final ApplicationGroupAssignment body) {
-
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response unassignApplicationFromGroup(final String appId, final String groupId) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response updateDefaultProvisioningConnectionForApplication(
-            final ProvisioningConnectionRequest body, final String appId, final Boolean activate) {
-
-        return Response.ok().entity("magic!").build();
     }
 }

@@ -17,8 +17,6 @@ package net.tirasa.connid.bundles.okta.servermock.impl;
 
 import io.swagger.model.Application;
 import io.swagger.model.Group;
-import io.swagger.model.GroupProfile;
-import io.swagger.model.GroupType;
 import io.swagger.model.LogEvent;
 import io.swagger.model.LogTarget;
 import io.swagger.model.User;
@@ -45,19 +43,15 @@ public abstract class AbstractApiImpl {
 
     protected static final long DEFAULT_LIMIT = 200;
 
-    protected static final String EVERYONE = "Everyone";
+    public static final String EVERYONE = "Everyone";
 
-    protected static final String EVERYONE_ID = "5602b236-6b6c-11ea-bc55-0242ac130003";
+    public static final String EVERYONE_ID = "5602b236-6b6c-11ea-bc55-0242ac130003";
 
     protected static final List<User> USER_REPOSITORY = Collections.synchronizedList(new ArrayList<>());
 
     protected static final Map<String, List<String>> USER_PASSWORD_REPOSITORY = new ConcurrentHashMap<>();
 
-    protected static final List<Group> GROUP_REPOSITORY = Collections.synchronizedList(new ArrayList<>(Arrays.asList(
-            new Group().
-                    id(EVERYONE_ID).
-                    type(GroupType.BUILT_IN).
-                    profile(new GroupProfile().name(EVERYONE).description(EVERYONE)))));
+    protected static final List<Group> GROUP_REPOSITORY = Collections.synchronizedList(new ArrayList<>());
 
     protected static final List<Pair<String, String>> GROUP_USER_REPOSITORY =
             Collections.synchronizedList(new ArrayList<>());

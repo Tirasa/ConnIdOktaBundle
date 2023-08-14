@@ -16,11 +16,27 @@
 package net.tirasa.connid.bundles.okta;
 
 import com.okta.sdk.authc.credentials.TokenClientCredentials;
+import com.okta.sdk.cache.Caches;
 import com.okta.sdk.client.AuthorizationMode;
 import com.okta.sdk.client.ClientBuilder;
-import com.okta.sdk.error.ResourceException;
+import com.okta.sdk.client.Clients;
+import com.okta.sdk.resource.api.ApplicationApi;
+import com.okta.sdk.resource.api.GroupApi;
+import com.okta.sdk.resource.api.SchemaApi;
+import com.okta.sdk.resource.api.SystemLogApi;
+import com.okta.sdk.resource.api.UserApi;
+import com.okta.sdk.resource.client.ApiClient;
+import com.okta.sdk.resource.client.ApiException;
 import com.okta.sdk.resource.common.PagedList;
 import com.okta.sdk.resource.group.GroupBuilder;
+import com.okta.sdk.resource.model.Application;
+import com.okta.sdk.resource.model.ChangePasswordRequest;
+import com.okta.sdk.resource.model.Group;
+import com.okta.sdk.resource.model.LogEvent;
+import com.okta.sdk.resource.model.PasswordCredential;
+import com.okta.sdk.resource.model.UpdateUserRequest;
+import com.okta.sdk.resource.model.User;
+import com.okta.sdk.resource.model.UserStatus;
 import com.okta.sdk.resource.user.UserBuilder;
 import java.time.OffsetDateTime;
 import java.util.Arrays;
@@ -79,20 +95,6 @@ import org.identityconnectors.framework.spi.operations.SearchOp;
 import org.identityconnectors.framework.spi.operations.SyncOp;
 import org.identityconnectors.framework.spi.operations.TestOp;
 import org.identityconnectors.framework.spi.operations.UpdateOp;
-import org.openapitools.client.ApiClient;
-import org.openapitools.client.api.ApplicationApi;
-import org.openapitools.client.api.GroupApi;
-import org.openapitools.client.api.SchemaApi;
-import org.openapitools.client.api.SystemLogApi;
-import org.openapitools.client.api.UserApi;
-import org.openapitools.client.model.Application;
-import org.openapitools.client.model.ChangePasswordRequest;
-import org.openapitools.client.model.Group;
-import org.openapitools.client.model.LogEvent;
-import org.openapitools.client.model.PasswordCredential;
-import org.openapitools.client.model.UpdateUserRequest;
-import org.openapitools.client.model.User;
-import org.openapitools.client.model.UserStatus;
 
 /**
  * Main implementation of the Okta Connector.
@@ -162,7 +164,8 @@ public class OktaConnector implements Connector, PoolableConnector,
         this.configuration = (OktaConfiguration) configuration;
         try {
             if (userApi == null || groupApi == null || appApi == null || systemLogApi == null || schema == null) {
-                ClientBuilder builder = new ConnIdClientBuilder()
+                ClientBuilder builder = Clients.builder()
+                        .setCacheManager(Caches.newDisabledCacheManager())
                         .setOrgUrl(this.configuration.getDomain())
                         .setRetryMaxAttempts(this.configuration.getRateLimitMaxRetries())
                         .setRetryMaxElapsed(this.configuration.getRetryMaxElapsed())
@@ -614,9 +617,9 @@ public class OktaConnector implements Connector, PoolableConnector,
             try {
                 if (pageSize != null) {
                     PagedList<T> response = pagedSearchFunction.apply(theFilter);
-                    objects = response.getItems();
+                    objects = response;
 
-                    if (response.getItems().size() >= pageSize) {
+                    if (response.size() >= pageSize) {
                         String nextPage = response.getNextPage();
                         int startIdx = nextPage.indexOf("after=");
                         if (startIdx != -1) {
@@ -676,9 +679,10 @@ public class OktaConnector implements Connector, PoolableConnector,
                     options.getPagedResultsCookie(),
                     handler,
                     userApi::getUser,
-                    f -> OktaPaginationApis.listUsers(
-                            userApi, null, options.getPagedResultsCookie(), options.getPageSize(), f, null, null, null),
-                    f -> userApi.listUsers(null, null, null, f, null, null, null),
+                    f -> (PagedList<User>) userApi.listUsers(
+                            null, options.getPagedResultsCookie(), options.getPageSize(), f, null, null, null),
+                    f -> userApi.listUsers(
+                            null, null, null, f, null, null, null),
                     o -> fromUser(o, attributesToGet));
         } else if (APPLICATION.equals(objectClass)) {
             doExecuteQuery(objectClass,
@@ -687,9 +691,10 @@ public class OktaConnector implements Connector, PoolableConnector,
                     options.getPagedResultsCookie(),
                     handler,
                     id -> appApi.getApplication(id, null),
-                    f -> OktaPaginationApis.listApplications(
-                            appApi, null, options.getPagedResultsCookie(), options.getPageSize(), f, null, null),
-                    f -> appApi.listApplications(null, null, null, f, null, null),
+                    f -> (PagedList<Application>) appApi.listApplications(
+                            null, options.getPagedResultsCookie(), options.getPageSize(), f, null, null),
+                    f -> appApi.listApplications(
+                            null, null, null, f, null, null),
                     o -> fromApplication(o, attributesToGet));
         } else if (ObjectClass.GROUP.equals(objectClass)) {
             doExecuteQuery(
@@ -699,9 +704,10 @@ public class OktaConnector implements Connector, PoolableConnector,
                     options.getPagedResultsCookie(),
                     handler,
                     groupApi::getGroup,
-                    f -> OktaPaginationApis.listGroups(
-                            groupApi, null, f, options.getPagedResultsCookie(), options.getPageSize(), null, null),
-                    f -> groupApi.listGroups(null, f, null, null, null, null),
+                    f -> (PagedList<Group>) groupApi.listGroups(
+                            null, f, options.getPagedResultsCookie(), options.getPageSize(), null, null, null, null),
+                    f -> groupApi.listGroups(
+                            null, f, null, null, null, null, null, null),
                     o -> fromGroup(o, attributesToGet));
         } else {
             throw new UnsupportedOperationException(
@@ -996,12 +1002,12 @@ public class OktaConnector implements Connector, PoolableConnector,
 
             userApi.changePassword(userId, req, Boolean.FALSE);
             LOG.ok("Self change passsword user {0}" + userId);
-        } catch (ResourceException e) {
+        } catch (ApiException e) {
             LOG.error(e, e.getMessage());
-            if (!CollectionUtil.isEmpty(e.getCauses())) {
-                OktaUtils.handleGeneralError(e.getError().getCauses().get(0).getSummary());
-            } else {
+            if (e.getCause() == null) {
                 OktaUtils.handleGeneralError(e.getMessage(), e);
+            } else {
+                OktaUtils.handleGeneralError(e.getCause().getMessage(), e.getCause());
             }
         } catch (Exception e) {
             LOG.error(e, e.getMessage());

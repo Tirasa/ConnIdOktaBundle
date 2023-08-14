@@ -60,11 +60,6 @@ public class SchemaApiImpl implements SchemaApi {
     }
 
     @Override
-    public Response getApplicationLayout(final String appName) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
     public Response getGroupSchema() {
         return Response.ok().entity("magic!").build();
     }
@@ -92,7 +87,7 @@ public class SchemaApiImpl implements SchemaApi {
         schema.setTitle("User");
         schema.setCreated(OktaObjectMapper.DATE_FORMAT.get().format(new Date()));
         schema.setLastUpdated(schema.getCreated());
-        schema.setType("object");
+        //schema.setType("object");
 
         schema.setProperties(new UserSchemaProperties());
         schema.getProperties().setProfile(new UserSchemaPropertiesProfile());
@@ -168,5 +163,15 @@ public class SchemaApiImpl implements SchemaApi {
         property.setPermissions(Collections.singletonList(permission));
 
         return property;
+    }
+
+    @Override
+    public Response getAppUISchema(final String appName, final String section, final String operation) {
+        return Response.ok().entity("magic!").build();
+    }
+
+    @Override
+    public Response getAppUISchemaLinks(final String appName) {
+        return Response.ok().entity("magic!").build();
     }
 }

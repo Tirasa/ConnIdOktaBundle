@@ -209,7 +209,7 @@ public class UserApiImpl extends AbstractApiImpl implements UserApi {
     }
 
     @Override
-    public Response expirePasswordAndGetTemporaryPassword(final String userId) {
+    public Response expirePasswordAndGetTemporaryPassword(final String userId, final Boolean revokeSessions) {
         return Response.ok().entity("magic!").build();
     }
 
@@ -405,26 +405,6 @@ public class UserApiImpl extends AbstractApiImpl implements UserApi {
     }
 
     @Override
-    public Response resetPassword(final String userId, final Boolean sendEmail) {
-        Optional<User> found = USER_REPOSITORY.stream()
-                .filter(user -> StringUtils.equals(userId, user.getId()))
-                .findFirst();
-        if (found.isPresent()) {
-            User user = found.get();
-            if (user.getStatus() == UserStatus.ACTIVE) {
-                found.get().setStatus(UserStatus.RECOVERY);
-                found.get().setStatusChanged(new Date());
-                createLogEvent("user.lifecycle.reset_password", userId);
-                return Response.ok().entity("{}").build();
-            }
-
-            return Response.status(Response.Status.FORBIDDEN).build();
-        }
-
-        return Response.status(Response.Status.NOT_FOUND).build();
-    }
-
-    @Override
     public Response revokeGrantsForUserAndClient(final String userId, final String clientId) {
         return Response.ok().entity("magic!").build();
     }
@@ -527,8 +507,8 @@ public class UserApiImpl extends AbstractApiImpl implements UserApi {
     }
 
     @Override
-    public Response replaceUser(final UpdateUserRequest body, final String userId, final Boolean strict) {
-        return updateUser(body, userId, strict);
+    public Response replaceUser(final User body, final String userId, final Boolean strict) {
+        return Response.ok().entity("magic!").build();
     }
 
     private Map<String, Object> buildErrorResponse(final String errorId, final String message) {
@@ -581,6 +561,18 @@ public class UserApiImpl extends AbstractApiImpl implements UserApi {
 
     @Override
     public Response revokeUserSessions(final String userId, final Boolean oauthTokens) {
+        return Response.ok().entity("magic!").build();
+    }
+
+    @Override
+    public Response generateResetPasswordToken(
+            final String userId, final Boolean sendEmail, final Boolean revokeSessions) {
+
+        return Response.ok().entity("magic!").build();
+    }
+
+    @Override
+    public Response listUserBlocks(final String userId) {
         return Response.ok().entity("magic!").build();
     }
 }

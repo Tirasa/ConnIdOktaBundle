@@ -77,15 +77,15 @@
 
   <properties>
     <connid.version>1.5.2.0</connid.version>
-    <okta.version>10.3.0</okta.version>
+    <okta.version>13.0.1</okta.version>
 
-    <swagger-codegen.plugin.version>3.0.41</swagger-codegen.plugin.version>
+    <swagger-codegen.plugin.version>3.0.46</swagger-codegen.plugin.version>
     <javax.servlet.version>3.1.0</javax.servlet.version>
-    <spring.version>5.3.27</spring.version>
+    <spring.version>5.3.29</spring.version>
     <jackson.version>2.14.3</jackson.version>
     <javax.validation.version>2.0.1.Final</javax.validation.version>
     <apache.cxf.version>3.5.6</apache.cxf.version>
-    <swagger-annotations.version>2.2.8</swagger-annotations.version>
+    <swagger-annotations.version>2.2.15</swagger-annotations.version>
 
     <log.directory>${project.build.directory}/log</log.directory>
     
@@ -95,7 +95,7 @@
     <cargo.log>${log.directory}/cargo.log</cargo.log>
     <cargo.output>${log.directory}/cargo-output.log</cargo.output>
 
-    <tomcat.version>9.0.75</tomcat.version>
+    <tomcat.version>9.0.78</tomcat.version>
     
     <java.version>1.8</java.version>
     <rootpom.basedir>${basedir}</rootpom.basedir>
@@ -297,7 +297,7 @@
         <plugin>
           <groupId>org.codehaus.cargo</groupId>
           <artifactId>cargo-maven3-plugin</artifactId>
-          <version>1.10.6</version>
+          <version>1.10.9</version>
           <configuration>
             <container>
               <containerId>tomcat9x</containerId>
@@ -325,7 +325,7 @@
       <plugin>
         <groupId>org.gaul</groupId>
         <artifactId>modernizer-maven-plugin</artifactId>
-        <version>2.5.0</version>
+        <version>2.6.0</version>
         <configuration>
           <javaVersion>${targetJdk}</javaVersion>
         </configuration>

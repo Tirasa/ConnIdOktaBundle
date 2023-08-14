@@ -106,9 +106,9 @@
               <generateModelTests>false</generateModelTests>
               <configOptions>
                 <sourceFolder>/</sourceFolder>
-                <useGenericResponse>true</useGenericResponse>
+                <useGenericResponse>true</useGenericResponse>                
               </configOptions>
-            </configuration>
+            </configuration>            
           </execution>
         </executions>
       </plugin>

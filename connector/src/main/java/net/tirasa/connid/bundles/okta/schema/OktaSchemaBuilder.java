@@ -15,6 +15,9 @@
  */
 package net.tirasa.connid.bundles.okta.schema;
 
+import com.okta.sdk.resource.api.SchemaApi;
+import com.okta.sdk.resource.model.UserSchemaAttribute;
+import com.okta.sdk.resource.model.UserSchemaDefinitions;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -31,9 +34,6 @@ import org.identityconnectors.framework.common.objects.ObjectClass;
 import org.identityconnectors.framework.common.objects.ObjectClassInfoBuilder;
 import org.identityconnectors.framework.common.objects.Schema;
 import org.identityconnectors.framework.common.objects.SchemaBuilder;
-import org.openapitools.client.api.SchemaApi;
-import org.openapitools.client.model.UserSchemaAttribute;
-import org.openapitools.client.model.UserSchemaDefinitions;
 
 class OktaSchemaBuilder {
 
