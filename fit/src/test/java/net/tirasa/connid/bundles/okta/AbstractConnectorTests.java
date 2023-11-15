@@ -18,39 +18,19 @@ package net.tirasa.connid.bundles.okta;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
-import com.okta.sdk.resource.api.ApplicationApi;
-import com.okta.sdk.resource.api.GroupApi;
-import com.okta.sdk.resource.api.UserApi;
-import com.okta.sdk.resource.group.GroupBuilder;
-import com.okta.sdk.resource.model.Application;
 import com.okta.sdk.resource.model.Group;
 import com.okta.sdk.resource.model.GroupProfile;
 import com.okta.sdk.resource.model.GroupType;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Properties;
-import java.util.Set;
-import java.util.UUID;
 import net.tirasa.connid.bundles.okta.servermock.impl.AbstractApiImpl;
-import net.tirasa.connid.bundles.okta.utils.OktaAttribute;
-import org.identityconnectors.common.StringUtil;
 import org.identityconnectors.common.logging.Log;
-import org.identityconnectors.common.security.GuardedString;
+import org.identityconnectors.framework.api.APIConfiguration;
 import org.identityconnectors.framework.api.ConnectorFacade;
-import org.identityconnectors.framework.common.objects.Attribute;
-import org.identityconnectors.framework.common.objects.AttributeBuilder;
-import org.identityconnectors.framework.common.objects.ObjectClass;
-import org.identityconnectors.framework.common.objects.OperationOptions;
-import org.identityconnectors.framework.common.objects.OperationOptionsBuilder;
-import org.identityconnectors.framework.common.objects.SyncDelta;
-import org.identityconnectors.framework.common.objects.SyncDeltaType;
-import org.identityconnectors.framework.common.objects.SyncResultsHandler;
-import org.identityconnectors.framework.common.objects.SyncToken;
-import org.identityconnectors.framework.common.objects.Uid;
+import org.identityconnectors.framework.api.ConnectorFacadeFactory;
+import org.identityconnectors.test.common.TestHelpers;
 import org.junit.BeforeClass;
 import org.springframework.util.ReflectionUtils;
 
@@ -64,26 +44,26 @@ public abstract class AbstractConnectorTests {
 
     protected static ConnectorFacade FACADE;
 
-    protected static final Properties PROPS = new Properties();
-
-    protected static final Set<String> USERS = new HashSet<>();
-
-    protected static final Set<String> GROUPS = new HashSet<>();
-
-    protected static final Set<String> APPLICATIONS = new HashSet<>();
+    protected static ConnectorFacade newFacade() {
+        ConnectorFacadeFactory factory = ConnectorFacadeFactory.getInstance();
+        APIConfiguration impl = TestHelpers.createTestConfiguration(OktaConnector.class, CONF);
+        impl.getResultsHandlerConfiguration().setFilteredResultsHandlerInValidationMode(true);
+        return factory.newInstance(impl);
+    }
 
     @BeforeClass
     public static void setUpConf() {
+        Properties props = new Properties();
         try {
             InputStream propStream = OktaConnectorTests.class.getResourceAsStream("/okta.properties");
-            PROPS.load(propStream);
+            props.load(propStream);
         } catch (IOException e) {
             fail("Could not load okta.properties: " + e.getMessage());
         }
 
         CONF = new OktaConfiguration();
-        CONF.setDomain(PROPS.getProperty("domain"));
-        CONF.setOktaApiToken(PROPS.getProperty("oktaApiToken"));
+        CONF.setDomain(props.getProperty("domain"));
+        CONF.setOktaApiToken(props.getProperty("oktaApiToken"));
         CONF.setUserEvents(
                 "user.lifecycle.create",
                 "user.lifecycle.update",
@@ -121,136 +101,4 @@ public abstract class AbstractConnectorTests {
         group.setProfile(profile);
         CONN.getGroupApi().createGroup(group);
     }
-
-    protected static void cleanUserTestData(final UserApi client, final String userId) {
-        try {
-            if (!StringUtil.isEmpty(userId)) {
-                client.deactivateUser(userId, Boolean.FALSE);
-                client.deleteUser(userId, Boolean.FALSE);
-            }
-        } catch (Exception e) {
-            LOG.error("Could not clean test data", e);
-        }
-    }
-
-    protected static void cleanGroupTestData(final GroupApi client, final String groupId) {
-        try {
-            if (!StringUtil.isEmpty(groupId)) {
-                client.deleteGroup(groupId);
-            }
-        } catch (Exception e) {
-            LOG.error("Could not clean test data", e);
-        }
-    }
-
-    protected static void cleanApplicationTestData(final ApplicationApi client, final String applicationId) {
-        try {
-            if (!StringUtil.isEmpty(applicationId)) {
-                client.deactivateApplication(applicationId);
-                client.deleteApplication(applicationId);
-            }
-        } catch (Exception e) {
-            LOG.error("Could not clean test data", e);
-        }
-    }
-
-    protected Set<String> getUserGroups(final UserApi client, final String userId) {
-        Set<String> assignedGroups = new HashSet<>();
-        try {
-            for (Group grpItem : client.listUserGroups(userId)) {
-                assignedGroups.add(grpItem.getId());
-            }
-        } catch (Exception ex) {
-            fail();
-            LOG.error(ex, "Could not list groups for User {0}", userId);
-        }
-        return assignedGroups;
-    }
-
-    protected static Set<Attribute> createUserAttrs(final String passwordValue) {
-        String username = UUID.randomUUID().toString();
-        Attribute password = AttributeBuilder.buildPassword(new GuardedString(passwordValue.toCharArray()));
-
-        Set<Attribute> userAttrs = new HashSet<>();
-        userAttrs.add(AttributeBuilder.build(OktaAttribute.EMAIL, username + "@tirasa.net"));
-        userAttrs.add(AttributeBuilder.build(OktaAttribute.FIRSTNAME, "Test"));
-        userAttrs.add(AttributeBuilder.build(OktaAttribute.LASTNAME, "Test"));
-        userAttrs.add(AttributeBuilder.build(OktaAttribute.MOBILEPHONE, "123456789"));
-        userAttrs.add(password);
-        return userAttrs;
-    }
-
-    protected static Group createGroup(final GroupApi client) {
-        String groupName = UUID.randomUUID().toString();
-        return GroupBuilder.instance()
-                .setName("connid-" + groupName)
-                .setDescription("connid-" + groupName).buildAndCreate(client);
-    }
-
-    protected static Application createApplication(final ApplicationApi client) {
-        Application app = new Application().label(UUID.randomUUID().toString());
-        return client.createApplication(app, Boolean.TRUE, null);
-    }
-
-    public static void createSearchTestData() {
-        OperationOptions oo = new OperationOptionsBuilder()
-                .setAttributesToGet(OktaAttribute.EMAIL, OktaAttribute.MOBILEPHONE).build();
-        Uid user = FACADE.create(ObjectClass.ACCOUNT, createUserAttrs("Password123"), oo);
-        USERS.add(user.getUidValue());
-
-        user = FACADE.create(ObjectClass.ACCOUNT, createUserAttrs("Password123"), oo);
-        USERS.add(user.getUidValue());
-
-        Group groupTest = createGroup(CONN.getGroupApi());
-        assertNotNull(groupTest);
-        GROUPS.add(groupTest.getId());
-
-        groupTest = createGroup(CONN.getGroupApi());
-        assertNotNull(groupTest);
-        GROUPS.add(groupTest.getId());
-
-        Application app = createApplication(CONN.getApplicationApi());
-        assertNotNull(app);
-        APPLICATIONS.add(app.getId());
-
-        app = createApplication(CONN.getApplicationApi());
-        assertNotNull(app);
-        APPLICATIONS.add(app.getId());
-    }
-
-    public static class TestSyncResultsHandler implements SyncResultsHandler {
-
-        private final List<SyncDelta> updated = new ArrayList<>();
-
-        private final List<SyncDelta> deleted = new ArrayList<>();
-
-        private SyncToken latestReceivedToken = null;
-
-        @Override
-        public boolean handle(final SyncDelta sd) {
-            latestReceivedToken = sd.getToken();
-            if (sd.getDeltaType() == SyncDeltaType.DELETE) {
-                return deleted.add(sd);
-            }
-
-            return updated.add(sd);
-        }
-
-        public SyncToken getLatestReceivedToken() {
-            return latestReceivedToken;
-        }
-
-        public List<SyncDelta> getUpdated() {
-            return updated;
-        }
-
-        public List<SyncDelta> getDeleted() {
-            return deleted;
-        }
-
-        public void clear() {
-            updated.clear();
-            deleted.clear();
-        }
-    };
 }

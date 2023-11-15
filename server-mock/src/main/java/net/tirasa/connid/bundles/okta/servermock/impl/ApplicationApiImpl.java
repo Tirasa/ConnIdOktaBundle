@@ -51,10 +51,10 @@ public class ApplicationApiImpl extends AbstractApiImpl implements ApplicationAp
             body.setLastUpdated(Date.from(Instant.now()));
             APPLICATION_REPOSITORY.add(body);
             createLogEvent("application.lifecycle.create", body.getId());
-            return Response.status(Response.Status.CREATED).entity(body).build();
-        } else {
-            return replaceApplication(body, body.getId());
+            return Response.ok(body).build();
         }
+
+        return replaceApplication(body, body.getId());
     }
 
     @Override

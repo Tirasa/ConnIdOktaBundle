@@ -22,9 +22,17 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.okta.sdk.resource.api.ApplicationApi;
+import com.okta.sdk.resource.api.GroupApi;
+import com.okta.sdk.resource.api.UserApi;
+import com.okta.sdk.resource.group.GroupBuilder;
+import com.okta.sdk.resource.model.Application;
+import com.okta.sdk.resource.model.ApplicationSignOnMode;
+import com.okta.sdk.resource.model.BasicAuthApplication;
 import com.okta.sdk.resource.model.Group;
 import com.okta.sdk.resource.model.User;
 import com.okta.sdk.resource.model.UserStatus;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -32,11 +40,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import net.tirasa.connid.bundles.okta.utils.OktaAttribute;
+import org.identityconnectors.common.StringUtil;
 import org.identityconnectors.common.logging.Log;
 import org.identityconnectors.common.security.GuardedString;
-import org.identityconnectors.framework.api.APIConfiguration;
-import org.identityconnectors.framework.api.ConnectorFacade;
-import org.identityconnectors.framework.api.ConnectorFacadeFactory;
 import org.identityconnectors.framework.common.objects.Attribute;
 import org.identityconnectors.framework.common.objects.AttributeBuilder;
 import org.identityconnectors.framework.common.objects.AttributeUtil;
@@ -47,11 +53,13 @@ import org.identityconnectors.framework.common.objects.OperationOptionsBuilder;
 import org.identityconnectors.framework.common.objects.OperationalAttributes;
 import org.identityconnectors.framework.common.objects.Schema;
 import org.identityconnectors.framework.common.objects.SearchResult;
+import org.identityconnectors.framework.common.objects.SyncDelta;
+import org.identityconnectors.framework.common.objects.SyncDeltaType;
+import org.identityconnectors.framework.common.objects.SyncResultsHandler;
 import org.identityconnectors.framework.common.objects.SyncToken;
 import org.identityconnectors.framework.common.objects.Uid;
 import org.identityconnectors.framework.common.objects.filter.Filter;
 import org.identityconnectors.framework.common.objects.filter.FilterBuilder;
-import org.identityconnectors.test.common.TestHelpers;
 import org.identityconnectors.test.common.ToListResultsHandler;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -63,9 +71,148 @@ public class OktaConnectorTests extends AbstractConnectorTests {
 
     private static final String ENTITLEMENTS_ATTR = "entitlements";
 
+    private static final Set<String> USERS = new HashSet<>();
+
+    private static final Set<String> GROUPS = new HashSet<>();
+
+    private static final Set<String> APPLICATIONS = new HashSet<>();
+
+    private Set<String> getUserGroups(final UserApi client, final String userId) {
+        Set<String> assignedGroups = new HashSet<>();
+        try {
+            for (Group grpItem : client.listUserGroups(userId)) {
+                assignedGroups.add(grpItem.getId());
+            }
+        } catch (Exception ex) {
+            fail();
+            LOG.error(ex, "Could not list groups for User {0}", userId);
+        }
+        return assignedGroups;
+    }
+
+    private static Set<Attribute> createUserAttrs(final String passwordValue) {
+        String username = UUID.randomUUID().toString();
+        Attribute password = AttributeBuilder.buildPassword(new GuardedString(passwordValue.toCharArray()));
+
+        Set<Attribute> userAttrs = new HashSet<>();
+        userAttrs.add(AttributeBuilder.build(OktaAttribute.EMAIL, username + "@tirasa.net"));
+        userAttrs.add(AttributeBuilder.build(OktaAttribute.FIRSTNAME, "Test"));
+        userAttrs.add(AttributeBuilder.build(OktaAttribute.LASTNAME, "Test"));
+        userAttrs.add(AttributeBuilder.build(OktaAttribute.MOBILEPHONE, "123456789"));
+        userAttrs.add(password);
+        return userAttrs;
+    }
+
+    private static Group createGroup(final GroupApi client) {
+        String groupName = "connid-" + UUID.randomUUID().toString();
+        return GroupBuilder.instance()
+                .setName(groupName)
+                .setDescription(groupName)
+                .buildAndCreate(client);
+    }
+
+    private static Application createApplication(final ApplicationApi client) {
+        BasicAuthApplication app = new BasicAuthApplication();
+        app.label("app-" + UUID.randomUUID().toString()).
+                signOnMode(ApplicationSignOnMode.BASIC_AUTH);
+        app.setName(null);
+
+        return client.createApplication(app, Boolean.TRUE, null);
+    }
+
+    public static class TestSyncResultsHandler implements SyncResultsHandler {
+
+        private final List<SyncDelta> updated = new ArrayList<>();
+
+        private final List<SyncDelta> deleted = new ArrayList<>();
+
+        private SyncToken latestReceivedToken = null;
+
+        @Override
+        public boolean handle(final SyncDelta sd) {
+            latestReceivedToken = sd.getToken();
+            if (sd.getDeltaType() == SyncDeltaType.DELETE) {
+                return deleted.add(sd);
+            }
+
+            return updated.add(sd);
+        }
+
+        public SyncToken getLatestReceivedToken() {
+            return latestReceivedToken;
+        }
+
+        public List<SyncDelta> getUpdated() {
+            return updated;
+        }
+
+        public List<SyncDelta> getDeleted() {
+            return deleted;
+        }
+
+        public void clear() {
+            updated.clear();
+            deleted.clear();
+        }
+    };
+
     @BeforeClass
     public static void setupData() {
-        createSearchTestData();
+        OperationOptions oo = new OperationOptionsBuilder().
+                setAttributesToGet(OktaAttribute.EMAIL, OktaAttribute.MOBILEPHONE).build();
+        Uid user = FACADE.create(ObjectClass.ACCOUNT, createUserAttrs("Password123"), oo);
+        USERS.add(user.getUidValue());
+
+        user = FACADE.create(ObjectClass.ACCOUNT, createUserAttrs("Password123"), oo);
+        USERS.add(user.getUidValue());
+
+        Group groupTest = createGroup(CONN.getGroupApi());
+        assertNotNull(groupTest);
+        GROUPS.add(groupTest.getId());
+
+        groupTest = createGroup(CONN.getGroupApi());
+        assertNotNull(groupTest);
+        GROUPS.add(groupTest.getId());
+
+        Application app = createApplication(CONN.getApplicationApi());
+        assertNotNull(app);
+        APPLICATIONS.add(app.getId());
+
+        app = createApplication(CONN.getApplicationApi());
+        assertNotNull(app);
+        APPLICATIONS.add(app.getId());
+    }
+
+    private static void cleanUserTestData(final UserApi client, final String userId) {
+        try {
+            if (!StringUtil.isEmpty(userId)) {
+                client.deactivateUser(userId, Boolean.FALSE);
+                client.deleteUser(userId, Boolean.FALSE);
+            }
+        } catch (Exception e) {
+            LOG.error("Could not clean test data", e);
+        }
+    }
+
+    private static void cleanGroupTestData(final GroupApi client, final String groupId) {
+        try {
+            if (!StringUtil.isEmpty(groupId)) {
+                client.deleteGroup(groupId);
+            }
+        } catch (Exception e) {
+            LOG.error("Could not clean test data", e);
+        }
+    }
+
+    private static void cleanApplicationTestData(final ApplicationApi client, final String applicationId) {
+        try {
+            if (!StringUtil.isEmpty(applicationId)) {
+                client.deactivateApplication(applicationId);
+                client.deleteApplication(applicationId);
+            }
+        } catch (Exception e) {
+            LOG.error("Could not clean test data", e);
+        }
     }
 
     @AfterClass
@@ -73,13 +220,6 @@ public class OktaConnectorTests extends AbstractConnectorTests {
         USERS.stream().forEach(item -> cleanUserTestData(CONN.getUserApi(), item));
         GROUPS.stream().forEach(item -> cleanGroupTestData(CONN.getGroupApi(), item));
         APPLICATIONS.stream().forEach(item -> cleanApplicationTestData(CONN.getApplicationApi(), item));
-    }
-
-    protected static ConnectorFacade newFacade() {
-        ConnectorFacadeFactory factory = ConnectorFacadeFactory.getInstance();
-        APIConfiguration impl = TestHelpers.createTestConfiguration(OktaConnector.class, CONF);
-        impl.getResultsHandlerConfiguration().setFilteredResultsHandlerInValidationMode(true);
-        return factory.newInstance(impl);
     }
 
     @Test

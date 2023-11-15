@@ -12259,6 +12259,49 @@ paths:
             - okta.policies.manage
       tags:
         - Policy
+  /api/v1/policies/simulate:
+    parameters:
+      - $ref: '#/components/parameters/simulateParameter'
+    post:
+      summary: Create a Policy Simulation
+      description: |-
+        Creates a policy or policy rule simulation. The access simulation evaluates policy and policy rules based on the existing policy rule configuration.
+        The evaluation result simulates what the real-world authentication flow is and what policy rules have been applied or matched to the authentication flow.
+      operationId: createPolicySimulation
+      x-codegen-request-body-name: simulatePolicy
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/SimulatePolicyBody'
+            examples:
+              SimulatePolicy:
+                $ref: '#/components/examples/SimulatePolicyBody'
+        required: true
+      responses:
+        '204':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimulatePolicyResponse'
+              examples:
+                SimulatePolicy:
+                  $ref: '#/components/examples/SimulatePolicyResponse'
+        '403':
+          $ref: '#/components/responses/ErrorAccessDenied403'
+        '404':
+          $ref: '#/components/responses/ErrorResourceNotFound404'
+        '429':
+          $ref: '#/components/responses/ErrorTooManyRequests429'
+      security:
+        - apiToken: []
+        - oauth2:
+            - okta.policies.read
+      tags:
+        - Policy
   /api/v1/policies/{policyId}:
     parameters:
       - $ref: '#/components/parameters/pathPolicyId'
@@ -20643,6 +20686,123 @@ components:
         _links:
           next:
             href: https://{yourOktaDomain}/api/v1/iam/roles?after=cr0Fw7HKcWIroo88m3r1
+    SimulatePolicyBody:
+      summary: Simulate policy request body
+      description: Simulate policy request body
+      value:
+        policyType:
+          - OKTA_SIGN_ON
+          - MFA_ENROLL
+        appInstance: 0oa4eroj3nYCIJIW70g7
+        policyContext:
+          groups:
+            ids:
+              - 00g4eralvekR5RLuS0g7
+              - 00g4eralvekR5RLuS0g8
+        risk:
+          level: LOW
+        zones:
+          ids:
+            - nzo4eralxcRnbIHYJ0g7
+        device:
+          platform: IOS
+          registered: true
+          managed: true
+    SimulatePolicyResponse:
+      summary: Simulate policy response body
+      description: Simulate policy response body
+      value:
+        evaluation:
+          - status: null
+            policyType: OkTA_SIGN_ON
+            result:
+              policies:
+                - id: 00p4eromwukk6qUku0g7
+                - name: test policy
+                - status: MATCH
+                - conditions: []
+                - rules:
+                    - id: 0pr4erof85nGcyC7Y0g7
+                    - name: test rule
+                    - status: MATCH
+                    - conditions:
+                        - type: people.groups.include
+                        - status: MATCH
+            undefined:
+              policies: null
+            evaluated:
+              policies: null
+          - status: null
+            policyType: ACCESS_POLICY
+            result:
+              policies:
+                - id: rst4eram06ZKZewEe0g7
+                - name: Any two factors
+                - status: MATCH
+                - conditions: []
+                - rules:
+                    - id: rul4eram07VsWgybo0g7
+                    - name: Catch-all rule
+                    - status: MATCH
+                    - conditions: []
+            undefined:
+              policies: null
+            evaluated:
+              policies: null
+          - status: null
+            policyType: PROFILE_ENROLLMENT
+            result:
+              policies:
+                - id: rst4eram08ZSjPTOl0g7
+                - name: Default Policy
+                - status: MATCH
+                - conditions: []
+                - rules:
+                    - id: rul4eram094PrQ2BX0g7
+                    - name: Catch-all rule
+                    - status: MATCH
+                    - conditions: []
+            undefined:
+              policies: null
+            evaluated:
+              policies: null
+    ThreatInsightResponseExample:
+      summary: ThreatInsight response
+      value:
+        action: none
+        excludeZones: []
+        created: '2020-08-05T22:18:30.629Z'
+        lastUpdated: '2020-08-05T22:18:30.629Z'
+        _links:
+          self:
+            href: https://{yourOktaDomain}/api/v1/threats/configuration
+            hints:
+              allow:
+                - GET
+                - POST
+    ThreatInsightUpdateRequestExample:
+      summary: ThreatInsight update request
+      value:
+        action: audit
+        excludeZones:
+          - nzo1q7jEOsoCnoKcj0g4
+          - nzouagptWUz5DlLfM0g3
+    ThreatInsightUpdateResponseExample:
+      summary: ThreatInsight update response
+      value:
+        action: audit
+        excludeZones:
+          - nzo1q7jEOsoCnoKcj0g4
+          - nzouagptWUz5DlLfM0g3
+        created: '2020-08-05T22:18:30.629Z'
+        lastUpdated: '2020-10-13T21:23:10.178Z'
+        _links:
+          self:
+            href: https://{yourOktaDomain}/api/v1/threats/configuration
+            hints:
+              allow:
+                - GET
+                - POST
     TriggerSessionResponse:
       value:
         - id: uij4ri8ZLk0ywyqxB0g4
@@ -22069,17 +22229,17 @@ components:
           type: string
           description: The URL to the API service integration configuration guide
           example: https://{docDomain}/my-app-cie/configuration-guide
-          readOnly: true
+          #readOnly: true
         createdAt:
           type: string
           description: Timestamp when the API Service Integration instance was created
           example: '2023-02-21T20:08:24.000Z'
-          readOnly: true
+          #readOnly: true
         createdBy:
           type: string
           description: The user ID of the API Service Integration instance creator
           example: 00uu3u0ujW1P6AfZC2d5
-          readOnly: true
+          #readOnly: true
         grantedScopes:
           type: array
           description: The list of Okta management scopes granted to the API Service Integration instance. See [Okta management OAuth 2.0 scopes](/oauth2/#okta-admin-management).
@@ -22090,12 +22250,12 @@ components:
         id:
           type: string
           description: The ID of the API Service Integration instance
-          readOnly: true
+          #readOnly: true
           example: 0oa72lrepvp4WqEET1d9
         name:
           type: string
           description: The name of the API service integration that corresponds with the `type` property. This is the full name of the API service integration listed in the Okta Integration Network (OIN) catalog.
-          readOnly: true
+          #readOnly: true
           example: My App Cloud Identity Engine
         type:
           type: string
@@ -22103,7 +22263,7 @@ components:
           example: my_app_cie
         _links:
           $ref: '#/components/schemas/APIServiceIntegrationLinks'
-          readOnly: true
+          #readOnly: true
     APIServiceIntegrationInstanceSecret:
       type: object
       properties:
@@ -22111,27 +22271,27 @@ components:
           type: string
           description: The OAuth 2.0 client secret string. The client secret string is returned in the response of a Secret creation request. In other responses (such as list, activate, or deactivate requests), the client secret is returned as an undisclosed hashed value.
           example: DRUFXGF9XbLnS9k-Sla3x3POBiIxDreBCdZuFs5B
-          readOnly: true
+          #readOnly: true
         created:
           type: string
           description: Timestamp when the API Service Integration instance Secret was created
           example: '2023-02-21T20:08:24.000Z'
-          readOnly: true
+          #readOnly: true
         id:
           type: string
           description: The ID of the API Service Integration instance Secret
           example: ocs2f4zrZbs8nUa7p0g4
-          readOnly: true
+          #readOnly: true
         lastUpdated:
           type: string
           description: Timestamp when the API Service Integration instance Secret was updated
           example: '2023-02-21T20:08:24.000Z'
-          readOnly: true
+          #readOnly: true
         secret_hash:
           type: string
           description: OAuth 2.0 client secret string hash
           example: yk4SVx4sUWVJVbHt6M-UPA
-          readOnly: true
+          #readOnly: true
         status:
           type: string
           enum:
@@ -22141,7 +22301,7 @@ components:
           example: ACTIVE
         _links:
           $ref: '#/components/schemas/APIServiceIntegrationSecretLinks'
-          readOnly: true
+          #readOnly: true
       required:
         - id
         - status
@@ -22159,7 +22319,7 @@ components:
           $ref: '#/components/schemas/HrefObjectLogoLink'
         self:
           $ref: '#/components/schemas/HrefObjectSelfLink'
-      readOnly: true
+      #readOnly: true
     APIServiceIntegrationSecretLinks:
       description: Specifies link relations (see [Web Linking](https://www.rfc-editor.org/rfc/rfc8288)) available for the current status of an application using the [JSON Hypertext Application Language](https://datatracker.ietf.org/doc/html/draft-kelly-json-hal-06) specification. This object is used for dynamic discovery of related resources and lifecycle operations.
       properties:
@@ -22169,7 +22329,7 @@ components:
           $ref: '#/components/schemas/HrefObjectDeactivateLink'
         delete:
           $ref: '#/components/schemas/HrefObjectDeleteLink'
-      readOnly: true
+      #readOnly: true
     APNSConfiguration:
       properties:
         fileName:
@@ -22292,7 +22452,7 @@ components:
       properties:
         id:
           type: string
-          readOnly: true
+          #readOnly: true
         isHidden:
           type: boolean
         isLatestGAedVersion:
@@ -22326,7 +22486,7 @@ components:
             $ref: '#/components/schemas/Agent'
         id:
           type: string
-          readOnly: true
+          #readOnly: true
         name:
           type: string
         operationalStatus:
@@ -22347,7 +22507,7 @@ components:
           type: boolean
         id:
           type: string
-          readOnly: true
+          #readOnly: true
         name:
           type: string
         notifyAdmin:
@@ -22378,7 +22538,7 @@ components:
           type: string
         poolId:
           type: string
-          readOnly: true
+          #readOnly: true
         poolName:
           type: string
         releaseChannel:
@@ -22428,22 +22588,22 @@ components:
       properties:
         clientName:
           type: string
-          readOnly: true
+          #readOnly: true
         created:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         expiresAt:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         id:
           type: string
-          readOnly: true
+          #readOnly: true
         lastUpdated:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         name:
           type: string
         tokenWindow:
@@ -22459,7 +22619,7 @@ components:
       properties:
         id:
           type: string
-          readOnly: true
+          #readOnly: true
         name:
           type: string
         type:
@@ -22496,34 +22656,34 @@ components:
       properties:
         appAssignmentId:
           type: string
-          readOnly: true
+          #readOnly: true
         appInstanceId:
           type: string
-          readOnly: true
+          #readOnly: true
         appName:
           type: string
-          readOnly: true
+          #readOnly: true
         credentialsSetup:
           type: boolean
-          readOnly: true
+          #readOnly: true
         hidden:
           type: boolean
-          readOnly: true
+          #readOnly: true
         id:
           type: string
-          readOnly: true
+          #readOnly: true
         label:
           type: string
-          readOnly: true
+          #readOnly: true
         linkUrl:
           type: string
-          readOnly: true
+          #readOnly: true
         logoUrl:
           type: string
-          readOnly: true
+          #readOnly: true
         sortOrder:
           type: integer
-          readOnly: true
+          #readOnly: true
     AppUser:
       title: Application User
       description: The App User object defines a user's app-specific profile and credentials for an app.
@@ -22533,7 +22693,7 @@ components:
           type: string
           description: Timestamp when the App User object was created
           format: date-time
-          readOnly: true
+          #readOnly: true
           example: '2014-06-24T15:27:59.000Z'
         credentials:
           $ref: '#/components/schemas/AppUserCredentials'
@@ -22545,7 +22705,7 @@ components:
 
             The `externalId` is set during import when the user is confirmed (reconciled) or during provisioning when the user has been successfully created in the target app.
             This value isn't populated for SSO app assignments (for example, SAML or SWA) because it isn't synchronized with a target app.
-          readOnly: true
+          #readOnly: true
           example: 70c14cc17d3745e8a9f98d599a68329c
         id:
           type: string
@@ -22555,19 +22715,19 @@ components:
           type: string
           description: Timestamp of the last synchronization operation. This value is only updated for apps with the `IMPORT_PROFILE_UPDATES` or `PUSH PROFILE_UPDATES` feature.
           format: date-time
-          readOnly: true
+          #readOnly: true
           example: '2014-06-24T15:27:59.000Z'
         lastUpdated:
           type: string
           description: Timestamp when App User was last updated
           format: date-time
-          readOnly: true
+          #readOnly: true
           example: '2014-06-24T15:28:14.000Z'
         passwordChanged:
           type: string
           description: Timestamp when the App User password was last changed
           format: date-time
-          readOnly: true
+          #readOnly: true
           nullable: true
           example: '2014-06-24T15:27:59.000Z'
         profile:
@@ -22585,7 +22745,7 @@ components:
           type: string
           description: Timestamp when the App User status was last changed
           format: date-time
-          readOnly: true
+          #readOnly: true
           example: '2014-06-24T15:28:14.000Z'
         syncState:
           $ref: '#/components/schemas/AppUserSyncState'
@@ -22595,7 +22755,7 @@ components:
           additionalProperties:
             type: object
             properties: {}
-          readOnly: true
+          #readOnly: true
         _links:
           $ref: '#/components/schemas/LinksAppAndUser'
       required:
@@ -22668,7 +22828,7 @@ components:
         STAGED: The App User doesn't have `externalId` set and the background provisioning operation is queued. This applies to apps with the `PUSH_NEW_USERS` feature enabled.
         PROVISIONED: The background provisioning operation completed and the App User was assigned an `externalId` successfully.
         DEPROVISIONED: The user was removed by the provisioning operation and the `externalId` property is unassigned.
-      readOnly: true
+      #readOnly: true
     AppUserSyncState:
       description: |-
         The synchronization state for the App User.
@@ -22689,7 +22849,7 @@ components:
         SYNCING: A background provisioning operation is running to update the user's profile in the target app.
         SYNCHRONIZED: All changes to the App User profile have successfully been synchronized with the target app.
         ERROR: A background provisioning operation failed to update the user's profile in the target app. You must resolve the provisioning task in the Admin Console before you retry the operation.
-      readOnly: true
+      #readOnly: true
     Application:
       type: object
       properties:
@@ -22730,7 +22890,7 @@ components:
           additionalProperties:
             type: object
             properties: {}
-          readOnly: true
+          #readOnly: true
         _links:
           $ref: '#/components/schemas/ApplicationLinks'
       discriminator:
@@ -22741,7 +22901,6 @@ components:
           BOOKMARK: '#/components/schemas/BookmarkApplication'
           BROWSER_PLUGIN: '#/components/schemas/BrowserPluginApplication'
           OPENID_CONNECT: '#/components/schemas/OpenIdConnectApplication'
-          SAML_1_1: '#/components/schemas/SamlApplication'
           SAML_2_0: '#/components/schemas/SamlApplication'
           SECURE_PASSWORD_STORE: '#/components/schemas/SecurePasswordStoreApplication'
           WS_FEDERATION: '#/components/schemas/WsFederationApplication'
@@ -22788,11 +22947,11 @@ components:
         lastRotated:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         nextRotation:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         rotationMode:
           type: string
         use:
@@ -22820,17 +22979,16 @@ components:
       type: object
       properties:
         capabilities:
-          allOf:
-            - $ref: '#/components/schemas/CapabilitiesObject'
+          $ref: '#/components/schemas/CapabilitiesObject'
         description:
           type: string
           description: Description of the feature
           example: Settings for provisioning users from Okta to a downstream application
-          readOnly: true
+          #readOnly: true
         name:
           type: string
           description: Identifying name of the feature
-          readOnly: true
+          #readOnly: true
           example: USER_PROVISIONING
           enum:
             - USER_PROVISIONING
@@ -22841,17 +22999,17 @@ components:
         _links:
           allOf:
             - $ref: '#/components/schemas/LinksSelf'
-            - readOnly: true
+            - #readOnly: true
     ApplicationGroupAssignment:
       type: object
       properties:
         id:
           type: string
-          readOnly: true
+          #readOnly: true
         lastUpdated:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         priority:
           type: integer
         profile:
@@ -22864,7 +23022,7 @@ components:
           additionalProperties:
             type: object
             properties: {}
-          readOnly: true
+          #readOnly: true
         _links:
           $ref: '#/components/schemas/LinksSelf'
     ApplicationLabel:
@@ -22913,7 +23071,7 @@ components:
               $ref: '#/components/schemas/ApplicationLayoutsLinksItem'
             provisioning:
               $ref: '#/components/schemas/ApplicationLayoutsLinksItem'
-          readOnly: true
+          #readOnly: true
     ApplicationLayoutsLinksItem:
       items:
         $ref: '#/components/schemas/HrefObject'
@@ -22929,7 +23087,7 @@ components:
         - ACTIVE
         - DELETED
         - INACTIVE
-      readOnly: true
+      #readOnly: true
     ApplicationLinks:
       properties:
         accessPolicy:
@@ -23009,8 +23167,6 @@ components:
         - SAML_2_0
         - SECURE_PASSWORD_STORE
         - WS_FEDERATION
-        - MOBILE_NO_SIGNON
-        - RADIUS_FOR_GENERIC_APP
     ApplicationVisibility:
       type: object
       properties:
@@ -23073,16 +23229,16 @@ components:
       properties:
         created:
           format: date-time
-          readOnly: true
+          #readOnly: true
           type: string
         id:
-          readOnly: true
+          #readOnly: true
           type: string
         key:
           type: string
         lastUpdated:
           format: date-time
-          readOnly: true
+          #readOnly: true
           type: string
         name:
           type: string
@@ -23337,14 +23493,14 @@ components:
         created:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         credentials:
           $ref: '#/components/schemas/AuthorizationServerCredentials'
         description:
           type: string
         id:
           type: string
-          readOnly: true
+          #readOnly: true
         issuer:
           type: string
         issuerMode:
@@ -23352,7 +23508,7 @@ components:
         lastUpdated:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         name:
           type: string
         status:
@@ -23377,11 +23533,11 @@ components:
         lastRotated:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         nextRotation:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         rotationMode:
           $ref: '#/components/schemas/AuthorizationServerCredentialsRotationMode'
         use:
@@ -23573,14 +23729,14 @@ components:
         created:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         id:
           type: string
-          readOnly: true
+          #readOnly: true
         lastUpdated:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         name:
           type: string
           maxLength: 128
@@ -23752,10 +23908,10 @@ components:
         emailDomainId:
           type: string
         id:
-          readOnly: true
+          #readOnly: true
           type: string
         isDefault:
-          readOnly: true
+          #readOnly: true
           type: boolean
         locale:
           $ref: '#/components/schemas/Language'
@@ -23803,7 +23959,7 @@ components:
               type: array
             emailDomain:
               $ref: '#/components/schemas/EmailDomainResponse'
-          readOnly: true
+          #readOnly: true
         _links:
           allOf:
             - $ref: '#/components/schemas/LinksSelf'
@@ -23851,7 +24007,7 @@ components:
         id:
           description: The unique key for the CAPTCHA instance
           type: string
-          readOnly: true
+          #readOnly: true
         name:
           description: The name of the CAPTCHA instance
           type: string
@@ -23929,11 +24085,11 @@ components:
             type: string
         id:
           type: string
-          readOnly: true
+          #readOnly: true
         lastUpdated:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         name:
           type: string
         signOnModes:
@@ -24102,16 +24258,16 @@ components:
         created:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         csr:
           type: string
-          readOnly: true
+          #readOnly: true
         id:
           type: string
-          readOnly: true
+          #readOnly: true
         kty:
           type: string
-          readOnly: true
+          #readOnly: true
     CsrMetadata:
       type: object
       properties:
@@ -24337,31 +24493,31 @@ components:
           type: string
           format: date-time
           description: Timestamp when the device was created
-          readOnly: true
+          #readOnly: true
         id:
           type: string
           description: Unique key for the device
-          readOnly: true
+          #readOnly: true
         lastUpdated:
           type: string
           format: date-time
           description: Timestamp when the device was last updated
-          readOnly: true
+          #readOnly: true
         profile:
           $ref: '#/components/schemas/DeviceProfile'
         resourceAlternateId:
           type: string
-          readOnly: true
+          #readOnly: true
         resourceDisplayName:
           $ref: '#/components/schemas/DeviceDisplayName'
         resourceId:
           type: string
           description: Alternate key for the `id`
-          readOnly: true
+          #readOnly: true
         resourceType:
           type: string
           default: UDDevice
-          readOnly: true
+          #readOnly: true
         status:
           $ref: '#/components/schemas/DeviceStatus'
         _links:
@@ -24381,19 +24537,19 @@ components:
       properties:
         createdBy:
           type: string
-          readOnly: true
+          #readOnly: true
         createdDate:
           type: string
-          readOnly: true
+          #readOnly: true
         id:
           type: string
-          readOnly: true
+          #readOnly: true
         lastUpdatedBy:
           type: string
-          readOnly: true
+          #readOnly: true
         lastUpdatedDate:
           type: string
-          readOnly: true
+          #readOnly: true
         name:
           type: string
           description: Display name of the Device Assurance Policy
@@ -24875,11 +25031,11 @@ components:
             created:
               type: string
               format: date-time
-              readOnly: true
+              #readOnly: true
               description: The UTC time at which this email customization was created.
             id:
               type: string
-              readOnly: true
+              #readOnly: true
               description: A unique identifier for this email customization
             isDefault:
               type: boolean
@@ -24889,7 +25045,7 @@ components:
             lastUpdated:
               type: string
               format: date-time
-              readOnly: true
+              #readOnly: true
               description: The UTC time at which this email customization was last updated.
             _links:
               allOf:
@@ -24960,7 +25116,7 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/Brand'
-          readOnly: true
+          #readOnly: true
     EmailDomainStatus:
       type: string
       enum:
@@ -24974,11 +25130,11 @@ components:
       properties:
         body:
           type: string
-          readOnly: true
+          #readOnly: true
           description: The email's HTML body
         subject:
           type: string
-          readOnly: true
+          #readOnly: true
           description: The email's subject
         _links:
           allOf:
@@ -25037,7 +25193,7 @@ components:
       properties:
         name:
           type: string
-          readOnly: true
+          #readOnly: true
           description: The name of this email template
         _embedded:
           type: object
@@ -25046,7 +25202,7 @@ components:
               $ref: '#/components/schemas/EmailSettings'
             customizationCount:
               type: integer
-          readOnly: true
+          #readOnly: true
         _links:
           allOf:
             - $ref: '#/components/schemas/LinksSelf'
@@ -25145,18 +25301,18 @@ components:
         created:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         createdBy:
           type: string
         events:
           $ref: '#/components/schemas/EventSubscriptions'
         id:
           type: string
-          readOnly: true
+          #readOnly: true
         lastUpdated:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         name:
           type: string
         status:
@@ -25238,7 +25394,7 @@ components:
         projectId:
           type: string
           description: Project ID of FCM configuration
-          readOnly: true
+          #readOnly: true
         serviceAccountJson:
           type: object
           description: JSON containing the private service account key and service account details. See [Creating and managing service account keys](https://cloud.google.com/iam/docs/creating-managing-service-account-keys) for more information on creating service account keys in JSON.
@@ -25307,7 +25463,7 @@ components:
           type: string
         id:
           type: string
-          readOnly: true
+          #readOnly: true
         name:
           type: string
         stage:
@@ -25355,7 +25511,7 @@ components:
       properties:
         resetPasswordUrl:
           type: string
-          readOnly: true
+          #readOnly: true
     GrantOrTokenStatus:
       type: string
       enum:
@@ -25388,7 +25544,7 @@ components:
           #readOnly: true
         objectClass:
           type: array
-          readOnly: true
+          #readOnly: true
           items:
             type: string
         profile:
@@ -25432,7 +25588,7 @@ components:
         displayName:
           description: The display name of the group owner
           type: string
-          readOnly: true
+          #readOnly: true
         id:
           description: The `id` of the group owner
           type: string
@@ -25440,7 +25596,7 @@ components:
           description: Timestamp when the group owner was last updated
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         originId:
           description: The ID of the app instance if the `originType` is `APPLICATION`. This value is `NULL` if `originType` is `OKTA_DIRECTORY`.
           type: string
@@ -25493,14 +25649,14 @@ components:
         created:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         id:
           type: string
-          readOnly: true
+          #readOnly: true
         lastUpdated:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         name:
           type: string
         status:
@@ -25572,30 +25728,30 @@ components:
       type: object
       properties:
         $schema:
-          readOnly: true
+          #readOnly: true
           type: string
         created:
-          readOnly: true
+          #readOnly: true
           type: string
         definitions:
           $ref: '#/components/schemas/GroupSchemaDefinitions'
         description:
           type: string
         id:
-          readOnly: true
+          #readOnly: true
           type: string
         lastUpdated:
-          readOnly: true
+          #readOnly: true
           type: string
         name:
-          readOnly: true
+          #readOnly: true
           type: string
         properties:
           $ref: '#/components/schemas/UserSchemaProperties'
         title:
           type: string
         type:
-          readOnly: true
+          #readOnly: true
           type: string
         _links:
           $ref: '#/components/schemas/LinksSelf'
@@ -25647,7 +25803,7 @@ components:
       type: object
       properties:
         id:
-          readOnly: true
+          #readOnly: true
           type: string
         properties:
           $ref: '#/components/schemas/GroupSchemaBaseProperties'
@@ -25668,7 +25824,7 @@ components:
       type: object
       properties:
         id:
-          readOnly: true
+          #readOnly: true
           type: string
         properties:
           additionalProperties:
@@ -25712,11 +25868,11 @@ components:
           type: string
           format: date-time
           description: Timestamp when the key was created.
-          readOnly: true
+          #readOnly: true
         id:
           type: string
           description: The unique identifier for the key.
-          readOnly: true
+          #readOnly: true
         isUsed:
           type: string
           format: boolean
@@ -25724,12 +25880,12 @@ components:
         keyId:
           type: string
           description: The alias of the public key.
-          readOnly: true
+          #readOnly: true
         lastUpdated:
           type: string
           format: date-time
           description: Timestamp when the key was updated.
-          readOnly: true
+          #readOnly: true
         name:
           type: string
           description: Display name of the key.
@@ -25773,7 +25929,7 @@ components:
           description: The media type of the link. If omitted, it is implicitly `application/json`.
       required:
         - href
-      readOnly: true
+      #readOnly: true
     HrefObjectActivateLink:
       allOf:
         - $ref: '#/components/schemas/HrefObject'
@@ -25828,14 +25984,14 @@ components:
           type: string
           format: date-time
           description: Timestamp when the role was created
-          readOnly: true
+          #readOnly: true
         description:
           type: string
           description: Description of the role
         id:
           type: string
           description: Unique key for the role
-          readOnly: true
+          #readOnly: true
         label:
           type: string
           description: Unique label for the role
@@ -25843,7 +25999,7 @@ components:
           type: string
           format: date-time
           description: Timestamp when the role was last updated
-          readOnly: true
+          #readOnly: true
         _links:
           allOf:
             - $ref: '#/components/schemas/LinksSelf'
@@ -25868,7 +26024,7 @@ components:
         created:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
           nullable: true
         id:
           type: string
@@ -25878,7 +26034,7 @@ components:
         lastUpdated:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         name:
           type: string
         policy:
@@ -25894,7 +26050,7 @@ components:
         _links:
           type: object
           additionalProperties:
-              $ref: '#/components/schemas/HrefObjectAppLink'
+              $ref: '#/components/schemas/HrefObjectSelfLink'
     IdentityProviderApplicationUser:
       type: object
       properties:
@@ -25904,7 +26060,7 @@ components:
           type: string
         id:
           type: string
-          readOnly: true
+          #readOnly: true
         lastUpdated:
           type: string
         profile:
@@ -25917,7 +26073,7 @@ components:
           additionalProperties:
             type: object
             properties: {}
-          readOnly: true
+          #readOnly: true
         _links:
           $ref: '#/components/schemas/LinksSelf'
     IdentityProviderCredentials:
@@ -26025,20 +26181,20 @@ components:
         created:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         id:
           type: string
-          readOnly: true
+          #readOnly: true
         identitySourceId:
           type: string
-          readOnly: true
+          #readOnly: true
         importType:
           type: string
-          readOnly: true
+          #readOnly: true
         lastUpdated:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         status:
           $ref: '#/components/schemas/IdentitySourceSessionStatus'
     IdentitySourceSessionStatus:
@@ -26102,7 +26258,7 @@ components:
       type: object
       properties:
         id:
-          readOnly: true
+          #readOnly: true
           type: string
         type:
           type: string
@@ -26114,7 +26270,7 @@ components:
       type: object
       properties:
         url:
-          readOnly: true
+          #readOnly: true
           type: string
     InactivityPolicyRuleCondition:
       type: object
@@ -26131,14 +26287,14 @@ components:
         created:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         id:
           type: string
-          readOnly: true
+          #readOnly: true
         lastUpdated:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         name:
           type: string
         status:
@@ -26433,21 +26589,21 @@ components:
           $ref: '#/components/schemas/HrefObjectAppLink'
         user:
           $ref: '#/components/schemas/HrefObjectUserLink'
-      readOnly: true
+      #readOnly: true
     LinksNext:
       description: Specifies link relations (see [Web Linking](https://www.rfc-editor.org/rfc/rfc8288)) available for the current status of an application using the [JSON Hypertext Application Language](https://datatracker.ietf.org/doc/html/draft-kelly-json-hal-06) specification. Use the `LinksNext` object for dynamic discovery of related resources and lifecycle operations.
       type: object
       properties:
         next:
           $ref: '#/components/schemas/HrefObject'
-      readOnly: true
+      #readOnly: true
     LinksSelf:
       description: Specifies link relations (see [Web Linking](https://www.rfc-editor.org/rfc/rfc8288)) available for the current status of an application using the [JSON Hypertext Application Language](https://datatracker.ietf.org/doc/html/draft-kelly-json-hal-06) specification. This object is used for dynamic discovery of related resources and lifecycle operations.
       type: object
       properties:
         self:
           $ref: '#/components/schemas/HrefObjectSelfLink'
-      readOnly: true
+      #readOnly: true
     LinksSelfAndFullUsersLifecycle:
       allOf:
         - $ref: '#/components/schemas/LinksSelfAndLifecycle'
@@ -26487,7 +26643,7 @@ components:
         id:
           type: string
           description: Unique identifier for profile mapping
-          readOnly: true
+          #readOnly: true
         source:
           type: object
           description: Source of the schema property expressions (Okta object or App Instance object)
@@ -26515,22 +26671,22 @@ components:
       properties:
         alternateId:
           type: string
-          readOnly: true
+          #readOnly: true
         detailEntry:
           type: object
           additionalProperties:
             type: object
             properties: {}
-          readOnly: true
+          #readOnly: true
         displayName:
           type: string
-          readOnly: true
+          #readOnly: true
         id:
           type: string
-          readOnly: true
+          #readOnly: true
         type:
           type: string
-          readOnly: true
+          #readOnly: true
     LogAuthenticationContext:
       type: object
       properties:
@@ -26538,17 +26694,17 @@ components:
           $ref: '#/components/schemas/LogAuthenticationProvider'
         authenticationStep:
           type: integer
-          readOnly: true
+          #readOnly: true
         credentialProvider:
           $ref: '#/components/schemas/LogCredentialProvider'
         credentialType:
           $ref: '#/components/schemas/LogCredentialType'
         externalSessionId:
           type: string
-          readOnly: true
+          #readOnly: true
         interface:
           type: string
-          readOnly: true
+          #readOnly: true
         issuer:
           $ref: '#/components/schemas/LogIssuer'
     LogAuthenticationProvider:
@@ -26565,20 +26721,20 @@ components:
       properties:
         device:
           type: string
-          readOnly: true
+          #readOnly: true
         geographicalContext:
           $ref: '#/components/schemas/LogGeographicalContext'
         id:
           type: string
-          readOnly: true
+          #readOnly: true
         ipAddress:
           type: string
-          readOnly: true
+          #readOnly: true
         userAgent:
           $ref: '#/components/schemas/LogUserAgent'
         zone:
           type: string
-          readOnly: true
+          #readOnly: true
     LogCredentialProvider:
       type: string
       enum:
@@ -26608,7 +26764,7 @@ components:
           additionalProperties:
             type: object
             properties: {}
-          readOnly: true
+          #readOnly: true
     LogEvent:
       type: object
       properties:
@@ -26622,13 +26778,13 @@ components:
           $ref: '#/components/schemas/LogDebugContext'
         displayMessage:
           type: string
-          readOnly: true
+          #readOnly: true
         eventType:
           type: string
           #readOnly: true
         legacyEventType:
           type: string
-          readOnly: true
+          #readOnly: true
         outcome:
           $ref: '#/components/schemas/LogOutcome'
         published:
@@ -26650,38 +26806,38 @@ components:
           $ref: '#/components/schemas/LogTransaction'
         uuid:
           type: string
-          readOnly: true
+          #readOnly: true
         version:
           type: string
-          readOnly: true
+          #readOnly: true
     LogGeographicalContext:
       type: object
       properties:
         city:
           type: string
-          readOnly: true
+          #readOnly: true
         country:
           type: string
-          readOnly: true
+          #readOnly: true
         geolocation:
           $ref: '#/components/schemas/LogGeolocation'
         postalCode:
           type: string
-          readOnly: true
+          #readOnly: true
         state:
           type: string
-          readOnly: true
+          #readOnly: true
     LogGeolocation:
       type: object
       properties:
         lat:
           type: number
           format: double
-          readOnly: true
+          #readOnly: true
         lon:
           type: number
           format: double
-          readOnly: true
+          #readOnly: true
     LogIpAddress:
       type: object
       properties:
@@ -26689,37 +26845,37 @@ components:
           $ref: '#/components/schemas/LogGeographicalContext'
         ip:
           type: string
-          readOnly: true
+          #readOnly: true
         source:
           type: string
-          readOnly: true
+          #readOnly: true
         version:
           type: string
-          readOnly: true
+          #readOnly: true
     LogIssuer:
       type: object
       properties:
         id:
           type: string
-          readOnly: true
+          #readOnly: true
         type:
           type: string
-          readOnly: true
+          #readOnly: true
     LogOutcome:
       type: object
       properties:
         reason:
           type: string
-          readOnly: true
+          #readOnly: true
         result:
           type: string
-          readOnly: true
+          #readOnly: true
     LogRequest:
       type: object
       properties:
         ipChain:
           type: array
-          readOnly: true
+          #readOnly: true
           items:
             $ref: '#/components/schemas/LogIpAddress'
     LogSecurityContext:
@@ -26727,19 +26883,19 @@ components:
       properties:
         asNumber:
           type: integer
-          readOnly: true
+          #readOnly: true
         asOrg:
           type: string
-          readOnly: true
+          #readOnly: true
         domain:
           type: string
-          readOnly: true
+          #readOnly: true
         isp:
           type: string
-          readOnly: true
+          #readOnly: true
         isProxy:
           type: boolean
-          readOnly: true
+          #readOnly: true
     LogSeverity:
       type: string
       enum:
@@ -26754,18 +26910,18 @@ components:
           type: string
           format: date-time
           description: Timestamp when the Log Stream object was created
-          readOnly: true
+          #readOnly: true
           example: '2022-10-21T16:59:59.000Z'
         id:
           type: string
           description: Unique identifier for the Log Stream
-          readOnly: true
+          #readOnly: true
           example: 0oa1orzg0CHSgPcjZ0g4
         lastUpdated:
           type: string
           format: date-time
           description: Timestamp when the Log Stream object was last updated
-          readOnly: true
+          #readOnly: true
           example: '2022-10-21T17:15:10.000Z'
         name:
           $ref: '#/components/schemas/LogStreamName'
@@ -26775,7 +26931,7 @@ components:
           enum:
             - ACTIVE
             - INACTIVE
-          readOnly: true
+          #readOnly: true
         type:
           $ref: '#/components/schemas/LogStreamType'
         _links:
@@ -26834,7 +26990,7 @@ components:
             - POST
       required:
         - href
-      readOnly: true
+      #readOnly: true
     LogStreamLinksSelfAndLifecycle:
       description: Specifies link relations (see [Web Linking](https://www.rfc-editor.org/rfc/rfc8288)) available for the current status of an application using the [JSON Hypertext Application Language](https://datatracker.ietf.org/doc/html/draft-kelly-json-hal-06) specification. This object is used for dynamic discovery of related resources and lifecycle operations.
       type: object
@@ -26847,7 +27003,7 @@ components:
           $ref: '#/components/schemas/LogStreamSelfLink'
       required:
         - self
-      readOnly: true
+      #readOnly: true
     LogStreamName:
       description: Unique name for the Log Stream object
       example: My AWS EventBridge log stream
@@ -26872,21 +27028,21 @@ components:
       properties:
         $schema:
           type: string
-          readOnly: true
+          #readOnly: true
         created:
           type: string
-          readOnly: true
+          #readOnly: true
         errorMessage:
           type: object
         id:
           type: string
-          readOnly: true
+          #readOnly: true
         lastUpdated:
           type: string
-          readOnly: true
+          #readOnly: true
         name:
           type: string
-          readOnly: true
+          #readOnly: true
         properties:
           type: object
         required:
@@ -26897,7 +27053,7 @@ components:
           type: string
         type:
           type: string
-          readOnly: true
+          #readOnly: true
         _links:
           $ref: '#/components/schemas/LinksSelf'
     LogStreamSelfLink:
@@ -26979,22 +27135,22 @@ components:
       properties:
         alternateId:
           type: string
-          readOnly: true
+          #readOnly: true
         detailEntry:
           type: object
           additionalProperties:
             type: object
             properties: {}
-          readOnly: true
+          #readOnly: true
         displayName:
           type: string
-          readOnly: true
+          #readOnly: true
         id:
           type: string
           #readOnly: true
         type:
           type: string
-          readOnly: true
+          #readOnly: true
     LogTransaction:
       type: object
       properties:
@@ -27003,25 +27159,25 @@ components:
           additionalProperties:
             type: object
             properties: {}
-          readOnly: true
+          #readOnly: true
         id:
           type: string
-          readOnly: true
+          #readOnly: true
         type:
           type: string
-          readOnly: true
+          #readOnly: true
     LogUserAgent:
       type: object
       properties:
         browser:
           type: string
-          readOnly: true
+          #readOnly: true
         os:
           type: string
-          readOnly: true
+          #readOnly: true
         rawUserAgent:
           type: string
-          readOnly: true
+          #readOnly: true
     MDMEnrollmentPolicyEnrollment:
       type: string
       enum:
@@ -27116,7 +27272,7 @@ components:
           type: string
           format: date-time
           description: Timestamp when the network zone was created
-          readOnly: true
+          #readOnly: true
         gateways:
           type: array
           items:
@@ -27127,12 +27283,12 @@ components:
         id:
           type: string
           description: Unique identifier for the network zone
-          readOnly: true
+          #readOnly: true
         lastUpdated:
           type: string
           format: date-time
           description: Timestamp when the network zone was last modified
-          readOnly: true
+          #readOnly: true
         locations:
           type: array
           items:
@@ -27265,7 +27421,7 @@ components:
       properties:
         id:
           type: string
-          readOnly: true
+          #readOnly: true
         type:
           type: string
     OAuth2Claim:
@@ -27281,7 +27437,7 @@ components:
           $ref: '#/components/schemas/OAuth2ClaimGroupFilterType'
         id:
           type: string
-          readOnly: true
+          #readOnly: true
         name:
           type: string
         status:
@@ -27324,16 +27480,16 @@ components:
       properties:
         client_id:
           type: string
-          readOnly: true
+          #readOnly: true
         client_name:
           type: string
-          readOnly: true
+          #readOnly: true
         client_uri:
           type: string
-          readOnly: true
+          #readOnly: true
         logo_uri:
           type: string
-          readOnly: true
+          #readOnly: true
         _links:
           $ref: '#/components/schemas/LinksSelf'
     OAuth2RefreshToken:
@@ -27344,22 +27500,22 @@ components:
         created:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         createdBy:
           $ref: '#/components/schemas/OAuth2Actor'
         expiresAt:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         id:
           type: string
-          readOnly: true
+          #readOnly: true
         issuer:
           type: string
         lastUpdated:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         scopes:
           type: array
           items:
@@ -27373,7 +27529,7 @@ components:
           additionalProperties:
             type: object
             properties: {}
-          readOnly: true
+          #readOnly: true
         _links:
           $ref: '#/components/schemas/LinksSelf'
     OAuth2Scope:
@@ -27389,7 +27545,7 @@ components:
           type: string
         id:
           type: string
-          readOnly: true
+          #readOnly: true
         metadataPublish:
           $ref: '#/components/schemas/OAuth2ScopeMetadataPublish'
         name:
@@ -27404,18 +27560,18 @@ components:
         created:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         createdBy:
           $ref: '#/components/schemas/OAuth2Actor'
         id:
           type: string
-          readOnly: true
+          #readOnly: true
         issuer:
           type: string
         lastUpdated:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         scopeId:
           type: string
         source:
@@ -27429,7 +27585,7 @@ components:
           additionalProperties:
             type: object
             properties: {}
-          readOnly: true
+          #readOnly: true
         _links:
           $ref: '#/components/schemas/LinksSelf'
     OAuth2ScopeConsentGrantSource:
@@ -27463,20 +27619,20 @@ components:
         created:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         expiresAt:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         id:
           type: string
-          readOnly: true
+          #readOnly: true
         issuer:
           type: string
         lastUpdated:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         scopes:
           type: array
           items:
@@ -27490,7 +27646,7 @@ components:
           additionalProperties:
             type: object
             properties: {}
-          readOnly: true
+          #readOnly: true
         _links:
           $ref: '#/components/schemas/LinksSelf'
     OAuthApplicationCredentials:
@@ -27754,7 +27910,7 @@ components:
           properties:
             self:
               $ref: '#/components/schemas/HrefObject'
-          readOnly: true
+          #readOnly: true
     OrgContactType:
       type: string
       enum:
@@ -27779,7 +27935,7 @@ components:
       properties:
         optOutEmailUsers:
           type: boolean
-          readOnly: true
+          #readOnly: true
         _links:
           $ref: '#/components/schemas/LinksSelf'
     OrgOktaSupportSetting:
@@ -27793,7 +27949,7 @@ components:
         expiration:
           format: date-time
           type: string
-          readOnly: true
+          #readOnly: true
         support:
           $ref: '#/components/schemas/OrgOktaSupportSetting'
         _links:
@@ -27803,7 +27959,7 @@ components:
       properties:
         showEndUserFooter:
           type: boolean
-          readOnly: true
+          #readOnly: true
         _links:
           $ref: '#/components/schemas/LinksSelf'
     OrgSetting:
@@ -27821,20 +27977,20 @@ components:
           type: string
         created:
           format: date-time
-          readOnly: true
+          #readOnly: true
           type: string
         endUserSupportHelpURL:
           type: string
         expiresAt:
           format: date-time
-          readOnly: true
+          #readOnly: true
           type: string
         id:
-          readOnly: true
+          #readOnly: true
           type: string
         lastUpdated:
           format: date-time
-          readOnly: true
+          #readOnly: true
           type: string
         phoneNumber:
           type: string
@@ -27843,10 +27999,10 @@ components:
         state:
           type: string
         status:
-          readOnly: true
+          #readOnly: true
           type: string
         subdomain:
-          readOnly: true
+          #readOnly: true
           type: string
         supportPhoneNumber:
           type: string
@@ -27891,7 +28047,7 @@ components:
             previewUrl:
               type: string
               format: uri
-          readOnly: true
+          #readOnly: true
         _links:
           allOf:
             - $ref: '#/components/schemas/LinksSelf'
@@ -28107,7 +28263,7 @@ components:
       properties:
         minLength:
           type: integer
-          readOnly: true
+          #readOnly: true
     PasswordPolicyRecoveryQuestionProperties:
       type: object
       properties:
@@ -28218,16 +28374,16 @@ components:
           type: string
           format: date-time
           description: Timestamp when the role was created
-          readOnly: true
+          #readOnly: true
         label:
           type: string
           description: The permission type
-          readOnly: true
+          #readOnly: true
         lastUpdated:
           type: string
           format: date-time
           description: Timestamp when the role was last updated
-          readOnly: true
+          #readOnly: true
         _links:
           allOf:
             - $ref: '#/components/schemas/LinksSelf'
@@ -28307,16 +28463,16 @@ components:
         created:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         description:
           type: string
         id:
           type: string
-          readOnly: true
+          #readOnly: true
         lastUpdated:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         name:
           type: string
         priority:
@@ -28332,7 +28488,7 @@ components:
           additionalProperties:
             type: object
             properties: {}
-          readOnly: true
+          #readOnly: true
         _links:
           $ref: '#/components/schemas/LinksSelf'
       discriminator:
@@ -28500,14 +28656,14 @@ components:
         created:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
           nullable: true
         id:
           type: string
         lastUpdated:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
           nullable: true
         name:
           type: string
@@ -28635,6 +28791,7 @@ components:
         - IDP_DISCOVERY
         - MFA_ENROLL
         - OKTA_SIGN_ON
+        - OAUTH_AUTHORIZATION_POLICY
         - PASSWORD
         - PROFILE_ENROLLMENT
     PolicyUserNameTemplate:
@@ -28678,30 +28835,30 @@ components:
       properties:
         createdBy:
           type: string
-          readOnly: true
+          #readOnly: true
         createdDate:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         defaultConcurrencyPercentage:
           type: integer
-          readOnly: true
+          #readOnly: true
         defaultPercentage:
           type: integer
-          readOnly: true
+          #readOnly: true
         id:
           type: string
-          readOnly: true
+          #readOnly: true
         lastUpdate:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         lastUpdatedBy:
           type: string
-          readOnly: true
+          #readOnly: true
         orgId:
           type: string
-          readOnly: true
+          #readOnly: true
         principalId:
           type: string
         principalType:
@@ -28789,7 +28946,7 @@ components:
         id:
           type: string
           description: Unique identifier for a profile mapping
-          readOnly: true
+          #readOnly: true
         properties:
           type: object
           additionalProperties:
@@ -28844,15 +29001,15 @@ components:
         id:
           type: string
           description: Unique identifier for the application instance or userType
-          readOnly: true
+          #readOnly: true
         name:
           type: string
           description: Variable name of the application instance or name of the referenced UserType
-          readOnly: true
+          #readOnly: true
         type:
           type: string
           description: Type of user referenced in the mapping
-          readOnly: true
+          #readOnly: true
         _links:
           $ref: '#/components/schemas/SourceLinks'
     ProfileMappingTarget:
@@ -28865,15 +29022,15 @@ components:
         id:
           type: string
           description: Unique identifier for the application instance or UserType
-          readOnly: true
+          #readOnly: true
         name:
           type: string
           description: Variable name of the application instance or name of the referenced userType
-          readOnly: true
+          #readOnly: true
         type:
           type: string
           description: Type of user referenced in the mapping
-          readOnly: true
+          #readOnly: true
         _links:
           $ref: '#/components/schemas/SourceLinks'
     ProfileSettingObject:
@@ -29167,10 +29324,10 @@ components:
       properties:
         id:
           type: string
-          readOnly: true
+          #readOnly: true
         lastUpdatedDate:
           type: string
-          readOnly: true
+          #readOnly: true
         name:
           type: string
           description: Display name of the push provider
@@ -29248,20 +29405,20 @@ components:
           type: string
           format: date-time
           description: Timestamp when the Realm was created
-          readOnly: true
+          #readOnly: true
         id:
           type: string
           description: Unique key for the Realm
-          readOnly: true
+          #readOnly: true
         isDefault:
           type: boolean
           description: Conveys whether the Realm is the default
-          readOnly: true
+          #readOnly: true
         lastUpdated:
           type: string
           format: date-time
           description: Timestamp when the Realm was last updated
-          readOnly: true
+          #readOnly: true
         profile:
           $ref: '#/components/schemas/RealmProfile'
         _links:
@@ -29298,7 +29455,7 @@ components:
       properties:
         resetPasswordUrl:
           type: string
-          readOnly: true
+          #readOnly: true
     ResourceSet:
       type: object
       properties:
@@ -29306,14 +29463,14 @@ components:
           type: string
           format: date-time
           description: Timestamp when the role was created
-          readOnly: true
+          #readOnly: true
         description:
           type: string
           description: Description of the Resource Set
         id:
           type: string
           description: Unique key for the role
-          readOnly: true
+          #readOnly: true
         label:
           type: string
           description: Unique label for the Resource Set
@@ -29321,7 +29478,7 @@ components:
           type: string
           format: date-time
           description: Timestamp when the role was last updated
-          readOnly: true
+          #readOnly: true
         _links:
           allOf:
             - $ref: '#/components/schemas/LinksSelf'
@@ -29354,16 +29511,16 @@ components:
           type: string
           format: date-time
           description: Timestamp when the role was created
-          readOnly: true
+          #readOnly: true
         id:
           type: string
           description: Unique key for the role
-          readOnly: true
+          #readOnly: true
         lastUpdated:
           type: string
           format: date-time
           description: Timestamp when the role was last updated
-          readOnly: true
+          #readOnly: true
         _links:
           $ref: '#/components/schemas/LinksSelf'
     ResourceSetBindingMembers:
@@ -29426,19 +29583,19 @@ components:
           type: string
           format: date-time
           description: Timestamp when the role was created
-          readOnly: true
+          #readOnly: true
         description:
           type: string
           description: Description of the Resource Set
         id:
           type: string
           description: Unique key for the role
-          readOnly: true
+          #readOnly: true
         lastUpdated:
           type: string
           format: date-time
           description: Timestamp when the role was last updated
-          readOnly: true
+          #readOnly: true
         _links:
           $ref: '#/components/schemas/LinksSelf'
     ResourceSetResourcePatchRequest:
@@ -29534,18 +29691,18 @@ components:
           type: string
           format: date-time
           description: Timestamp when the Risk Provider object was created
-          readOnly: true
+          #readOnly: true
           example: '2021-01-05 22:18:30'
         id:
           type: string
           description: The ID of the Risk Provider object
-          readOnly: true
+          #readOnly: true
           example: 00rp12r4skkjkjgsn
         lastUpdated:
           type: string
           format: date-time
           description: Timestamp when the Risk Provider object was last updated
-          readOnly: true
+          #readOnly: true
           example: '2021-01-05 22:18:30'
         name:
           type: string
@@ -29585,19 +29742,19 @@ components:
         created:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         description:
           type: string
         id:
           type: string
-          readOnly: true
+          #readOnly: true
         label:
           type: string
-          readOnly: true
+          #readOnly: true
         lastUpdated:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         status:
           $ref: '#/components/schemas/LifecycleStatus'
         type:
@@ -29607,7 +29764,7 @@ components:
           additionalProperties:
             type: object
             properties: {}
-          readOnly: true
+          #readOnly: true
         _links:
           $ref: '#/components/schemas/LinksSelf'
     RoleAssignedUser:
@@ -29615,10 +29772,10 @@ components:
       properties:
         id:
           type: string
-          readOnly: true
+          #readOnly: true
         orn:
           type: string
-          readOnly: true
+          #readOnly: true
         _links:
           $ref: '#/components/schemas/LinksSelfAndRoles'
     RoleAssignedUsers:
@@ -29931,7 +30088,7 @@ components:
           properties:
             type:
               type: string
-              readOnly: true
+              #readOnly: true
               description: The type of rule action
               enum:
                 - selfServicePasswordReset
@@ -29942,45 +30099,45 @@ components:
       properties:
         amr:
           type: array
-          readOnly: true
+          #readOnly: true
           description: Authentication method reference
           items:
             $ref: '#/components/schemas/SessionAuthenticationMethod'
         createdAt:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         expiresAt:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
           description: A timestamp when the Session expires
         id:
           type: string
-          readOnly: true
+          #readOnly: true
           description: A unique key for the Session
         idp:
           $ref: '#/components/schemas/SessionIdentityProvider'
         lastFactorVerification:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
           description: A timestamp when the user last performed multifactor authentication
         lastPasswordVerification:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
           description: A timestamp when the user last performed the primary or step-up authentication with a password
         login:
           type: string
-          readOnly: true
+          #readOnly: true
           description: A unique identifier for the user (username)
         status:
           $ref: '#/components/schemas/SessionStatus'
           description: Current Session status
         userId:
           type: string
-          readOnly: true
+          #readOnly: true
           description: A unique key for the user
         _links:
           $ref: '#/components/schemas/LinksSelf'
@@ -30017,7 +30174,7 @@ components:
       properties:
         id:
           type: string
-          readOnly: true
+          #readOnly: true
           description: Identity Provider ID. If the `type` is `OKTA`, then the `id` is the org ID.
         type:
           $ref: '#/components/schemas/SessionIdentityProviderType'
@@ -30107,6 +30264,121 @@ components:
         id:
           type: string
           readOnly: false
+    SimulatePolicyBody:
+      description: The request body required for a simulate policy operation.
+      type: object
+      properties:
+        appInstance:
+          type: string
+          description: The application instance ID for a simulate operation
+        policyContext:
+          $ref: '#/components/schemas/PolicyContext'
+        policyTypes:
+          type: string
+          description: Supported policy types for a simulate operation. The default value, `null`, returns all types.
+          enum:
+            - OKTA_SIGN_ON
+            - MFA_ENROLL
+            - PROFILE_ENROLLMENT
+            - ACCESS_POLICY
+            - null
+      required:
+        - appInstance
+    SimulatePolicyEvaluations:
+      type: object
+      properties:
+        evaluated:
+          type: object
+          description: A list of evaluated but not matched policies and rules
+          properties:
+            policies:
+              $ref: '#/components/schemas/SimulateResultPolicies'
+        policyType:
+          type: string
+          description: The policy type of the simulate operation
+          enum:
+            - OKTA_SIGN_ON
+            - MFA_ENROLL
+            - PROFILE_ENROLLMENT
+            - ACCESS_POLICY
+            - null
+        result:
+          $ref: '#/components/schemas/SimulatePolicyResult'
+        status:
+          type: string
+          description: The result of this entity evaluation
+          enum:
+            - MATCH
+            - NOT_MATCH
+            - UNDEFINED
+        undefined:
+          type: object
+          description: A list of undefined but not matched policies and rules
+          properties:
+            policies:
+              $ref: '#/components/schemas/SimulateResultPolicies'
+    SimulatePolicyResponse:
+      description: The response body returned for a simulate policy operation. An array of `evaluations`.
+      items:
+        $ref: '#/components/schemas/SimulatePolicyEvaluations'
+      type: array
+    SimulatePolicyResult:
+      description: The result of the policy evaluation
+      type: object
+      properties:
+        policies:
+          $ref: '#/components/schemas/SimulateResultPolicies'
+    SimulateResultConditions:
+      type: object
+      properties:
+        status:
+          type: string
+          description: The result of the entity evaluation
+          enum:
+            - MATCH
+            - UNMATCHED
+            - UNDEFINED
+        type:
+          type: string
+          description: The type of condition
+    SimulateResultPolicies:
+      items:
+        $ref: '#/components/schemas/SimulateResultPoliciesItems'
+      type: array
+    SimulateResultPoliciesItems:
+      type: object
+      properties:
+        conditions:
+          type: array
+          $ref: '#/components/schemas/SimulateResultConditions'
+        id:
+          type: string
+        name:
+          type: string
+        rules:
+          type: array
+          $ref: '#/components/schemas/SimulateResultRules'
+        status:
+          type: string
+    SimulateResultRules:
+      type: object
+      properties:
+        conditions:
+          type: array
+          $ref: '#/components/schemas/SimulateResultConditions'
+        id:
+          type: string
+          description: The unique ID number of the policy rule
+        name:
+          type: string
+          description: The name of the policy rule
+        status:
+          type: string
+          description: The result of the entity evaluation
+          enum:
+            - MATCH
+            - UNMATCHED
+            - UNDEFINED
     SingleLogout:
       type: object
       properties:
@@ -30122,14 +30394,14 @@ components:
         created:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         id:
           type: string
-          readOnly: true
+          #readOnly: true
         lastUpdated:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         name:
           type: string
         template:
@@ -30163,10 +30435,10 @@ components:
         expiresAt:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         id:
           type: string
-          readOnly: true
+          #readOnly: true
         scopes:
           type: array
           items:
@@ -30291,7 +30563,7 @@ components:
           properties:
             self:
               $ref: '#/components/schemas/HrefObject'
-          readOnly: true
+          #readOnly: true
     SubscriptionStatus:
       description: The status of the subscription
       type: string
@@ -30361,12 +30633,12 @@ components:
       properties:
         tempPassword:
           type: string
-          readOnly: true
+          #readOnly: true
     Theme:
       type: object
       properties:
         backgroundImage:
-          readOnly: true
+          #readOnly: true
           type: string
         emailTemplateTouchPointVariant:
           $ref: '#/components/schemas/EmailTemplateTouchPointVariant'
@@ -30392,7 +30664,7 @@ components:
       type: object
       properties:
         backgroundImage:
-          readOnly: true
+          #readOnly: true
           type: string
         emailTemplateTouchPointVariant:
           $ref: '#/components/schemas/EmailTemplateTouchPointVariant'
@@ -30401,15 +30673,15 @@ components:
         errorPageTouchPointVariant:
           $ref: '#/components/schemas/ErrorPageTouchPointVariant'
         favicon:
-          readOnly: true
+          #readOnly: true
           type: string
         id:
-          readOnly: true
+          #readOnly: true
           type: string
         loadingPageTouchPointVariant:
           $ref: '#/components/schemas/LoadingPageTouchPointVariant'
         logo:
-          readOnly: true
+          #readOnly: true
           type: string
         primaryColorContrastHex:
           type: string
@@ -30443,7 +30715,7 @@ components:
           format: date-time
           description: Timestamp when the ThreatInsight Configuration object was created
           example: '2020-08-05T22:18:30.629Z'
-          readOnly: true
+          #readOnly: true
         excludeZones:
           type: array
           description: |-
@@ -30457,7 +30729,7 @@ components:
           type: string
           format: date-time
           description: Timestamp when the ThreatInsight Configuration object was last updated
-          readOnly: true
+          #readOnly: true
           example: '2020-09-08T20:53:20.882Z'
         _links:
           $ref: '#/components/schemas/LinksSelf'
@@ -30514,16 +30786,16 @@ components:
         created:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         createdBy:
           type: string
         id:
           type: string
-          readOnly: true
+          #readOnly: true
         lastUpdated:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         lastUpdatedBy:
           type: string
         name:
@@ -30623,16 +30895,16 @@ components:
           type: string
           format: date-time
           description: Timestamp when the UI Schema was created (ISO-86001)
-          readOnly: true
+          #readOnly: true
         id:
           type: string
           description: Unique identifier for the UI Schema
-          readOnly: true
+          #readOnly: true
         lastUpdated:
           type: string
           format: date-time
           description: Timestamp when the UI Schema was last modified (ISO-86001)
-          readOnly: true
+          #readOnly: true
         uiSchema:
           $ref: '#/components/schemas/UISchemaObject'
         _links:
@@ -30729,7 +31001,7 @@ components:
           x-okta-lifecycle:
             features:
               - UD_REALMS
-          readOnly: true
+          #readOnly: true
         status:
           $ref: '#/components/schemas/UserStatus'
         statusChanged:
@@ -30746,7 +31018,7 @@ components:
           additionalProperties:
             type: object
             properties: {}
-          readOnly: true
+          #readOnly: true
         _links:
           $ref: '#/components/schemas/LinksSelf'
     UserActivationToken:
@@ -30754,19 +31026,19 @@ components:
       properties:
         activationToken:
           type: string
-          readOnly: true
+          #readOnly: true
         activationUrl:
           type: string
-          readOnly: true
+          #readOnly: true
     UserBlock:
       type: object
       properties:
         appliesTo:
           type: string
-          readOnly: true
+          #readOnly: true
         type:
           type: string
-          readOnly: true
+          #readOnly: true
     UserCondition:
       type: object
       properties:
@@ -30793,16 +31065,16 @@ components:
         created:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         factorType:
           $ref: '#/components/schemas/FactorType'
         id:
           type: string
-          readOnly: true
+          #readOnly: true
         lastUpdated:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         profile:
           type: object
           description: Factor-specific attributes
@@ -30817,14 +31089,9 @@ components:
           additionalProperties:
             type: object
             properties: {}
-          readOnly: true
+          #readOnly: true
         _links:
-          type: object
-          additionalProperties:
-            type: object
-            properties: {}
-          readOnly: true          
-          #$ref: '#/components/schemas/LinksSelf'
+          $ref: '#/components/schemas/LinksSelf'
       discriminator:
         propertyName: factorType
         mapping:
@@ -31035,7 +31302,7 @@ components:
           type: string
         type:
           type: string
-          readOnly: true
+          #readOnly: true
         _links:
           $ref: '#/components/schemas/LinksSelf'
     UserSchemaAttribute:
@@ -31291,15 +31558,15 @@ components:
           type: string
           format: date-time
           description: A timestamp from when the User Type was created
-          readOnly: true
+          #readOnly: true
         createdBy:
           type: string
           description: The user ID of the account that created the User Type
-          readOnly: true
+          #readOnly: true
         default:
           type: boolean
           description: A boolean value to indicate if this is the default User Type
-          readOnly: true
+          #readOnly: true
         description:
           type: string
           description: The human-readable description of the User Type
@@ -31313,11 +31580,11 @@ components:
           type: string
           format: date-time
           description: A timestamp from when the User Type was most recently updated
-          readOnly: true
+          #readOnly: true
         lastUpdatedBy:
           type: string
           description: The user ID of the most recent account to edit the User Type
-          readOnly: true
+          #readOnly: true
         name:
           type: string
           description: |-
@@ -31417,7 +31684,7 @@ components:
         expiresAt:
           type: string
           format: date-time
-          readOnly: true
+          #readOnly: true
         factorResult:
           $ref: '#/components/schemas/VerifyUserFactorResult'
         factorResultMessage:
@@ -31427,9 +31694,11 @@ components:
           additionalProperties:
             type: object
             properties: {}
-          readOnly: true
+          #readOnly: true
         _links:
-          $ref: '#/components/schemas/LinksSelf'
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/HrefObjectSelfLink'
     VerifyUserFactorResult:
       type: string
       enum:
@@ -31608,7 +31877,7 @@ components:
             clientSecret:
               type: string
               description: The client secret for the API Service Integration instance. This property is only returned in a POST response.
-              readOnly: true
+              #readOnly: true
     postAPIServiceIntegrationInstanceRequest:
       type: object
       properties:
