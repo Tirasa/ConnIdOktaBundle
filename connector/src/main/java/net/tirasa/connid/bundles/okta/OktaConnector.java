@@ -913,54 +913,48 @@ public class OktaConnector implements Connector, PoolableConnector,
         ObjectClassInfo objectClassInfo = schema.getSchema().findObjectClassInfo(ObjectClass.ACCOUNT_NAME);
         replaceAttributes.stream().
                 filter(attribute -> !NOT_FOR_PROFILE.contains(attribute.getName())).
-                forEach(attribute -> objectClassInfo.getAttributeInfo().stream().
-                filter(attr -> attr.getName().equals(attribute.getName())).findFirst().
-                ifPresent(attributeInfo -> {
+                forEach(attr -> objectClassInfo.getAttributeInfo().stream().
+                filter(attrInfo -> attrInfo.getName().equals(attr.getName())).findFirst().
+                ifPresent(attrInfo -> {
 
-                    if (!CollectionUtil.isEmpty(attribute.getValue())) {
-                        if (OktaAttribute.BASIC_PROFILE_ATTRIBUTES.contains(attribute.getName())) {
-                            switch (attributeInfo.getName()) {
-                                case OktaAttribute.FIRSTNAME:
-                                    user.getProfile().setFirstName(AttributeUtil.getStringValue(attribute));
-                                    break;
+                    if (OktaAttribute.BASIC_PROFILE_ATTRIBUTES.contains(attr.getName())) {
+                        String value = CollectionUtil.isEmpty(attr.getValue())
+                                ? null
+                                : AttributeUtil.getStringValue(attr);
 
-                                case OktaAttribute.LASTNAME:
-                                    user.getProfile().setLastName(AttributeUtil.getStringValue(attribute));
-                                    break;
+                        switch (attrInfo.getName()) {
+                            case OktaAttribute.FIRSTNAME:
+                                user.getProfile().setFirstName(value);
+                                break;
 
-                                case OktaAttribute.EMAIL:
-                                    user.getProfile().setEmail(AttributeUtil.getStringValue(attribute));
-                                    break;
+                            case OktaAttribute.LASTNAME:
+                                user.getProfile().setLastName(value);
+                                break;
 
-                                case OktaAttribute.LOGIN:
-                                    user.getProfile().setLogin(AttributeUtil.getStringValue(attribute));
-                                    break;
+                            case OktaAttribute.EMAIL:
+                                user.getProfile().setEmail(value);
+                                break;
 
-                                case OktaAttribute.MOBILEPHONE:
-                                    user.getProfile().setMobilePhone(AttributeUtil.getStringValue(attribute));
-                                    break;
+                            case OktaAttribute.LOGIN:
+                                user.getProfile().setLogin(value);
+                                break;
 
-                                case OktaAttribute.SECOND_EMAIL:
-                                    user.getProfile().setSecondEmail(AttributeUtil.getStringValue(attribute));
-                                    break;
+                            case OktaAttribute.MOBILEPHONE:
+                                user.getProfile().setMobilePhone(value);
+                                break;
 
-                                default:
-                            }
-                        } else {
-                            if (Boolean.class.isInstance(attributeInfo.getType())) {
-                                user.getProfile().getAdditionalProperties().
-                                        put(attribute.getName(), AttributeUtil.getBooleanValue(attribute));
-                            } else if (Integer.class.isInstance(attributeInfo.getType())) {
-                                user.getProfile().getAdditionalProperties().
-                                        put(attribute.getName(), AttributeUtil.getIntegerValue(attribute));
-                            } else if (String.class.isInstance(attributeInfo.getType())) {
-                                user.getProfile().getAdditionalProperties().
-                                        put(attribute.getName(), AttributeUtil.getStringValue(attribute));
-                            } else {
-                                user.getProfile().getAdditionalProperties().
-                                        put(attribute.getName(), AttributeUtil.getSingleValue(attribute));
-                            }
+                            case OktaAttribute.SECOND_EMAIL:
+                                user.getProfile().setSecondEmail(value);
+                                break;
+
+                            default:
                         }
+                    } else {
+                        user.getProfile().getAdditionalProperties().put(
+                                attr.getName(),
+                                CollectionUtil.isEmpty(attr.getValue())
+                                ? null
+                                : AttributeUtil.getSingleValue(attr));
                     }
                 }));
     }

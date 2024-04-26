@@ -285,13 +285,13 @@ public class OktaConnectorTests extends AbstractConnectorTests {
             assertEquals(Collections.singletonList("{}"), entitlements.getValue());
             LOG.info("Created User with id {0} on Okta", handler.getObjects().get(0).getUid());
 
-            // UPDATE USER
+            // UPDATE USER - change attribute
             Attribute newMobilePhone = AttributeBuilder.build(OktaAttribute.MOBILEPHONE, "987654321");
             userAttrs.remove(mobilePhone);
             userAttrs.remove(password);
             userAttrs.add(newMobilePhone);
             Uid updated = FACADE.update(ObjectClass.ACCOUNT, created, userAttrs, operationOption);
-            assertNotNull(updated);
+            assertEquals(created, updated);
 
             // GET USER
             handler = new ToListResultsHandler();
@@ -303,6 +303,21 @@ public class OktaConnectorTests extends AbstractConnectorTests {
                     AttributeUtil.getAsStringValue(newMobilePhone),
                     AttributeUtil.getAsStringValue(
                             handler.getObjects().get(0).getAttributeByName(OktaAttribute.MOBILEPHONE)));
+
+            // UPDATE USER - remove attribute
+            Attribute noMobilePhone = AttributeBuilder.build(OktaAttribute.MOBILEPHONE);
+            userAttrs.remove(newMobilePhone);
+            userAttrs.add(noMobilePhone);
+            updated = FACADE.update(ObjectClass.ACCOUNT, created, userAttrs, operationOption);
+            assertEquals(created, updated);
+
+            // GET USER
+            handler = new ToListResultsHandler();
+            FACADE.search(ObjectClass.ACCOUNT, filter, handler, operationOption);
+            assertNotNull(handler.getObjects());
+            assertFalse(handler.getObjects().isEmpty());
+            assertEquals(handler.getObjects().get(0).getUid().getUidValue(), created.getUidValue());
+            assertNull(handler.getObjects().get(0).getAttributeByName(OktaAttribute.MOBILEPHONE).getValue());
 
             // DELETE USER
             FACADE.delete(ObjectClass.ACCOUNT, updated, operationOption);
