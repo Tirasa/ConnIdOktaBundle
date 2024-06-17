@@ -20,6 +20,7 @@ import com.okta.sdk.cache.Caches;
 import com.okta.sdk.client.AuthorizationMode;
 import com.okta.sdk.client.ClientBuilder;
 import com.okta.sdk.client.Clients;
+import com.okta.sdk.helper.PaginationUtil;
 import com.okta.sdk.resource.api.ApplicationApi;
 import com.okta.sdk.resource.api.GroupApi;
 import com.okta.sdk.resource.api.SchemaApi;
@@ -27,7 +28,6 @@ import com.okta.sdk.resource.api.SystemLogApi;
 import com.okta.sdk.resource.api.UserApi;
 import com.okta.sdk.resource.client.ApiClient;
 import com.okta.sdk.resource.client.ApiException;
-import com.okta.sdk.resource.common.PagedList;
 import com.okta.sdk.resource.group.GroupBuilder;
 import com.okta.sdk.resource.model.Application;
 import com.okta.sdk.resource.model.ChangePasswordRequest;
@@ -132,6 +132,8 @@ public class OktaConnector implements Connector, PoolableConnector,
 
     private OktaConfiguration configuration;
 
+    private ApiClient apiClient;
+
     private UserApi userApi;
 
     private GroupApi groupApi;
@@ -180,12 +182,12 @@ public class OktaConnector implements Connector, PoolableConnector,
                     builder.setClientCredentials(new TokenClientCredentials(this.configuration.getOktaApiToken()));
                 }
 
-                ApiClient client = builder.build();
-                this.userApi = new UserApi(client);
-                this.groupApi = new GroupApi(client);
-                this.appApi = new ApplicationApi(client);
-                this.systemLogApi = new SystemLogApi(client);
-                this.schema = new OktaSchema(new SchemaApi(client));
+                this.apiClient = builder.build();
+                this.userApi = new UserApi(apiClient);
+                this.groupApi = new GroupApi(apiClient);
+                this.appApi = new ApplicationApi(apiClient);
+                this.systemLogApi = new SystemLogApi(apiClient);
+                this.schema = new OktaSchema(new SchemaApi(apiClient));
             }
         } catch (Exception ex) {
             OktaUtils.wrapGeneralError("Could not create Okta client", ex);
@@ -595,7 +597,7 @@ public class OktaConnector implements Connector, PoolableConnector,
             final String beforeCookie,
             final ResultsHandler handler,
             final Function<String, T> getFunction,
-            final Function<String, PagedList<T>> pagedSearchFunction,
+            final Function<String, List<T>> pagedSearchFunction,
             final Function<String, List<T>> searchFunction,
             final Function<T, ConnectorObject> fromFunction) {
 
@@ -616,18 +618,11 @@ public class OktaConnector implements Connector, PoolableConnector,
             List<T> objects = null;
             try {
                 if (pageSize != null) {
-                    PagedList<T> response = pagedSearchFunction.apply(theFilter);
+                    List<T> response = pagedSearchFunction.apply(theFilter);
                     objects = response;
 
                     if (response.size() >= pageSize) {
-                        String nextPage = response.getNextPage();
-                        int startIdx = nextPage.indexOf("after=");
-                        if (startIdx != -1) {
-                            int endIdx = nextPage.indexOf('&', startIdx);
-                            afterCookie = endIdx == -1
-                                    ? nextPage.substring(startIdx + 6)
-                                    : nextPage.substring(startIdx + 6, endIdx);
-                        }
+                        afterCookie = PaginationUtil.getAfter(apiClient);
                     }
                 } else {
                     objects = searchFunction.apply(theFilter);
@@ -679,7 +674,7 @@ public class OktaConnector implements Connector, PoolableConnector,
                     options.getPagedResultsCookie(),
                     handler,
                     userApi::getUser,
-                    f -> (PagedList<User>) userApi.listUsers(
+                    f -> userApi.listUsers(
                             null, options.getPagedResultsCookie(), options.getPageSize(), f, null, null, null),
                     f -> userApi.listUsers(
                             null, null, null, f, null, null, null),
@@ -691,7 +686,7 @@ public class OktaConnector implements Connector, PoolableConnector,
                     options.getPagedResultsCookie(),
                     handler,
                     id -> appApi.getApplication(id, null),
-                    f -> (PagedList<Application>) appApi.listApplications(
+                    f -> appApi.listApplications(
                             null, options.getPagedResultsCookie(), options.getPageSize(), f, null, null),
                     f -> appApi.listApplications(
                             null, null, null, f, null, null),
@@ -704,7 +699,7 @@ public class OktaConnector implements Connector, PoolableConnector,
                     options.getPagedResultsCookie(),
                     handler,
                     groupApi::getGroup,
-                    f -> (PagedList<Group>) groupApi.listGroups(
+                    f -> groupApi.listGroups(
                             null, f, options.getPagedResultsCookie(), options.getPageSize(), null, null, null, null),
                     f -> groupApi.listGroups(
                             null, f, null, null, null, null, null, null),
