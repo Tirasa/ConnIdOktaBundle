@@ -164,14 +164,4 @@ public class SchemaApiImpl implements SchemaApi {
 
         return property;
     }
-
-    @Override
-    public Response getAppUISchema(final String appName, final String section, final String operation) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response getAppUISchemaLinks(final String appName) {
-        return Response.ok().entity("magic!").build();
-    }
 }

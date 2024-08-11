@@ -30,7 +30,7 @@ import com.okta.sdk.resource.model.Application;
 import com.okta.sdk.resource.model.ApplicationSignOnMode;
 import com.okta.sdk.resource.model.BasicAuthApplication;
 import com.okta.sdk.resource.model.Group;
-import com.okta.sdk.resource.model.User;
+import com.okta.sdk.resource.model.UserGetSingleton;
 import com.okta.sdk.resource.model.UserStatus;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -80,7 +80,7 @@ public class OktaConnectorTests extends AbstractConnectorTests {
     private Set<String> getUserGroups(final UserApi client, final String userId) {
         Set<String> assignedGroups = new HashSet<>();
         try {
-            for (Group grpItem : client.listUserGroups(userId)) {
+            for (Group grpItem : client.listUserGroups(userId, null, null)) {
                 assignedGroups.add(grpItem.getId());
             }
         } catch (Exception ex) {
@@ -168,10 +168,12 @@ public class OktaConnectorTests extends AbstractConnectorTests {
 
         Group groupTest = createGroup(CONN.getGroupApi());
         assertNotNull(groupTest);
+        assertNotNull(groupTest.getProfile().getName());
         GROUPS.add(groupTest.getId());
 
         groupTest = createGroup(CONN.getGroupApi());
         assertNotNull(groupTest);
+        assertNotNull(groupTest.getProfile().getName());
         GROUPS.add(groupTest.getId());
 
         Application app = createApplication(CONN.getApplicationApi());
@@ -739,7 +741,7 @@ public class OktaConnectorTests extends AbstractConnectorTests {
         USERS.add(created.getUidValue());
         assertNotNull(created);
 
-        User user = CONN.getUserApi().getUser(created.getUidValue());
+        UserGetSingleton user = CONN.getUserApi().getUser(created.getUidValue(), null);
         assertEquals(UserStatus.STAGED, user.getStatus());
     }
 

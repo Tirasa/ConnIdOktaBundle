@@ -16,7 +16,6 @@
 package net.tirasa.connid.bundles.okta.servermock.impl;
 
 import io.swagger.api.GroupApi;
-import io.swagger.model.AssignGroupOwnerRequestBody;
 import io.swagger.model.Group;
 import io.swagger.model.GroupRule;
 import io.swagger.model.GroupType;
@@ -121,7 +120,14 @@ public class GroupApiImpl extends AbstractApiImpl implements GroupApi {
     }
 
     @Override
-    public Response listGroupUsers(final String groupId, final String after, final Integer limit) {
+    public Response listGroupUsers(
+            final String groupId,
+            final String search,
+            final String sortBy,
+            final String sortOrder,
+            final String after,
+            final Integer limit) {
+
         List<Pair<String, String>> foundGroupUsers = GROUP_USER_REPOSITORY.stream().
                 filter(pair -> StringUtils.equals(groupId, pair.getLeft())).
                 collect(Collectors.toList());
@@ -228,23 +234,6 @@ public class GroupApiImpl extends AbstractApiImpl implements GroupApi {
                         return false;
                     }
                 }).collect(Collectors.toList());
-    }
-
-    @Override
-    public Response assignGroupOwner(final AssignGroupOwnerRequestBody body, final String groupId) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response deleteGroupOwner(final String groupId, final String ownerId) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response listGroupOwners(
-            final String groupId, final String filter, final String after, final Integer limit) {
-
-        return Response.ok().entity("magic!").build();
     }
 
     @Override

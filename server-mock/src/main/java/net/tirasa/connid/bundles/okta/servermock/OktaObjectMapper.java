@@ -16,6 +16,7 @@
 package net.tirasa.connid.bundles.okta.servermock;
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.text.SimpleDateFormat;
 import java.util.TimeZone;
@@ -34,7 +35,9 @@ public class OktaObjectMapper extends ObjectMapper {
 
     public OktaObjectMapper() {
         super();
-        this.setDateFormat(DATE_FORMAT.get());
-        this.setSerializationInclusion(Include.NON_NULL);
+
+        setDateFormat(DATE_FORMAT.get());
+        setSerializationInclusion(Include.NON_NULL);
+        configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 }

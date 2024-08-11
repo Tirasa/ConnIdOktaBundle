@@ -25,6 +25,7 @@ import io.swagger.model.PasswordCredential;
 import io.swagger.model.UpdateUserRequest;
 import io.swagger.model.User;
 import io.swagger.model.UserCredentials;
+import io.swagger.model.UserGetSingleton;
 import io.swagger.model.UserNextLogin;
 import io.swagger.model.UserProfile;
 import io.swagger.model.UserStatus;
@@ -45,8 +46,12 @@ import javax.ws.rs.core.Response;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class UserApiImpl extends AbstractApiImpl implements UserApi {
+
+    private static final Logger LOG = LoggerFactory.getLogger(UserApiImpl.class);
 
     @Override
     public Response activateUser(final String userId, final Boolean sendEmail) {
@@ -226,12 +231,30 @@ public class UserApiImpl extends AbstractApiImpl implements UserApi {
     }
 
     @Override
-    public Response getUser(final String userId) {
+    public Response getUser(
+            final String userId,
+            final String expand) {
+
         return USER_REPOSITORY.stream()
                 .filter(user -> StringUtils.equals(userId, user.getId())
                 || StringUtils.equals(userId, user.getProfile().getLogin()))
                 .findFirst()
-                .map(found -> Response.ok().entity(found).build())
+                .map(found -> {
+                    UserGetSingleton ugs = new UserGetSingleton();
+                    ugs.setActivated(found.getActivated());
+                    ugs.setCreated(found.getCreated());
+                    ugs.setCredentials(found.getCredentials());
+                    ugs.setEmbedded(found.getEmbedded());
+                    ugs.setId(found.getId());
+                    ugs.setProfile(found.getProfile());
+                    ugs.setStatus(found.getStatus());
+                    ugs.setStatusChanged(found.getStatusChanged());
+                    ugs.setLastUpdated(found.getLastUpdated());
+                    ugs.setType(found.getType());
+                    ugs.setRealmId(found.getRealmId());
+
+                    return Response.ok().entity(ugs).build();
+                })
                 .orElseGet(() -> Response.status(Response.Status.NOT_FOUND).build());
     }
 
@@ -284,7 +307,7 @@ public class UserApiImpl extends AbstractApiImpl implements UserApi {
     }
 
     @Override
-    public Response listUserGroups(final String userId) {
+    public Response listUserGroups(final String userId, final String after, final Integer limit) {
         List<Pair<String, String>> foundUserGroups = GROUP_USER_REPOSITORY.stream().
                 filter(pair -> StringUtils.equals(userId, pair.getRight())).
                 collect(Collectors.toList());
@@ -400,11 +423,6 @@ public class UserApiImpl extends AbstractApiImpl implements UserApi {
     }
 
     @Override
-    public Response resetFactors(final String userId) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
     public Response revokeGrantsForUserAndClient(final String userId, final String clientId) {
         return Response.ok().entity("magic!").build();
     }
@@ -426,15 +444,6 @@ public class UserApiImpl extends AbstractApiImpl implements UserApi {
 
     @Override
     public Response revokeUserGrants(final String userId) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response setLinkedObjectForUser(
-            final String associatedUserId,
-            final String primaryRelationshipName,
-            final String primaryUserId) {
-
         return Response.ok().entity("magic!").build();
     }
 
@@ -573,6 +582,20 @@ public class UserApiImpl extends AbstractApiImpl implements UserApi {
 
     @Override
     public Response listUserBlocks(final String userId) {
+        return Response.ok().entity("magic!").build();
+    }
+
+    @Override
+    public Response replaceLinkedObjectForUser(
+            final String userIdOrLogin,
+            final String primaryRelationshipName,
+            final String primaryUserId) {
+
+        return Response.ok().entity("magic!").build();
+    }
+
+    @Override
+    public Response resetFactors(final String userId, final Boolean removeRecoveryEnrollment) {
         return Response.ok().entity("magic!").build();
     }
 }

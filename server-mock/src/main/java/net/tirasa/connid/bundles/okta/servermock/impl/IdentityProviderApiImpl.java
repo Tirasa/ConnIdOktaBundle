@@ -114,11 +114,6 @@ public class IdentityProviderApiImpl extends AbstractApiImpl implements Identity
     }
 
     @Override
-    public Response listIdentityProviderApplicationUsers(final String idpId) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
     public Response listIdentityProviderKeys(final String after, final Integer limit) {
         return Response.ok().entity("magic!").build();
     }
@@ -166,6 +161,17 @@ public class IdentityProviderApiImpl extends AbstractApiImpl implements Identity
 
     @Override
     public Response publishCsrForIdentityProvider(final Object body, final String idpId, final String idpCsrId) {
+        return Response.ok().entity("magic!").build();
+    }
+
+    @Override
+    public Response listIdentityProviderApplicationUsers(
+            final String idpId,
+            final String q,
+            final String after,
+            final Integer limit,
+            final String expand) {
+
         return Response.ok().entity("magic!").build();
     }
 }

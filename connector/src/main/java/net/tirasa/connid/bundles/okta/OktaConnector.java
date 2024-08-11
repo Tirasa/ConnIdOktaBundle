@@ -36,6 +36,8 @@ import com.okta.sdk.resource.model.LogEvent;
 import com.okta.sdk.resource.model.PasswordCredential;
 import com.okta.sdk.resource.model.UpdateUserRequest;
 import com.okta.sdk.resource.model.User;
+import com.okta.sdk.resource.model.UserGetSingleton;
+import com.okta.sdk.resource.model.UserProfile;
 import com.okta.sdk.resource.model.UserStatus;
 import com.okta.sdk.resource.user.UserBuilder;
 import java.time.OffsetDateTime;
@@ -343,7 +345,7 @@ public class OktaConnector implements Connector, PoolableConnector,
         AttributesAccessor accessor = new AttributesAccessor(replaceAttributes);
         if (ObjectClass.ACCOUNT.equals(objectClass)) {
             Uid returnUid = uid;
-            User user = userApi.getUser(uid.getUidValue());
+            UserGetSingleton user = userApi.getUser(uid.getUidValue(), null);
 
             // 1. update password
             Optional.ofNullable(accessor.getPassword()).
@@ -357,7 +359,7 @@ public class OktaConnector implements Connector, PoolableConnector,
 
             // 2. update attributes
             try {
-                updateUserAttributes(user, replaceAttributes);
+                updateUserProfile(user.getProfile(), replaceAttributes);
                 UpdateUserRequest req = new UpdateUserRequest();
                 req.setProfile(user.getProfile());
 
@@ -375,7 +377,7 @@ public class OktaConnector implements Connector, PoolableConnector,
                     List<Object> groupsToAssign =
                             CollectionUtil.nullAsEmpty(accessor.findList(OktaAttribute.OKTA_GROUPS));
 
-                    Set<String> assignedGroups = userApi.listUserGroups(user.getId()).stream()
+                    Set<String> assignedGroups = userApi.listUserGroups(user.getId(), null, null).stream()
                             .filter(item -> !OktaAttribute.isDefaultEveryoneGroup(item))
                             .map(Group::getId).collect(Collectors.toSet());
 
@@ -539,7 +541,7 @@ public class OktaConnector implements Connector, PoolableConnector,
                     } else {
                         try {
                             if (ObjectClass.ACCOUNT.equals(objectClass)) {
-                                User user = userApi.getUser(item.getTarget().get(0).getId());
+                                UserGetSingleton user = userApi.getUser(item.getTarget().get(0).getId(), null);
                                 connObj = fromUser(user, attributesToGet);
                             } else if (ObjectClass.GROUP.equals(objectClass)) {
                                 Group group = groupApi.getGroup(item.getTarget().get(0).getId());
@@ -590,24 +592,25 @@ public class OktaConnector implements Connector, PoolableConnector,
         return new OktaFilterTranslator(oclass);
     }
 
-    private <T> void doExecuteQuery(
+    private <T, S> void doExecuteQuery(
             final ObjectClass objectClass,
             final OktaFilter filter,
             final Integer pageSize,
             final String beforeCookie,
             final ResultsHandler handler,
-            final Function<String, T> getFunction,
+            final Function<String, S> getFunction,
             final Function<String, List<T>> pagedSearchFunction,
             final Function<String, List<T>> searchFunction,
-            final Function<T, ConnectorObject> fromFunction) {
+            final Function<T, ConnectorObject> fromObject,
+            final Function<S, ConnectorObject> fromObjectSingletonGet) {
 
         if (filter != null && filter.getFilters() == null
                 && OktaAttribute.ID.equals(filter.getAttribute())
                 && OktaFilterOp.EQUALS.equals(filter.getFilterOp())) {
 
             try {
-                T object = getFunction.apply(filter.getValue());
-                handler.handle(fromFunction.apply(object));
+                S object = getFunction.apply(filter.getValue());
+                handler.handle(fromObjectSingletonGet.apply(object));
             } catch (Exception e) {
                 OktaUtils.wrapGeneralError(
                         "While getting " + objectClass.getObjectClassValue() + " with filter: " + filter, e);
@@ -632,12 +635,10 @@ public class OktaConnector implements Connector, PoolableConnector,
                         "While getting " + objectClass.getObjectClassValue() + " with filter: " + filter, e);
             }
 
-            if (objects != null) {
-                for (T object : objects) {
-                    if (!handler.handle(fromFunction.apply(object))) {
-                        LOG.ok("Stop processing of the result set");
-                        break;
-                    }
+            for (T object : CollectionUtil.nullAsEmpty(objects)) {
+                if (!handler.handle(fromObject.apply(object))) {
+                    LOG.ok("Stop processing of the result set");
+                    break;
                 }
             }
 
@@ -673,14 +674,16 @@ public class OktaConnector implements Connector, PoolableConnector,
                     options.getPageSize(),
                     options.getPagedResultsCookie(),
                     handler,
-                    userApi::getUser,
+                    userId -> userApi.getUser(userId, null),
                     f -> userApi.listUsers(
                             null, options.getPagedResultsCookie(), options.getPageSize(), f, null, null, null),
                     f -> userApi.listUsers(
                             null, null, null, f, null, null, null),
-                    o -> fromUser(o, attributesToGet));
+                    user -> fromUser(user, attributesToGet),
+                    userGetSingleton -> fromUser(userGetSingleton, attributesToGet));
         } else if (APPLICATION.equals(objectClass)) {
-            doExecuteQuery(objectClass,
+            doExecuteQuery(
+                    objectClass,
                     filter,
                     options.getPageSize(),
                     options.getPagedResultsCookie(),
@@ -690,6 +693,7 @@ public class OktaConnector implements Connector, PoolableConnector,
                             null, options.getPagedResultsCookie(), options.getPageSize(), f, null, null),
                     f -> appApi.listApplications(
                             null, null, null, f, null, null),
+                    o -> fromApplication(o, attributesToGet),
                     o -> fromApplication(o, attributesToGet));
         } else if (ObjectClass.GROUP.equals(objectClass)) {
             doExecuteQuery(
@@ -703,6 +707,7 @@ public class OktaConnector implements Connector, PoolableConnector,
                             null, f, options.getPagedResultsCookie(), options.getPageSize(), null, null, null, null),
                     f -> groupApi.listGroups(
                             null, f, null, null, null, null, null, null),
+                    o -> fromGroup(o, attributesToGet),
                     o -> fromGroup(o, attributesToGet));
         } else {
             throw new UnsupportedOperationException(
@@ -761,13 +766,41 @@ public class OktaConnector implements Connector, PoolableConnector,
         return builder.build();
     }
 
-    private ConnectorObject fromUser(final User user, final Set<String> attributesToGet) {
+    private ConnectorObject fromUser(
+            final UserGetSingleton user,
+            final Set<String> attributesToGet) {
+
         ConnectorObjectBuilder builder = new ConnectorObjectBuilder();
         builder.setObjectClass(ObjectClass.ACCOUNT);
         builder.setUid(user.getId());
         builder.setName(user.getProfile().getLogin());
         builder.addAttributes(OktaAttribute.buildUserAttributes(
-                userApi, user, schema.getSchema(), attributesToGet));
+                userApi,
+                user.getId(),
+                user.getStatus(),
+                user.getLastUpdated(),
+                user.getProfile(),
+                schema.getSchema(),
+                attributesToGet));
+        return builder.build();
+    }
+
+    private ConnectorObject fromUser(
+            final User user,
+            final Set<String> attributesToGet) {
+
+        ConnectorObjectBuilder builder = new ConnectorObjectBuilder();
+        builder.setObjectClass(ObjectClass.ACCOUNT);
+        builder.setUid(user.getId());
+        builder.setName(user.getProfile().getLogin());
+        builder.addAttributes(OktaAttribute.buildUserAttributes(
+                userApi,
+                user.getId(),
+                user.getStatus(),
+                user.getLastUpdated(),
+                user.getProfile(),
+                schema.getSchema(),
+                attributesToGet));
         return builder.build();
     }
 
@@ -904,7 +937,7 @@ public class OktaConnector implements Connector, PoolableConnector,
                 }));
     }
 
-    private void updateUserAttributes(final User user, final Set<Attribute> replaceAttributes) {
+    private void updateUserProfile(final UserProfile userProfile, final Set<Attribute> replaceAttributes) {
         ObjectClassInfo objectClassInfo = schema.getSchema().findObjectClassInfo(ObjectClass.ACCOUNT_NAME);
         replaceAttributes.stream().
                 filter(attribute -> !NOT_FOR_PROFILE.contains(attribute.getName())).
@@ -919,33 +952,33 @@ public class OktaConnector implements Connector, PoolableConnector,
 
                         switch (attrInfo.getName()) {
                             case OktaAttribute.FIRSTNAME:
-                                user.getProfile().setFirstName(value);
+                                userProfile.setFirstName(value);
                                 break;
 
                             case OktaAttribute.LASTNAME:
-                                user.getProfile().setLastName(value);
+                                userProfile.setLastName(value);
                                 break;
 
                             case OktaAttribute.EMAIL:
-                                user.getProfile().setEmail(value);
+                                userProfile.setEmail(value);
                                 break;
 
                             case OktaAttribute.LOGIN:
-                                user.getProfile().setLogin(value);
+                                userProfile.setLogin(value);
                                 break;
 
                             case OktaAttribute.MOBILEPHONE:
-                                user.getProfile().setMobilePhone(value);
+                                userProfile.setMobilePhone(value);
                                 break;
 
                             case OktaAttribute.SECOND_EMAIL:
-                                user.getProfile().setSecondEmail(value);
+                                userProfile.setSecondEmail(value);
                                 break;
 
                             default:
                         }
                     } else {
-                        user.getProfile().getAdditionalProperties().put(
+                        userProfile.getAdditionalProperties().put(
                                 attr.getName(),
                                 CollectionUtil.isEmpty(attr.getValue())
                                 ? null

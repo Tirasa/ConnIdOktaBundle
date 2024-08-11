@@ -22,12 +22,13 @@ import com.okta.sdk.resource.model.Application;
 import com.okta.sdk.resource.model.ApplicationLifecycleStatus;
 import com.okta.sdk.resource.model.Group;
 import com.okta.sdk.resource.model.GroupType;
-import com.okta.sdk.resource.model.User;
 import com.okta.sdk.resource.model.UserProfile;
 import com.okta.sdk.resource.model.UserStatus;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import net.tirasa.connid.bundles.okta.OktaConnector;
@@ -115,34 +116,35 @@ public final class OktaAttribute {
 
     public static Set<Attribute> buildUserAttributes(
             final UserApi userApi,
-            final User user,
+            final String userId,
+            final UserStatus userStatus,
+            final OffsetDateTime userLastUpdated,
+            final UserProfile userProfile,
             final Schema schema,
             final Set<String> attributesToGet) {
 
         Set<Attribute> attributes = new HashSet<>();
         ObjectClassInfo objectClassInfo = schema.findObjectClassInfo(ObjectClass.ACCOUNT_NAME);
-        UserProfile userProfile = user.getProfile();
         attributesToGet.stream().filter(name -> !Name.NAME.equals(name) && !Uid.NAME.equals(name)).forEach(name -> {
             if (ID.equals(name)) {
-                attributes.add(AttributeBuilder.build(name, user.getId()));
+                attributes.add(AttributeBuilder.build(name, userId));
             } else if (STATUS.equals(name)) {
-                attributes.add(buildAttribute(user.getStatus().toString(), name, String.class).build());
+                attributes.add(buildAttribute(userStatus.toString(), name, String.class).build());
             } else if (OperationalAttributes.ENABLE_NAME.equals(name)) {
-                attributes.add(buildAttribute(user.getStatus() == UserStatus.ACTIVE, name, Boolean.class).build());
+                attributes.add(buildAttribute(userStatus == UserStatus.ACTIVE, name, Boolean.class).build());
             } else if (OKTA_GROUPS.equals(name)) {
                 try {
-                    List<String> assignedGroups = userApi.listUserGroups(user.getId()).stream()
+                    List<String> assignedGroups = userApi.listUserGroups(userId, null, null).stream()
                             .filter(item -> !isDefaultEveryoneGroup(item))
                             .map(Group::getId)
                             .collect(Collectors.toList());
                     attributes.add(buildAttribute(assignedGroups, name, Set.class).build());
                 } catch (Exception ex) {
-                    LOG.error(ex, "Could not list groups for User {0}", user.getId());
+                    LOG.error(ex, "Could not list groups for User {0}", userId);
                 }
             } else if (LASTUPDATED.equals(name)) {
-                attributes.add(buildAttribute(user.getLastUpdated() != null
-                        ? user.getLastUpdated().toInstant().toEpochMilli()
-                        : 0L,
+                attributes.add(buildAttribute(
+                        Optional.ofNullable(userLastUpdated).map(u -> u.toInstant().toEpochMilli()).orElse(0L),
                         name, Long.class).build());
             } else {
                 objectClassInfo.getAttributeInfo().stream().
@@ -293,14 +295,23 @@ public final class OktaAttribute {
 
         Set<Attribute> attributes = new HashSet<>();
         attributesToGet.stream().filter(name -> !Name.NAME.equals(name) && !Uid.NAME.equals(name)).forEach(name -> {
-            if (ID.equals(name)) {
-                attributes.add(AttributeBuilder.build(name, group.getId()));
-            } else if (DESCRIPTION.equals(name)) {
-                attributes.add(AttributeBuilder.build(name, group.getProfile().getDescription()));
-            } else if (LASTUPDATED.equals(name)) {
-                attributes.add(buildAttribute(group.getLastUpdated() != null
-                        ? group.getLastUpdated().toInstant().toEpochMilli() : 0L,
-                        name, Long.class).build());
+            switch (name) {
+                case ID:
+                    attributes.add(AttributeBuilder.build(name, group.getId()));
+                    break;
+
+                case DESCRIPTION:
+                    attributes.add(AttributeBuilder.build(name, group.getProfile().getDescription()));
+                    break;
+
+                case LASTUPDATED:
+                    attributes.add(buildAttribute(
+                            Optional.ofNullable(group.getLastUpdated()).
+                                    map(t -> t.toInstant().toEpochMilli()).orElse(0L),
+                            name, Long.class).build());
+                    break;
+
+                default:
             }
         });
         return attributes;
@@ -322,16 +333,15 @@ public final class OktaAttribute {
                 attributeBuilder.setName(name);
                 attributeBuilder.addValue(application.getStatus());
                 attributes.add(attributeBuilder.build());
-            } else if (OperationalAttributes.ENABLE_NAME.equals(name)
-                    || STATUS.equals(name)) {
-
+            } else if (OperationalAttributes.ENABLE_NAME.equals(name) || STATUS.equals(name)) {
                 AttributeBuilder attributeBuilder = new AttributeBuilder();
                 attributeBuilder.setName(name);
                 attributeBuilder.addValue(application.getStatus() == ApplicationLifecycleStatus.ACTIVE);
                 attributes.add(attributeBuilder.build());
             } else if (LASTUPDATED.equals(name)) {
-                attributes.add(buildAttribute(application.getLastUpdated() != null
-                        ? application.getLastUpdated().toInstant().toEpochMilli() : 0L,
+                attributes.add(buildAttribute(
+                        Optional.ofNullable(application.getLastUpdated()).
+                                map(t -> t.toInstant().toEpochMilli()).orElse(0L),
                         name, Long.class).build());
             } else {
                 objectClassInfo.getAttributeInfo().stream().
@@ -348,7 +358,8 @@ public final class OktaAttribute {
         return buildAttribute(value, name, clazz, new AttributeBuilder());
     }
 
-    public static AttributeBuilder buildAttribute(final Object value,
+    public static AttributeBuilder buildAttribute(
+            final Object value,
             final String name,
             final Class<?> clazz,
             final AttributeBuilder attributeBuilder) {
