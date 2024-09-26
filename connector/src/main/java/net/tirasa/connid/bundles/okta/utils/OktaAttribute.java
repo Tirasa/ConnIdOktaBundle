@@ -17,7 +17,7 @@ package net.tirasa.connid.bundles.okta.utils;
 
 import com.okta.sdk.resource.api.ApplicationApi;
 import com.okta.sdk.resource.api.GroupApi;
-import com.okta.sdk.resource.api.UserApi;
+import com.okta.sdk.resource.api.UserResourcesApi;
 import com.okta.sdk.resource.model.Application;
 import com.okta.sdk.resource.model.ApplicationLifecycleStatus;
 import com.okta.sdk.resource.model.Group;
@@ -115,7 +115,7 @@ public final class OktaAttribute {
     }
 
     public static Set<Attribute> buildUserAttributes(
-            final UserApi userApi,
+            final UserResourcesApi userApi,
             final String userId,
             final UserStatus userStatus,
             final OffsetDateTime userLastUpdated,
@@ -134,7 +134,7 @@ public final class OktaAttribute {
                 attributes.add(buildAttribute(userStatus == UserStatus.ACTIVE, name, Boolean.class).build());
             } else if (OKTA_GROUPS.equals(name)) {
                 try {
-                    List<String> assignedGroups = userApi.listUserGroups(userId, null, null).stream()
+                    List<String> assignedGroups = userApi.listUserGroups(userId).stream()
                             .filter(item -> !isDefaultEveryoneGroup(item))
                             .map(Group::getId)
                             .collect(Collectors.toList());

@@ -18,12 +18,10 @@ package net.tirasa.connid.bundles.okta;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
-import com.okta.sdk.resource.model.Group;
-import com.okta.sdk.resource.model.GroupProfile;
-import com.okta.sdk.resource.model.GroupType;
+import com.okta.sdk.resource.model.AddGroupRequest;
+import com.okta.sdk.resource.model.OktaUserGroupProfile;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Field;
 import java.util.Properties;
 import net.tirasa.connid.bundles.okta.servermock.impl.AbstractApiImpl;
 import org.identityconnectors.common.logging.Log;
@@ -32,7 +30,6 @@ import org.identityconnectors.framework.api.ConnectorFacade;
 import org.identityconnectors.framework.api.ConnectorFacadeFactory;
 import org.identityconnectors.test.common.TestHelpers;
 import org.junit.BeforeClass;
-import org.springframework.util.ReflectionUtils;
 
 public abstract class AbstractConnectorTests {
 
@@ -89,16 +86,8 @@ public abstract class AbstractConnectorTests {
         assertNotNull(CONF.getDomain());
         assertNotNull(CONF.getOktaApiToken());
 
-        Field groupId = ReflectionUtils.findField(Group.class, "id");
-        ReflectionUtils.makeAccessible(groupId);
-
-        GroupProfile profile = new GroupProfile();
+        OktaUserGroupProfile profile = new OktaUserGroupProfile();
         profile.setName(AbstractApiImpl.EVERYONE);
-
-        Group group = new Group();
-        ReflectionUtils.setField(groupId, group, AbstractApiImpl.EVERYONE_ID);
-        group.setType(GroupType.BUILT_IN);
-        group.setProfile(profile);
-        CONN.getGroupApi().createGroup(group);
+        CONN.getGroupApi().addGroup(new AddGroupRequest().profile(profile));
     }
 }
