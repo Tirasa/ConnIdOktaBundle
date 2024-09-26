@@ -25,6 +25,8 @@ import static org.junit.Assert.fail;
 import com.okta.sdk.resource.api.ApplicationApi;
 import com.okta.sdk.resource.api.GroupApi;
 import com.okta.sdk.resource.api.UserApi;
+import com.okta.sdk.resource.api.UserLifecycleApi;
+import com.okta.sdk.resource.api.UserResourcesApi;
 import com.okta.sdk.resource.group.GroupBuilder;
 import com.okta.sdk.resource.model.Application;
 import com.okta.sdk.resource.model.ApplicationSignOnMode;
@@ -77,10 +79,10 @@ public class OktaConnectorTests extends AbstractConnectorTests {
 
     private static final Set<String> APPLICATIONS = new HashSet<>();
 
-    private Set<String> getUserGroups(final UserApi client, final String userId) {
+    private Set<String> getUserGroups(final UserResourcesApi client, final String userId) {
         Set<String> assignedGroups = new HashSet<>();
         try {
-            for (Group grpItem : client.listUserGroups(userId, null, null)) {
+            for (Group grpItem : client.listUserGroups(userId)) {
                 assignedGroups.add(grpItem.getId());
             }
         } catch (Exception ex) {
@@ -176,20 +178,20 @@ public class OktaConnectorTests extends AbstractConnectorTests {
         assertNotNull(groupTest.getProfile().getName());
         GROUPS.add(groupTest.getId());
 
-        Application app = createApplication(CONN.getApplicationApi());
+        Application app = createApplication(CONN.getAppApi());
         assertNotNull(app);
         APPLICATIONS.add(app.getId());
 
-        app = createApplication(CONN.getApplicationApi());
+        app = createApplication(CONN.getAppApi());
         assertNotNull(app);
         APPLICATIONS.add(app.getId());
     }
 
-    private static void cleanUserTestData(final UserApi client, final String userId) {
+    private static void cleanUserTestData(final UserLifecycleApi client, final UserApi userApi, final String userId) {
         try {
             if (!StringUtil.isEmpty(userId)) {
-                client.deactivateUser(userId, Boolean.FALSE);
-                client.deleteUser(userId, Boolean.FALSE);
+                client.deactivateUser(userId, Boolean.FALSE, null);
+                userApi.deleteUser(userId, Boolean.FALSE, null);
             }
         } catch (Exception e) {
             LOG.error("Could not clean test data", e);
@@ -219,9 +221,9 @@ public class OktaConnectorTests extends AbstractConnectorTests {
 
     @AfterClass
     public static void cleanTestData() {
-        USERS.stream().forEach(item -> cleanUserTestData(CONN.getUserApi(), item));
+        USERS.stream().forEach(item -> cleanUserTestData(CONN.getUserLifecycleApi(), CONN.getUserApi(), item));
         GROUPS.stream().forEach(item -> cleanGroupTestData(CONN.getGroupApi(), item));
-        APPLICATIONS.stream().forEach(item -> cleanApplicationTestData(CONN.getApplicationApi(), item));
+        APPLICATIONS.stream().forEach(item -> cleanApplicationTestData(CONN.getAppApi(), item));
     }
 
     @Test
@@ -400,7 +402,7 @@ public class OktaConnectorTests extends AbstractConnectorTests {
             assertNotNull(created);
             USERS.add(created.getUidValue());
 
-            Set<String> assignedGroups = getUserGroups(CONN.getUserApi(), created.getUidValue());
+            Set<String> assignedGroups = getUserGroups(CONN.getUserResourcesApi(), created.getUidValue());
             assertTrue(assignedGroups.contains(groupCreate.getId()));
 
             // GET USER
@@ -422,7 +424,7 @@ public class OktaConnectorTests extends AbstractConnectorTests {
             Uid updated = FACADE.update(ObjectClass.ACCOUNT, created, userAttrs, operationOption);
             assertNotNull(updated);
 
-            assignedGroups = getUserGroups(CONN.getUserApi(), updated.getUidValue());
+            assignedGroups = getUserGroups(CONN.getUserResourcesApi(), updated.getUidValue());
             assertTrue(assignedGroups.contains(groupUpdate.getId()));
         } catch (Exception e) {
             LOG.error(e, "While running test");
@@ -458,7 +460,7 @@ public class OktaConnectorTests extends AbstractConnectorTests {
             assertNotNull(created);
             USERS.add(created.getUidValue());
 
-            Set<String> assignedGroups = getUserGroups(CONN.getUserApi(), created.getUidValue());
+            Set<String> assignedGroups = getUserGroups(CONN.getUserResourcesApi(), created.getUidValue());
             assertTrue(assignedGroups.contains(groupOne.getId()));
             assertTrue(assignedGroups.contains(groupTwo.getId()));
 
@@ -477,7 +479,7 @@ public class OktaConnectorTests extends AbstractConnectorTests {
             Uid updated = FACADE.update(ObjectClass.ACCOUNT, created, userAttrs, operationOption);
             assertNotNull(updated);
 
-            assignedGroups = getUserGroups(CONN.getUserApi(), updated.getUidValue());
+            assignedGroups = getUserGroups(CONN.getUserResourcesApi(), updated.getUidValue());
             assertFalse(assignedGroups.contains(groupOne.getId()));
             assertFalse(assignedGroups.contains(groupTwo.getId()));
         } catch (Exception e) {
@@ -741,7 +743,7 @@ public class OktaConnectorTests extends AbstractConnectorTests {
         USERS.add(created.getUidValue());
         assertNotNull(created);
 
-        UserGetSingleton user = CONN.getUserApi().getUser(created.getUidValue(), null);
+        UserGetSingleton user = CONN.getUserApi().getUser(created.getUidValue(), null, null);
         assertEquals(UserStatus.STAGED, user.getStatus());
     }
 

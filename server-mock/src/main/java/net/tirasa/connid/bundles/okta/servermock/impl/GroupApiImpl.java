@@ -17,9 +17,10 @@ package net.tirasa.connid.bundles.okta.servermock.impl;
 
 import io.swagger.api.GroupApi;
 import io.swagger.model.Group;
-import io.swagger.model.GroupRule;
 import io.swagger.model.GroupType;
+import io.swagger.model.GroupsGroupIdBody;
 import io.swagger.model.User;
+import io.swagger.model.V1GroupsBody;
 import java.lang.reflect.InvocationTargetException;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -34,11 +35,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
 public class GroupApiImpl extends AbstractApiImpl implements GroupApi {
-
-    @Override
-    public Response activateGroupRule(final String ruleId) {
-        return Response.ok().entity("magic!").build();
-    }
 
     @Override
     public Response assignUserToGroup(final String groupId, final String userId) {
@@ -57,39 +53,27 @@ public class GroupApiImpl extends AbstractApiImpl implements GroupApi {
     }
 
     @Override
-    public Response createGroup(final Group body) {
-        if (body.getId() == null) {
-            body.setId(UUID.randomUUID().toString());
+    public Response addGroup(final V1GroupsBody body) {
+        Group group = new Group();
+        if (EVERYONE.equals(body.getProfile().getName())) {
+            group.setId(EVERYONE_ID);
+            group.setType(GroupType.BUILT_IN);
+        } else {
+            group.setId(UUID.randomUUID().toString());
+            group.setType(GroupType.OKTA_GROUP);
         }
-        if (body.getType() == null) {
-            body.setType(GroupType.OKTA_GROUP);
-        }
-        body.setCreated(Date.from(Instant.now()));
-        body.setLastMembershipUpdated(Date.from(Instant.now()));
-        body.setLastUpdated(Date.from(Instant.now()));
-        GROUP_REPOSITORY.add(body);
-        return Response.status(Response.Status.CREATED).entity(body).build();
-    }
-
-    @Override
-    public Response createGroupRule(final GroupRule body) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response deactivateGroupRule(final String ruleId) {
-        return Response.ok().entity("magic!").build();
+        group.setCreated(Date.from(Instant.now()));
+        group.setLastMembershipUpdated(Date.from(Instant.now()));
+        group.setLastUpdated(Date.from(Instant.now()));
+        group.setProfile(body.getProfile());
+        GROUP_REPOSITORY.add(group);
+        return Response.status(Response.Status.CREATED).entity(group).build();
     }
 
     @Override
     public Response deleteGroup(final String groupId) {
         return GROUP_REPOSITORY.removeIf(group -> StringUtils.equals(groupId, group.getId())) ? Response.
                 noContent().build() : Response.status(Response.Status.NOT_FOUND).build();
-    }
-
-    @Override
-    public Response deleteGroupRule(final String ruleId, final Boolean removeUsers) {
-        return Response.ok().entity("magic!").build();
     }
 
     @Override
@@ -105,29 +89,12 @@ public class GroupApiImpl extends AbstractApiImpl implements GroupApi {
     }
 
     @Override
-    public Response getGroupRule(final String ruleId, final String expand) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
     public Response listAssignedApplicationsForGroup(final String groupId, final String after, final Integer limit) {
         return Response.ok().entity("magic!").build();
     }
 
     @Override
-    public Response listGroupRules(final Integer limit, final String after, final String search, final String expand) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response listGroupUsers(
-            final String groupId,
-            final String search,
-            final String sortBy,
-            final String sortOrder,
-            final String after,
-            final Integer limit) {
-
+    public Response listGroupUsers(final String groupId, final String after, final Integer limit) {
         List<Pair<String, String>> foundGroupUsers = GROUP_USER_REPOSITORY.stream().
                 filter(pair -> StringUtils.equals(groupId, pair.getLeft())).
                 collect(Collectors.toList());
@@ -187,7 +154,7 @@ public class GroupApiImpl extends AbstractApiImpl implements GroupApi {
         return Response.ok().entity(GROUP_REPOSITORY.stream().
                 limit(actualLimit).
                 filter(q == null ? group -> true : group -> group.getProfile().getName().contains(q)).
-                collect(Collectors.toList())).header("link", nextPage(limit, 0, GROUP_REPOSITORY)).
+                collect(Collectors.toList())).header("link", nextPage(actualLimit, 0, GROUP_REPOSITORY)).
                 build();
     }
 
@@ -204,18 +171,14 @@ public class GroupApiImpl extends AbstractApiImpl implements GroupApi {
     }
 
     @Override
-    public Response replaceGroup(final Group body, final String groupId) {
+    public Response replaceGroup(final GroupsGroupIdBody body, final String groupId) {
         Optional<Group> found = GROUP_REPOSITORY.stream()
                 .filter(group -> StringUtils.equals(groupId, group.getId()))
                 .findAny();
         if (found.isPresent()) {
-            body.setId(found.get().getId());
-            body.setCreated(found.get().getCreated());
-            body.setLastMembershipUpdated(found.get().getLastMembershipUpdated());
-            GROUP_REPOSITORY.remove(found.get());
-            GROUP_REPOSITORY.add(body);
-            body.setLastUpdated(Date.from(Instant.now()));
-            return Response.ok().entity(body).build();
+            found.get().setProfile(body.getProfile());
+            found.get().setLastUpdated(Date.from(Instant.now()));
+            return Response.ok().entity(found.get()).build();
         }
 
         return Response.status(Response.Status.NOT_FOUND).build();
@@ -234,10 +197,5 @@ public class GroupApiImpl extends AbstractApiImpl implements GroupApi {
                         return false;
                     }
                 }).collect(Collectors.toList());
-    }
-
-    @Override
-    public Response replaceGroupRule(final GroupRule body, final String ruleId) {
-        return Response.ok().entity("magic!").build();
     }
 }

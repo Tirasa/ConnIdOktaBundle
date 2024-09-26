@@ -17,8 +17,11 @@ package net.tirasa.connid.bundles.okta.servermock.impl;
 
 import io.swagger.api.SystemLogApi;
 import io.swagger.model.LogEvent;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -30,26 +33,30 @@ public class SystemLogApiImpl extends AbstractApiImpl implements SystemLogApi {
 
     @Override
     public Response listLogEvents(
-            final Date since,
-            final Date until,
+            final String since,
+            final String until,
+            final String after,
             final String filter,
             final String q,
             final Integer limit,
-            final String sortOrder,
-            final String after) {
+            final String sortOrder) {
 
         return Response.ok().entity(searchEvents(filter, since, limit)).build();
     }
 
-    private List<LogEvent> searchEvents(final String filter, final Date since, final Integer limit) {
+    private List<LogEvent> searchEvents(final String filter, final String since, final Integer limit) {
         List<String> eventTypeNames = filter == null
-                ? Collections.emptyList()
+                ? List.of()
                 : Arrays.asList(filter.replaceAll("\\\\", "").split(" or ")).stream().
                         map(item -> item.substring(item.indexOf("\"") + 1, item.lastIndexOf("\""))).
                         collect(Collectors.toList());
 
+        Date sinceDate = "7 days prior to until".equals(since)
+                ? Date.from(Instant.now().minus(7, ChronoUnit.DAYS))
+                : new Date(OffsetDateTime.parse(since, DateTimeFormatter.ISO_DATE_TIME).toInstant().toEpochMilli());
+
         Stream<LogEvent> found = EVENT_REPOSITORY.entrySet().stream().filter(
-                event -> (since == null || event.getKey().after(since))
+                event -> (sinceDate == null || event.getKey().after(sinceDate))
                 && eventTypeNames.contains(event.getValue().getEventType())).
                 map(Map.Entry::getValue);
         if (limit != null) {

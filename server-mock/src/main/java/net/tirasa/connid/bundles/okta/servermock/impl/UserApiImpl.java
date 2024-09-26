@@ -16,29 +16,21 @@
 package net.tirasa.connid.bundles.okta.servermock.impl;
 
 import io.swagger.api.UserApi;
-import io.swagger.model.ChangePasswordRequest;
 import io.swagger.model.CreateUserRequest;
-import io.swagger.model.Group;
-import io.swagger.model.IdentityProvider;
-import io.swagger.model.IdentityProviderType;
 import io.swagger.model.PasswordCredential;
 import io.swagger.model.UpdateUserRequest;
 import io.swagger.model.User;
-import io.swagger.model.UserCredentials;
 import io.swagger.model.UserGetSingleton;
 import io.swagger.model.UserNextLogin;
 import io.swagger.model.UserProfile;
 import io.swagger.model.UserStatus;
+import io.swagger.model.UserType;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -46,80 +38,8 @@ import javax.ws.rs.core.Response;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class UserApiImpl extends AbstractApiImpl implements UserApi {
-
-    private static final Logger LOG = LoggerFactory.getLogger(UserApiImpl.class);
-
-    @Override
-    public Response activateUser(final String userId, final Boolean sendEmail) {
-        Optional<User> found = USER_REPOSITORY.stream()
-                .filter(user -> StringUtils.equals(userId, user.getId()))
-                .findFirst();
-        if (found.isPresent() && found.get().getStatus() != UserStatus.ACTIVE) {
-            found.get().setStatus(UserStatus.ACTIVE);
-            found.get().setActivated(new Date());
-            found.get().setLastUpdated(new Date());
-            found.get().setStatusChanged(new Date());
-            createLogEvent("user.lifecycle.activate", userId);
-            return Response.ok().entity(found.get()).build();
-        }
-
-        return Response.status(Response.Status.NOT_FOUND).build();
-    }
-
-    @Override
-    public Response changePassword(
-            final ChangePasswordRequest changePasswordRequest,
-            final String userId,
-            final Boolean strict) {
-
-        Optional<User> found = USER_REPOSITORY.stream()
-                .filter(user -> StringUtils.equals(userId, user.getId()))
-                .findFirst();
-        if (found.isPresent() && (found.get().getStatus().equals(UserStatus.ACTIVE)
-                || found.get().getStatus().equals(UserStatus.PASSWORD_EXPIRED)
-                || found.get().getStatus().equals(UserStatus.STAGED)
-                || found.get().getStatus().equals(UserStatus.RECOVERY))) {
-            if (USER_PASSWORD_REPOSITORY.get(userId).isEmpty()
-                    || changePasswordRequest.getOldPassword().getValue().
-                            equals(USER_PASSWORD_REPOSITORY.get(userId).get(
-                                    USER_PASSWORD_REPOSITORY.get(userId).size() - 1))) {
-                if (!USER_PASSWORD_REPOSITORY.get(userId).
-                        contains(changePasswordRequest.getNewPassword().getValue())) {
-                    USER_PASSWORD_REPOSITORY.get(userId).add(changePasswordRequest.getNewPassword().getValue());
-                    found.get().setLastUpdated(new Date());
-                    found.get().setPasswordChanged(new Date());
-                    createLogEvent("user.account.update_password", userId);
-                    return Response.ok().entity(found.get().getCredentials()).build();
-                }
-
-                return Response.status(Response.Status.FORBIDDEN).
-                        header("Okta-Request-Id", "E0000014").
-                        entity(buildErrorResponse("000123",
-                                "Password requirements were not met. "
-                                + "Password requirements: at least 8 characters, a lowercase letter, "
-                                + "an uppercase letter, a number, "
-                                + "no parts of your username. "
-                                + "Your password cannot be any of your last 4 passwords.")).build();
-            }
-
-            return Response.status(Response.Status.FORBIDDEN).
-                    header("Okta-Request-Id", "E0000014").
-                    entity(buildErrorResponse("000123", "Old Password is not correct")).build();
-        }
-
-        return Response.status(Response.Status.NOT_FOUND).
-                header("Okta-Request-Id", "E0000014").
-                entity(buildErrorResponse("000123", "User not found or status not valid")).build();
-    }
-
-    @Override
-    public Response changeRecoveryQuestion(final UserCredentials body, final String userId) {
-        return Response.ok().entity("magic!").build();
-    }
 
     @Override
     public Response createUser(
@@ -131,7 +51,9 @@ public class UserApiImpl extends AbstractApiImpl implements UserApi {
         User user = new User();
         user.setCredentials(req.getCredentials());
         user.setProfile(Optional.ofNullable(req.getProfile()).orElseGet(() -> new UserProfile()));
-        user.setType(req.getType());
+        if (req.getType() != null) {
+            user.setType(new UserType().id(req.getType().getId()));
+        }
 
         if (Boolean.TRUE.equals(activate)) {
             user.setStatus(UserStatus.ACTIVE);
@@ -173,7 +95,7 @@ public class UserApiImpl extends AbstractApiImpl implements UserApi {
     }
 
     @Override
-    public Response deleteUser(final String userId, final Boolean sendEmail) {
+    public Response deleteUser(final String userId, final Boolean sendEmail, final String prefer) {
         Optional<User> found = USER_REPOSITORY.stream()
                 .filter(user -> StringUtils.equals(userId, user.getId()))
                 .findFirst();
@@ -194,47 +116,7 @@ public class UserApiImpl extends AbstractApiImpl implements UserApi {
     }
 
     @Override
-    public Response deactivateUser(final String userId, final Boolean sendEmail) {
-        return USER_REPOSITORY.stream()
-                .filter(user -> StringUtils.equals(userId, user.getId())
-                && user.getStatus() != UserStatus.DEPROVISIONED).
-                map(user -> {
-                    user.setStatus(UserStatus.DEPROVISIONED);
-                    user.setLastUpdated(new Date());
-                    user.setStatusChanged(new Date());
-                    createLogEvent("user.lifecycle.deactivate", userId);
-                    return Response.ok().entity(user).build();
-                }).findFirst().
-                orElse(Response.status(Response.Status.NOT_FOUND).build());
-    }
-
-    @Override
-    public Response expirePassword(final String userId) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response expirePasswordAndGetTemporaryPassword(final String userId, final Boolean revokeSessions) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response getRefreshTokenForUserAndClient(
-            final String userId,
-            final String clientId,
-            final String tokenId,
-            final String expand,
-            final Integer limit,
-            final String after) {
-
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response getUser(
-            final String userId,
-            final String expand) {
-
+    public Response getUser(final String userId, final String contentType, final String expand) {
         return USER_REPOSITORY.stream()
                 .filter(user -> StringUtils.equals(userId, user.getId())
                 || StringUtils.equals(userId, user.getProfile().getLogin()))
@@ -258,81 +140,6 @@ public class UserApiImpl extends AbstractApiImpl implements UserApi {
                 .orElseGet(() -> Response.status(Response.Status.NOT_FOUND).build());
     }
 
-    @Override
-    public Response getUserGrant(final String userId, final String grantId, final String expand) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response listAppLinks(final String userId) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response listGrantsForUserAndClient(
-            final String userId,
-            final String clientId,
-            final String expand,
-            final String after,
-            final Integer limit) {
-
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response listRefreshTokensForUserAndClient(
-            final String userId,
-            final String clientId,
-            final String expand,
-            final String after,
-            final Integer limit) {
-
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response listUserClients(final String userId) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response listUserGrants(
-            final String userId,
-            final String scopeId,
-            final String expand,
-            final String after,
-            final Integer limit) {
-
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response listUserGroups(final String userId, final String after, final Integer limit) {
-        List<Pair<String, String>> foundUserGroups = GROUP_USER_REPOSITORY.stream().
-                filter(pair -> StringUtils.equals(userId, pair.getRight())).
-                collect(Collectors.toList());
-        List<Group> groups = new ArrayList<>();
-        foundUserGroups.forEach(pair -> groups.addAll(GROUP_REPOSITORY.stream().
-                filter(group -> StringUtils.equals(group.getId(), pair.getLeft())).
-                collect(Collectors.toList())));
-        return Response.ok().entity(groups).build();
-    }
-
-    @Override
-    public Response listUserIdentityProviders(final String userId) {
-        Set<String> userIdps = USER_IDP_REPOSITORY.get(userId);
-        if (userIdps != null) {
-            return Response.ok(
-                    userIdps.isEmpty()
-                    ? Collections.emptyList()
-                    : userIdps.stream().map(item -> new IdentityProvider().
-                    id("6e77c44bf27d4750a10f1489ce4100df").
-                    type(IdentityProviderType.SAML2).
-                    name("CAS 5 IDP")).collect(Collectors.toList())).build();
-        }
-        return Response.status(Response.Status.NOT_FOUND).build();
-    }
-
     private String nextPage(final long limit, final int after, final List<User> repository) {
         if (limit + after < repository.size()) {
             return "<" + uriInfo.getBaseUri().toString() + "api/v1/users?after="
@@ -351,6 +158,7 @@ public class UserApiImpl extends AbstractApiImpl implements UserApi {
 
     @Override
     public Response listUsers(
+            final String contentType,
             final String q,
             final String after,
             final Integer limit,
@@ -405,84 +213,6 @@ public class UserApiImpl extends AbstractApiImpl implements UserApi {
     }
 
     @Override
-    public Response reactivateUser(final String userId, final Boolean sendEmail) {
-        return USER_REPOSITORY.stream().
-                filter(user -> StringUtils.equals(userId, user.getId())).
-                findFirst().
-                map(user -> {
-                    if (user.getStatus() == UserStatus.PROVISIONED) {
-                        user.setStatus(UserStatus.RECOVERY);
-                        user.setStatusChanged(new Date());
-                        createLogEvent("user.lifecycle.reactivate", userId);
-                        return Response.ok().entity("{}").build();
-                    } else {
-                        return Response.status(Response.Status.FORBIDDEN).build();
-                    }
-                }).
-                orElseGet(() -> Response.status(Response.Status.NOT_FOUND).build());
-    }
-
-    @Override
-    public Response revokeGrantsForUserAndClient(final String userId, final String clientId) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response revokeTokenForUserAndClient(final String userId, final String clientId, final String tokenId) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response revokeTokensForUserAndClient(final String userId, final String clientId) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response revokeUserGrant(final String userId, final String grantId) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response revokeUserGrants(final String userId) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response suspendUser(final String userId) {
-        Optional<User> found = USER_REPOSITORY.stream()
-                .filter(user -> StringUtils.equals(userId, user.getId()))
-                .findFirst();
-        if (found.isPresent() && found.get().getStatus() == UserStatus.ACTIVE) {
-            found.get().setStatus(UserStatus.SUSPENDED);
-            found.get().setStatusChanged(new Date());
-            createLogEvent("user.lifecycle.suspend", userId);
-            return Response.ok().entity(found.get()).build();
-        }
-
-        return Response.status(Response.Status.NOT_FOUND).build();
-    }
-
-    @Override
-    public Response unlockUser(final String userId) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response unsuspendUser(final String userId) {
-        Optional<User> found = USER_REPOSITORY.stream()
-                .filter(user -> StringUtils.equals(userId, user.getId()))
-                .findFirst();
-        if (found.isPresent() && found.get().getStatus() == UserStatus.SUSPENDED) {
-            found.get().setStatus(UserStatus.ACTIVE);
-            found.get().setStatusChanged(new Date());
-            createLogEvent("user.lifecycle.unsuspend", userId);
-            return Response.ok().entity(found.get()).build();
-        } else {
-            return Response.status(Response.Status.NOT_FOUND).build();
-        }
-    }
-
-    @Override
     public Response updateUser(final UpdateUserRequest req, final String userId, final Boolean strict) {
         Optional<User> found = USER_REPOSITORY.stream()
                 .filter(u -> StringUtils.equals(userId, u.getId()))
@@ -516,18 +246,8 @@ public class UserApiImpl extends AbstractApiImpl implements UserApi {
     }
 
     @Override
-    public Response replaceUser(final User body, final String userId, final Boolean strict) {
+    public Response replaceUser(final UpdateUserRequest body, final String id, final Boolean strict) {
         return Response.ok().entity("magic!").build();
-    }
-
-    private Map<String, Object> buildErrorResponse(final String errorId, final String message) {
-        Map<String, Object> error = new LinkedHashMap<>();
-        error.put("errorCode", "E0000014");
-        error.put("errorSummary", "Update of credentials failed");
-        error.put("errorLink", "E0000014");
-        error.put("errorId", errorId);
-        error.put("errorCauses", Collections.singletonList(Collections.singletonMap("errorSummary", message)));
-        return error;
     }
 
     public List<User> searchUsers(final List<User> users, final String filter) {
@@ -545,57 +265,7 @@ public class UserApiImpl extends AbstractApiImpl implements UserApi {
     }
 
     @Override
-    public Response deleteLinkedObjectForUser(final String userId, final String relationshipName) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response forgotPassword(final String userId, final Boolean sendEmail) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response forgotPasswordSetNewPassword(
-            final UserCredentials body, final String userId, final Boolean sendEmail) {
-
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response listLinkedObjectsForUser(
-            final String userId, final String relationshipName, final String after, final Integer limit) {
-
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response revokeUserSessions(final String userId, final Boolean oauthTokens) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response generateResetPasswordToken(
-            final String userId, final Boolean sendEmail, final Boolean revokeSessions) {
-
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
     public Response listUserBlocks(final String userId) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response replaceLinkedObjectForUser(
-            final String userIdOrLogin,
-            final String primaryRelationshipName,
-            final String primaryUserId) {
-
-        return Response.ok().entity("magic!").build();
-    }
-
-    @Override
-    public Response resetFactors(final String userId, final Boolean removeRecoveryEnrollment) {
         return Response.ok().entity("magic!").build();
     }
 }

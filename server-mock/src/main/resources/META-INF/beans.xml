@@ -46,6 +46,9 @@
       <bean class="net.tirasa.connid.bundles.okta.servermock.impl.SchemaApiImpl"/>
       <bean class="net.tirasa.connid.bundles.okta.servermock.impl.SystemLogApiImpl"/>
       <bean class="net.tirasa.connid.bundles.okta.servermock.impl.UserApiImpl"/>
+      <bean class="net.tirasa.connid.bundles.okta.servermock.impl.UserCredApiImpl"/>
+      <bean class="net.tirasa.connid.bundles.okta.servermock.impl.UserLifecycleApiImpl"/>
+      <bean class="net.tirasa.connid.bundles.okta.servermock.impl.UserResourcesApiImpl"/>
     </jaxrs:serviceBeans>
     <jaxrs:providers>
       <ref bean="jsonProvider"/>

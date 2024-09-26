@@ -105,6 +105,7 @@ public class ApplicationApiImpl extends AbstractApiImpl implements ApplicationAp
     public Response listApplications(
             final String q,
             final String after,
+            final Boolean useOptimization,
             final Integer limit,
             final String filter,
             final String expand,
