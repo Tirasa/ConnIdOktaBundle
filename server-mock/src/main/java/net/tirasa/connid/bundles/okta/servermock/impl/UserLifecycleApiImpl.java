@@ -19,7 +19,6 @@ import io.swagger.api.UserLifecycleApi;
 import io.swagger.model.User;
 import io.swagger.model.UserStatus;
 import java.util.Date;
-import java.util.Optional;
 import javax.ws.rs.core.Response;
 import org.apache.commons.lang3.StringUtils;
 
@@ -27,16 +26,17 @@ public class UserLifecycleApiImpl extends AbstractApiImpl implements UserLifecyc
 
     @Override
     public Response activateUser(final String userId, final Boolean sendEmail) {
-        Optional<User> found = USER_REPOSITORY.stream()
+        User found = USER_REPOSITORY.stream()
                 .filter(user -> StringUtils.equals(userId, user.getId()))
-                .findFirst();
-        if (found.isPresent() && found.get().getStatus() != UserStatus.ACTIVE) {
-            found.get().setStatus(UserStatus.ACTIVE);
-            found.get().setActivated(new Date());
-            found.get().setLastUpdated(new Date());
-            found.get().setStatusChanged(new Date());
+                .findFirst()
+                .orElse(null);
+        if (found != null && found.getStatus() != UserStatus.ACTIVE) {
+            found.setStatus(UserStatus.ACTIVE);
+            found.setActivated(new Date());
+            found.setLastUpdated(new Date());
+            found.setStatusChanged(new Date());
             createLogEvent("user.lifecycle.activate", userId);
-            return Response.ok().entity(found.get()).build();
+            return Response.ok().entity(found).build();
         }
 
         return Response.status(Response.Status.NOT_FOUND).build();
@@ -82,14 +82,15 @@ public class UserLifecycleApiImpl extends AbstractApiImpl implements UserLifecyc
 
     @Override
     public Response suspendUser(final String userId) {
-        Optional<User> found = USER_REPOSITORY.stream()
+        User found = USER_REPOSITORY.stream()
                 .filter(user -> StringUtils.equals(userId, user.getId()))
-                .findFirst();
-        if (found.isPresent() && found.get().getStatus() == UserStatus.ACTIVE) {
-            found.get().setStatus(UserStatus.SUSPENDED);
-            found.get().setStatusChanged(new Date());
+                .findFirst()
+                .orElse(null);
+        if (found != null && found.getStatus() == UserStatus.ACTIVE) {
+            found.setStatus(UserStatus.SUSPENDED);
+            found.setStatusChanged(new Date());
             createLogEvent("user.lifecycle.suspend", userId);
-            return Response.ok().entity(found.get()).build();
+            return Response.ok().entity(found).build();
         }
 
         return Response.status(Response.Status.NOT_FOUND).build();
@@ -102,16 +103,17 @@ public class UserLifecycleApiImpl extends AbstractApiImpl implements UserLifecyc
 
     @Override
     public Response unsuspendUser(final String userId) {
-        Optional<User> found = USER_REPOSITORY.stream()
+        User found = USER_REPOSITORY.stream()
                 .filter(user -> StringUtils.equals(userId, user.getId()))
-                .findFirst();
-        if (found.isPresent() && found.get().getStatus() == UserStatus.SUSPENDED) {
-            found.get().setStatus(UserStatus.ACTIVE);
-            found.get().setStatusChanged(new Date());
+                .findFirst()
+                .orElse(null);
+        if (found != null && found.getStatus() == UserStatus.SUSPENDED) {
+            found.setStatus(UserStatus.ACTIVE);
+            found.setStatusChanged(new Date());
             createLogEvent("user.lifecycle.unsuspend", userId);
-            return Response.ok().entity(found.get()).build();
-        } else {
-            return Response.status(Response.Status.NOT_FOUND).build();
+            return Response.ok().entity(found).build();
         }
+
+        return Response.status(Response.Status.NOT_FOUND).build();
     }
 }

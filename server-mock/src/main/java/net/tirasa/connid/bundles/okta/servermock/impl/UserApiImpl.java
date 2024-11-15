@@ -96,23 +96,24 @@ public class UserApiImpl extends AbstractApiImpl implements UserApi {
 
     @Override
     public Response deleteUser(final String userId, final Boolean sendEmail, final String prefer) {
-        Optional<User> found = USER_REPOSITORY.stream()
+        User found = USER_REPOSITORY.stream()
                 .filter(user -> StringUtils.equals(userId, user.getId()))
-                .findFirst();
-        if (!found.isPresent()) {
+                .findFirst()
+                .orElse(null);
+        if (found == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
-        } else if (found.get().getStatus() == UserStatus.DEPROVISIONED) {
-            USER_REPOSITORY.remove(found.get());
+        } else if (found.getStatus() == UserStatus.DEPROVISIONED) {
+            USER_REPOSITORY.remove(found);
             USER_PASSWORD_REPOSITORY.remove(userId);
             createLogEvent("user.lifecycle.delete", userId);
             return Response.noContent().build();
         }
 
-        found.get().setStatus(UserStatus.DEPROVISIONED);
-        found.get().setLastUpdated(new Date());
-        found.get().setStatusChanged(new Date());
+        found.setStatus(UserStatus.DEPROVISIONED);
+        found.setLastUpdated(new Date());
+        found.setStatusChanged(new Date());
         createLogEvent("user.lifecycle.deactivate", userId);
-        return Response.ok().entity(found.get()).build();
+        return Response.ok().entity(found).build();
     }
 
     @Override
@@ -188,11 +189,12 @@ public class UserApiImpl extends AbstractApiImpl implements UserApi {
                 || user.getProfile().getEmail().contains(q));
 
         if (after != null) {
-            Optional<User> found = USER_REPOSITORY.stream().
+            User found = USER_REPOSITORY.stream().
                     filter(group -> StringUtils.equals(after, group.getId())).
-                    findFirst();
-            if (found.isPresent()) {
-                int lastIndexOf = USER_REPOSITORY.lastIndexOf(found.get());
+                    findFirst().
+                    orElse(null);
+            if (found != null) {
+                int lastIndexOf = USER_REPOSITORY.lastIndexOf(found);
                 return Response.ok().entity(USER_REPOSITORY.stream().
                         skip(lastIndexOf).
                         limit(limit == null ? DEFAULT_LIMIT : limit.longValue()).
@@ -214,11 +216,11 @@ public class UserApiImpl extends AbstractApiImpl implements UserApi {
 
     @Override
     public Response updateUser(final UpdateUserRequest req, final String userId, final Boolean strict) {
-        Optional<User> found = USER_REPOSITORY.stream()
+        User user = USER_REPOSITORY.stream()
                 .filter(u -> StringUtils.equals(userId, u.getId()))
-                .findFirst();
-        if (found.isPresent()) {
-            User user = found.get();
+                .findFirst()
+                .orElse(null);
+        if (user != null) {
             user.setLastUpdated(new Date());
             Optional.ofNullable(req.getProfile()).ifPresent(user::setProfile);
 

@@ -22,7 +22,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import javax.ws.rs.core.Response;
@@ -79,14 +78,11 @@ public class ApplicationApiImpl extends AbstractApiImpl implements ApplicationAp
 
     @Override
     public Response getApplication(final String appId, final String expand) {
-        Optional<Application> found = APPLICATION_REPOSITORY.stream()
-                .filter(app -> StringUtils.equals(appId, app.getId()))
-                .findAny();
-        if (found.isPresent()) {
-            return Response.ok().entity(found.get()).build();
-        }
-
-        return Response.status(Response.Status.NOT_FOUND).build();
+        return APPLICATION_REPOSITORY.stream().
+                filter(app -> StringUtils.equals(appId, app.getId())).
+                findAny().
+                map(entity -> Response.ok().entity(entity).build()).
+                orElseGet(() -> Response.status(Response.Status.NOT_FOUND).build());
     }
 
     private String nextPage(final long limit, final int after, final List<Application> repository) {
@@ -118,11 +114,12 @@ public class ApplicationApiImpl extends AbstractApiImpl implements ApplicationAp
         }
 
         if (after != null) {
-            Optional<Application> found = APPLICATION_REPOSITORY.stream()
+            Application found = APPLICATION_REPOSITORY.stream()
                     .filter(group -> StringUtils.equals(after, group.getId()))
-                    .findAny();
-            if (found.isPresent()) {
-                int lastIndexOf = APPLICATION_REPOSITORY.lastIndexOf(found.get());
+                    .findAny()
+                    .orElse(null);
+            if (found != null) {
+                int lastIndexOf = APPLICATION_REPOSITORY.lastIndexOf(found);
                 return Response.ok().entity(APPLICATION_REPOSITORY.stream().
                         skip(lastIndexOf).
                         limit(limit).
@@ -142,13 +139,14 @@ public class ApplicationApiImpl extends AbstractApiImpl implements ApplicationAp
 
     @Override
     public Response replaceApplication(final Application body, final String appId) {
-        Optional<Application> found = APPLICATION_REPOSITORY.stream()
+        Application found = APPLICATION_REPOSITORY.stream()
                 .filter(app -> StringUtils.equals(appId, app.getId()))
-                .findAny();
-        if (found.isPresent()) {
-            body.setId(found.get().getId());
-            body.setCreated(found.get().getCreated());
-            APPLICATION_REPOSITORY.remove(found.get());
+                .findAny()
+                .orElse(null);
+        if (found != null) {
+            body.setId(found.getId());
+            body.setCreated(found.getCreated());
+            APPLICATION_REPOSITORY.remove(found);
             APPLICATION_REPOSITORY.add(body);
             body.setLastUpdated(Date.from(Instant.now()));
             createLogEvent("application.lifecycle.update", appId);

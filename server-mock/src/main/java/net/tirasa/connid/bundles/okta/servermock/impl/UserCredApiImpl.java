@@ -23,8 +23,8 @@ import io.swagger.model.UserStatus;
 import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import javax.ws.rs.core.Response;
 import org.apache.commons.lang3.StringUtils;
 
@@ -46,24 +46,24 @@ public class UserCredApiImpl extends AbstractApiImpl implements UserCredApi {
             final String userId,
             final Boolean strict) {
 
-        Optional<User> found = USER_REPOSITORY.stream()
+        User found = USER_REPOSITORY.stream()
                 .filter(user -> StringUtils.equals(userId, user.getId()))
-                .findFirst();
-        if (found.isPresent() && (found.get().getStatus().equals(UserStatus.ACTIVE)
-                || found.get().getStatus().equals(UserStatus.PASSWORD_EXPIRED)
-                || found.get().getStatus().equals(UserStatus.STAGED)
-                || found.get().getStatus().equals(UserStatus.RECOVERY))) {
-            if (USER_PASSWORD_REPOSITORY.get(userId).isEmpty()
-                    || changePasswordRequest.getOldPassword().getValue().
-                            equals(USER_PASSWORD_REPOSITORY.get(userId).get(
-                                    USER_PASSWORD_REPOSITORY.get(userId).size() - 1))) {
-                if (!USER_PASSWORD_REPOSITORY.get(userId).
-                        contains(changePasswordRequest.getNewPassword().getValue())) {
-                    USER_PASSWORD_REPOSITORY.get(userId).add(changePasswordRequest.getNewPassword().getValue());
-                    found.get().setLastUpdated(new Date());
-                    found.get().setPasswordChanged(new Date());
+                .findFirst()
+                .orElse(null);
+        if (found != null
+                && (found.getStatus().equals(UserStatus.ACTIVE)
+                || found.getStatus().equals(UserStatus.PASSWORD_EXPIRED)
+                || found.getStatus().equals(UserStatus.STAGED)
+                || found.getStatus().equals(UserStatus.RECOVERY))) {
+
+            List<String> pwds = USER_PASSWORD_REPOSITORY.get(userId);
+            if (pwds.isEmpty() || changePasswordRequest.getOldPassword().getValue().equals(pwds.get(pwds.size() - 1))) {
+                if (!pwds.contains(changePasswordRequest.getNewPassword().getValue())) {
+                    pwds.add(changePasswordRequest.getNewPassword().getValue());
+                    found.setLastUpdated(new Date());
+                    found.setPasswordChanged(new Date());
                     createLogEvent("user.account.update_password", userId);
-                    return Response.ok().entity(found.get().getCredentials()).build();
+                    return Response.ok().entity(found.getCredentials()).build();
                 }
 
                 return Response.status(Response.Status.FORBIDDEN).

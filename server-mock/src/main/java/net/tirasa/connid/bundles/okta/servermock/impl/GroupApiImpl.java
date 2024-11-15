@@ -26,7 +26,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import javax.ws.rs.core.Response;
@@ -72,20 +71,18 @@ public class GroupApiImpl extends AbstractApiImpl implements GroupApi {
 
     @Override
     public Response deleteGroup(final String groupId) {
-        return GROUP_REPOSITORY.removeIf(group -> StringUtils.equals(groupId, group.getId())) ? Response.
-                noContent().build() : Response.status(Response.Status.NOT_FOUND).build();
+        return GROUP_REPOSITORY.removeIf(group -> StringUtils.equals(groupId, group.getId()))
+                ? Response.noContent().build()
+                : Response.status(Response.Status.NOT_FOUND).build();
     }
 
     @Override
     public Response getGroup(final String groupId) {
-        Optional<Group> found = GROUP_REPOSITORY.stream()
-                .filter(group -> StringUtils.equals(groupId, group.getId()))
-                .findAny();
-        if (found.isPresent()) {
-            return Response.ok().entity(found.get()).build();
-        }
-
-        return Response.status(Response.Status.NOT_FOUND).build();
+        return GROUP_REPOSITORY.stream().
+                filter(group -> StringUtils.equals(groupId, group.getId())).
+                findAny().
+                map(entity -> Response.ok().entity(entity).build()).
+                orElseGet(() -> Response.status(Response.Status.NOT_FOUND).build());
     }
 
     @Override
@@ -136,11 +133,12 @@ public class GroupApiImpl extends AbstractApiImpl implements GroupApi {
         }
 
         if (after != null) {
-            Optional<Group> found = GROUP_REPOSITORY.stream()
+            Group found = GROUP_REPOSITORY.stream()
                     .filter(group -> StringUtils.equals(after, group.getId()))
-                    .findAny();
-            if (found.isPresent()) {
-                int lastIndexOf = GROUP_REPOSITORY.lastIndexOf(found.get());
+                    .findAny()
+                    .orElse(null);
+            if (found != null) {
+                int lastIndexOf = GROUP_REPOSITORY.lastIndexOf(found);
                 return Response.ok().entity(GROUP_REPOSITORY.stream().
                         skip(lastIndexOf).
                         limit(limit == null ? DEFAULT_LIMIT : limit.longValue()).
@@ -172,16 +170,15 @@ public class GroupApiImpl extends AbstractApiImpl implements GroupApi {
 
     @Override
     public Response replaceGroup(final GroupsGroupIdBody body, final String groupId) {
-        Optional<Group> found = GROUP_REPOSITORY.stream()
-                .filter(group -> StringUtils.equals(groupId, group.getId()))
-                .findAny();
-        if (found.isPresent()) {
-            found.get().setProfile(body.getProfile());
-            found.get().setLastUpdated(Date.from(Instant.now()));
-            return Response.ok().entity(found.get()).build();
-        }
+        return GROUP_REPOSITORY.stream().
+                filter(group -> StringUtils.equals(groupId, group.getId())).
+                findAny().
+                map(entity -> {
+                    entity.setProfile(body.getProfile());
+                    entity.setLastUpdated(Date.from(Instant.now()));
+                    return Response.ok().entity(entity).build();
+                }).orElseGet(() -> Response.status(Response.Status.NOT_FOUND).build());
 
-        return Response.status(Response.Status.NOT_FOUND).build();
     }
 
     private List<Group> searchGroup(final String filter) {
