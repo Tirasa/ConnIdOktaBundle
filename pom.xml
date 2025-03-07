@@ -76,7 +76,7 @@
   </mailingLists>
 
   <properties>
-    <connid.version>1.5.2.0</connid.version>
+    <connid.version>1.6.0.0</connid.version>
     <okta.version>21.0.0</okta.version>
 
     <swagger-codegen.plugin.version>3.0.68</swagger-codegen.plugin.version>
