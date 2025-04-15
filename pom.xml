@@ -63,7 +63,7 @@
   </ciManagement>
 
   <properties>
-    <connid.version>1.5.2.1</connid.version>
+    <connid.version>1.6.0.1</connid.version>
     <okta.version>22.0.0</okta.version>
 
     <swagger-codegen.plugin.version>3.0.68</swagger-codegen.plugin.version>
