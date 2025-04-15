@@ -15,12 +15,12 @@
  */
 package net.tirasa.connid.bundles.okta;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import com.okta.sdk.resource.api.ApplicationApi;
 import com.okta.sdk.resource.api.GroupApi;
@@ -63,9 +63,9 @@ import org.identityconnectors.framework.common.objects.Uid;
 import org.identityconnectors.framework.common.objects.filter.Filter;
 import org.identityconnectors.framework.common.objects.filter.FilterBuilder;
 import org.identityconnectors.test.common.ToListResultsHandler;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class OktaConnectorTests extends AbstractConnectorTests {
 
@@ -158,7 +158,7 @@ public class OktaConnectorTests extends AbstractConnectorTests {
         }
     };
 
-    @BeforeClass
+    @BeforeAll
     public static void setupData() {
         OperationOptions oo = new OperationOptionsBuilder().
                 setAttributesToGet(OktaAttribute.EMAIL, OktaAttribute.MOBILEPHONE).build();
@@ -219,7 +219,7 @@ public class OktaConnectorTests extends AbstractConnectorTests {
         }
     }
 
-    @AfterClass
+    @AfterAll
     public static void cleanTestData() {
         USERS.stream().forEach(item -> cleanUserTestData(CONN.getUserLifecycleApi(), CONN.getUserApi(), item));
         GROUPS.stream().forEach(item -> cleanGroupTestData(CONN.getGroupApi(), item));

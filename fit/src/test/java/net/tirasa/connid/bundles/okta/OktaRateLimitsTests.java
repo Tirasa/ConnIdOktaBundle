@@ -15,15 +15,15 @@
  */
 package net.tirasa.connid.bundles.okta;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.stream.IntStream;
 import org.identityconnectors.framework.common.objects.ObjectClass;
 import org.identityconnectors.framework.common.objects.OperationOptionsBuilder;
 import org.identityconnectors.framework.common.objects.SearchResult;
 import org.identityconnectors.test.common.ToListResultsHandler;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class OktaRateLimitsTests extends AbstractConnectorTests {
 

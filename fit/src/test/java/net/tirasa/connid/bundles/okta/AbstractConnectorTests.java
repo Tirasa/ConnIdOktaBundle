@@ -15,8 +15,8 @@
  */
 package net.tirasa.connid.bundles.okta;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import com.okta.sdk.resource.model.AddGroupRequest;
 import com.okta.sdk.resource.model.OktaUserGroupProfile;
@@ -29,7 +29,7 @@ import org.identityconnectors.framework.api.APIConfiguration;
 import org.identityconnectors.framework.api.ConnectorFacade;
 import org.identityconnectors.framework.api.ConnectorFacadeFactory;
 import org.identityconnectors.test.common.TestHelpers;
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.BeforeAll;
 
 public abstract class AbstractConnectorTests {
 
@@ -48,7 +48,7 @@ public abstract class AbstractConnectorTests {
         return factory.newInstance(impl);
     }
 
-    @BeforeClass
+    @BeforeAll
     public static void setUpConf() {
         Properties props = new Properties();
         try {
