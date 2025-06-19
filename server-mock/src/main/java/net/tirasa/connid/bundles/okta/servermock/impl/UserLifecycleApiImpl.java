@@ -21,7 +21,9 @@ import io.swagger.model.UserStatus;
 import java.util.Date;
 import javax.ws.rs.core.Response;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.stereotype.Service;
 
+@Service
 public class UserLifecycleApiImpl extends AbstractApiImpl implements UserLifecycleApi {
 
     @Override

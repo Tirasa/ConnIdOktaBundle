@@ -28,7 +28,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.ws.rs.core.Response;
+import org.springframework.stereotype.Service;
 
+@Service
 public class SystemLogApiImpl extends AbstractApiImpl implements SystemLogApi {
 
     @Override

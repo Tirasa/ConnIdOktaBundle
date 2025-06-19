@@ -22,18 +22,25 @@ import com.okta.sdk.resource.model.AddGroupRequest;
 import com.okta.sdk.resource.model.OktaUserGroupProfile;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Optional;
 import java.util.Properties;
+import net.tirasa.connid.bundles.okta.servermock.OktaServerMockApplication;
 import net.tirasa.connid.bundles.okta.servermock.impl.AbstractApiImpl;
 import org.identityconnectors.common.logging.Log;
 import org.identityconnectors.framework.api.APIConfiguration;
 import org.identityconnectors.framework.api.ConnectorFacade;
 import org.identityconnectors.framework.api.ConnectorFacadeFactory;
 import org.identityconnectors.test.common.TestHelpers;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.context.ConfigurableApplicationContext;
 
 public abstract class AbstractConnectorTests {
 
     private static final Log LOG = Log.getLog(AbstractConnectorTests.class);
+
+    private static ConfigurableApplicationContext CTX;
 
     protected static OktaConfiguration CONF;
 
@@ -46,6 +53,16 @@ public abstract class AbstractConnectorTests {
         APIConfiguration impl = TestHelpers.createTestConfiguration(OktaConnector.class, CONF);
         impl.getResultsHandlerConfiguration().setFilteredResultsHandlerInValidationMode(true);
         return factory.newInstance(impl);
+    }
+
+    @BeforeAll
+    public static void startServerMock() {
+        CTX = new SpringApplicationBuilder(OktaServerMockApplication.class).run();
+    }
+
+    @AfterAll
+    public static void stopServerMock() {
+        Optional.ofNullable(CTX).ifPresent(ConfigurableApplicationContext::close);
     }
 
     @BeforeAll

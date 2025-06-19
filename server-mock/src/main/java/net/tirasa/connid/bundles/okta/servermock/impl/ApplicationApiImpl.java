@@ -27,7 +27,9 @@ import java.util.stream.Collectors;
 import javax.ws.rs.core.Response;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.stereotype.Service;
 
+@Service
 public class ApplicationApiImpl extends AbstractApiImpl implements ApplicationApi {
 
     @Override

@@ -27,7 +27,9 @@ import java.util.List;
 import java.util.Map;
 import javax.ws.rs.core.Response;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.stereotype.Service;
 
+@Service
 public class UserCredApiImpl extends AbstractApiImpl implements UserCredApi {
 
     private Map<String, Object> buildErrorResponse(final String errorId, final String message) {

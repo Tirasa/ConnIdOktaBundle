@@ -37,7 +37,9 @@ import java.util.HashMap;
 import java.util.List;
 import javax.ws.rs.core.Response;
 import net.tirasa.connid.bundles.okta.servermock.OktaObjectMapper;
+import org.springframework.stereotype.Service;
 
+@Service
 public class SchemaApiImpl implements SchemaApi {
 
     @Override

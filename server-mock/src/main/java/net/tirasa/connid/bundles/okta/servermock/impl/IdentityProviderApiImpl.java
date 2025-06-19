@@ -19,7 +19,9 @@ import io.swagger.api.IdentityProviderApi;
 import io.swagger.model.IdentityProvider;
 import io.swagger.model.IdentityProviderType;
 import javax.ws.rs.core.Response;
+import org.springframework.stereotype.Service;
 
+@Service
 public class IdentityProviderApiImpl extends AbstractApiImpl implements IdentityProviderApi {
 
     @Override
