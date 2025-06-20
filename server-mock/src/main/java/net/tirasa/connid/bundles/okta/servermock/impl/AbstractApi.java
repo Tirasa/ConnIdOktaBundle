@@ -36,7 +36,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.UriInfo;
 import org.apache.commons.lang3.tuple.Pair;
 
-public abstract class AbstractApiImpl {
+public abstract class AbstractApi {
 
     @Context
     protected UriInfo uriInfo;
