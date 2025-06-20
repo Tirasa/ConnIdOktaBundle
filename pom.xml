@@ -66,7 +66,7 @@
     <connid.version>1.5.2.1</connid.version>
     <okta.version>23.0.1</okta.version>
 
-    <swagger-codegen.plugin.version>3.0.68</swagger-codegen.plugin.version>
+    <swagger-codegen.plugin.version>3.0.69</swagger-codegen.plugin.version>
     <javax.servlet.version>3.1.0</javax.servlet.version>
     <spring.version>5.3.39</spring.version>
     <jackson.version>2.17.3</jackson.version>
