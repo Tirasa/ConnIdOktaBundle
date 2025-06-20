@@ -26,7 +26,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Service;
 
 @Service
-public class UserResourcesApiImpl extends AbstractApiImpl implements UserResourcesApi {
+public class UserResourcesApiImpl extends AbstractApi implements UserResourcesApi {
 
     @Override
     public Response listAppLinks(final String userId) {

@@ -31,6 +31,3 @@ management.security.enabled: false
 
 cxf:
   path: /okta
-  jaxrs:
-    component-scan: true
-    classes-scan-packages: net.tirasa.connid.bundles.okta.servermock.impl

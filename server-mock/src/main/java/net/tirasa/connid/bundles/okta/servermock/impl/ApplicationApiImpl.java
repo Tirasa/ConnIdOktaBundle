@@ -30,7 +30,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 @Service
-public class ApplicationApiImpl extends AbstractApiImpl implements ApplicationApi {
+public class ApplicationApiImpl extends AbstractApi implements ApplicationApi {
 
     @Override
     public Response activateApplication(final String appId) {

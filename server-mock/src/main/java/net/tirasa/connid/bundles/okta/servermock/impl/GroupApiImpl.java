@@ -35,7 +35,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Service;
 
 @Service
-public class GroupApiImpl extends AbstractApiImpl implements GroupApi {
+public class GroupApiImpl extends AbstractApi implements GroupApi {
 
     @Override
     public Response assignUserToGroup(final String groupId, final String userId) {

@@ -22,7 +22,7 @@ import javax.ws.rs.core.Response;
 import org.springframework.stereotype.Service;
 
 @Service
-public class IdentityProviderApiImpl extends AbstractApiImpl implements IdentityProviderApi {
+public class IdentityProviderApiImpl extends AbstractApi implements IdentityProviderApi {
 
     @Override
     public Response activateIdentityProvider(final String idpId) {

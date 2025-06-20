@@ -24,7 +24,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 @Service
-public class UserLifecycleApiImpl extends AbstractApiImpl implements UserLifecycleApi {
+public class UserLifecycleApiImpl extends AbstractApi implements UserLifecycleApi {
 
     @Override
     public Response activateUser(final String userId, final Boolean sendEmail) {

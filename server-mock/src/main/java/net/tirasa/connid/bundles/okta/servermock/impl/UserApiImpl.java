@@ -41,7 +41,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Service;
 
 @Service
-public class UserApiImpl extends AbstractApiImpl implements UserApi {
+public class UserApiImpl extends AbstractApi implements UserApi {
 
     @Override
     public Response createUser(

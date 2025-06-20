@@ -25,7 +25,7 @@ import java.io.InputStream;
 import java.util.Optional;
 import java.util.Properties;
 import net.tirasa.connid.bundles.okta.servermock.OktaServerMockApplication;
-import net.tirasa.connid.bundles.okta.servermock.impl.AbstractApiImpl;
+import net.tirasa.connid.bundles.okta.servermock.impl.AbstractApi;
 import org.identityconnectors.common.logging.Log;
 import org.identityconnectors.framework.api.APIConfiguration;
 import org.identityconnectors.framework.api.ConnectorFacade;
@@ -104,7 +104,7 @@ public abstract class AbstractConnectorTests {
         assertNotNull(CONF.getOktaApiToken());
 
         OktaUserGroupProfile profile = new OktaUserGroupProfile();
-        profile.setName(AbstractApiImpl.EVERYONE);
+        profile.setName(AbstractApi.EVERYONE);
         CONN.getGroupApi().addGroup(new AddGroupRequest().profile(profile));
     }
 }

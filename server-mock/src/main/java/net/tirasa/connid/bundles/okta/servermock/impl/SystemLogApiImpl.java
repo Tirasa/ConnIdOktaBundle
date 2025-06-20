@@ -31,7 +31,7 @@ import javax.ws.rs.core.Response;
 import org.springframework.stereotype.Service;
 
 @Service
-public class SystemLogApiImpl extends AbstractApiImpl implements SystemLogApi {
+public class SystemLogApiImpl extends AbstractApi implements SystemLogApi {
 
     @Override
     public Response listLogEvents(

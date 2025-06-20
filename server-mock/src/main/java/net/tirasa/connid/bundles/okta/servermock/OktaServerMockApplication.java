@@ -16,6 +16,14 @@
 package net.tirasa.connid.bundles.okta.servermock;
 
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
+import java.util.List;
+import java.util.stream.Collectors;
+import net.tirasa.connid.bundles.okta.servermock.impl.AbstractApi;
+import org.apache.cxf.Bus;
+import org.apache.cxf.endpoint.Server;
+import org.apache.cxf.ext.logging.LoggingFeature;
+import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -27,14 +35,20 @@ public class OktaServerMockApplication {
         SpringApplication.run(OktaServerMockApplication.class, args);
     }
 
-    @Bean
-    public JacksonJsonProvider jsonProvider() {
-        return new JacksonJsonProvider(new OktaObjectMapper());
-    }
+    @Autowired
+    private Bus bus;
 
     @Bean
-    public DateParamConverterProvider dateParamConverterProvider() {
-        return new DateParamConverterProvider();
+    public Server restContainer(final List<AbstractApi> services) {
+        JAXRSServerFactoryBean restContainer = new JAXRSServerFactoryBean();
+        restContainer.setBus(bus);
+        restContainer.setAddress("/");
+        restContainer.setServiceBeans(services.stream().map(Object.class::cast).collect(Collectors.toList()));
+        restContainer.setProviders(List.of(
+                new JacksonJsonProvider(new OktaObjectMapper()),
+                new DateParamConverterProvider()));
+        restContainer.setFeatures(List.of(new LoggingFeature()));
+        return restContainer.create();
     }
 
     @Bean

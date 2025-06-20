@@ -40,7 +40,7 @@ import net.tirasa.connid.bundles.okta.servermock.OktaObjectMapper;
 import org.springframework.stereotype.Service;
 
 @Service
-public class SchemaApiImpl implements SchemaApi {
+public class SchemaApiImpl extends AbstractApi implements SchemaApi {
 
     @Override
     public Response getApplicationUserSchema(final String appInstanceId) {

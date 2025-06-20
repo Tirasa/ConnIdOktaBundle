@@ -24,7 +24,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
-import net.tirasa.connid.bundles.okta.servermock.impl.AbstractApiImpl;
+import net.tirasa.connid.bundles.okta.servermock.impl.AbstractApi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -43,7 +43,7 @@ public class ContentBootstrap implements InitializingBean {
         LOG.info("Bootstrapping groups");
 
         OktaUserGroupProfile everyoneProfile = new OktaUserGroupProfile();
-        everyoneProfile.setName(AbstractApiImpl.EVERYONE);
+        everyoneProfile.setName(AbstractApi.EVERYONE);
 
         V1GroupsBody everyoneGroup = new V1GroupsBody();
         everyoneGroup.setProfile(everyoneProfile);
