@@ -36,4 +36,9 @@ public class OktaServerMockApplication {
     public DateParamConverterProvider dateParamConverterProvider() {
         return new DateParamConverterProvider();
     }
+
+    @Bean
+    public ContentBootstrap contentBootstrap() {
+        return new ContentBootstrap();
+    }
 }
