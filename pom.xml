@@ -70,16 +70,6 @@
     
     <cxf.version>3.6.6</cxf.version>
 
-    <log.directory>${project.build.directory}/log</log.directory>
-    
-    <cargo.servlet.port>8443</cargo.servlet.port>
-    <cargo.tomcat.ajp.port>9889</cargo.tomcat.ajp.port>
-    <cargo.rmi.port>9805</cargo.rmi.port>
-    <cargo.log>${log.directory}/cargo.log</cargo.log>
-    <cargo.output>${log.directory}/cargo-output.log</cargo.output>
-
-    <tomcat.version>9.0.105</tomcat.version>
-
     <targetJdk>11</targetJdk>
     <rootpom.basedir>${basedir}</rootpom.basedir>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -121,39 +111,6 @@
           </exclusion>
         </exclusions>
       </dependency>
-      <dependency>
-        <groupId>org.apache.httpcomponents.client5</groupId>
-        <artifactId>httpclient5</artifactId>
-        <version>5.3.1</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.httpcomponents.core5</groupId>
-        <artifactId>httpcore5</artifactId>
-        <version>5.2.4</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.httpcomponents.core5</groupId>
-        <artifactId>httpcore5-h2</artifactId>
-        <version>5.2.4</version>
-      </dependency>
-
-      <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-dependencies</artifactId>
-        <version>${spring-boot.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot</artifactId>
-        <version>${spring-boot.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-autoconfigure</artifactId>
-        <version>${spring-boot.version}</version>
-      </dependency>
 
       <dependency>
         <groupId>org.apache.cxf</groupId>
@@ -194,18 +151,6 @@
         <groupId>net.tirasa.connid</groupId>
         <artifactId>connector-test-common</artifactId>
         <version>${connid.version}</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.junit.jupiter</groupId>
-        <artifactId>junit-jupiter-params</artifactId>
-        <version>5.8.2</version>
-        <scope>test</scope>
-      </dependency>        
-      <dependency>
-        <groupId>org.junit.jupiter</groupId>
-        <artifactId>junit-jupiter-engine</artifactId>
-        <version>5.8.2</version>
         <scope>test</scope>
       </dependency>
     </dependencies>
@@ -266,23 +211,6 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
           <version>3.5.3</version>
-          <configuration>
-            <redirectTestOutputToFile>true</redirectTestOutputToFile>
-          </configuration>
-        </plugin>
-        
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-failsafe-plugin</artifactId>
-          <version>3.5.3</version>
-          <executions>
-            <execution>
-              <goals>
-                <goal>integration-test</goal>
-                <goal>verify</goal>
-              </goals>
-            </execution>
-          </executions>
         </plugin>
         
         <plugin>
@@ -390,6 +318,7 @@
             </goals>
             <configuration>
               <outputDirectory>${project.build.directory}/classes/META-INF</outputDirectory>
+              <propertiesEncoding>${project.build.sourceEncoding}</propertiesEncoding>
               <resources>
                 <resource>
                   <directory>${rootpom.basedir}</directory>
