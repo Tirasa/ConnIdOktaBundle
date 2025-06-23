@@ -13,6 +13,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+spring:
+  application:
+    instance_id: okta-server-mock
+    name: okta-server-mock
 
-domain=
-oktaApiToken=
+server:
+  ssl:
+    key-store: classpath:keystore
+    key-store-password: password
+    key-store-type: jks
+    key-alias: tomcat
+    key-password: password
+  port: 8443
+
+management.security.enabled: false
+
+cxf:
+  path: /okta

@@ -30,7 +30,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @Path("/oauth2/default/v1/keys")
-public class Keys {
+public class Keys extends AbstractApi {
 
     private static final AtomicReference<String> KEYS = new AtomicReference<>(
             "{\"keys\":["

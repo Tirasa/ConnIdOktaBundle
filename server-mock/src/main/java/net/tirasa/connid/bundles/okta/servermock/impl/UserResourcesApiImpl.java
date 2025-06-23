@@ -23,8 +23,10 @@ import java.util.stream.Collectors;
 import javax.ws.rs.core.Response;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.springframework.stereotype.Service;
 
-public class UserResourcesApiImpl extends AbstractApiImpl implements UserResourcesApi {
+@Service
+public class UserResourcesApiImpl extends AbstractApi implements UserResourcesApi {
 
     @Override
     public Response listAppLinks(final String userId) {

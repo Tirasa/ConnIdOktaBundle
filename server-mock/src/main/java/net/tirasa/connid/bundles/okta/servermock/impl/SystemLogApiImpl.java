@@ -28,8 +28,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.ws.rs.core.Response;
+import org.springframework.stereotype.Service;
 
-public class SystemLogApiImpl extends AbstractApiImpl implements SystemLogApi {
+@Service
+public class SystemLogApiImpl extends AbstractApi implements SystemLogApi {
 
     @Override
     public Response listLogEvents(

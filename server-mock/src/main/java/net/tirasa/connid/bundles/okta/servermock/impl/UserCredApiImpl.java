@@ -27,8 +27,10 @@ import java.util.List;
 import java.util.Map;
 import javax.ws.rs.core.Response;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.stereotype.Service;
 
-public class UserCredApiImpl extends AbstractApiImpl implements UserCredApi {
+@Service
+public class UserCredApiImpl extends AbstractApi implements UserCredApi {
 
     private Map<String, Object> buildErrorResponse(final String errorId, final String message) {
         Map<String, Object> error = new LinkedHashMap<>();

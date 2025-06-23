@@ -38,8 +38,10 @@ import javax.ws.rs.core.Response;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.springframework.stereotype.Service;
 
-public class UserApiImpl extends AbstractApiImpl implements UserApi {
+@Service
+public class UserApiImpl extends AbstractApi implements UserApi {
 
     @Override
     public Response createUser(

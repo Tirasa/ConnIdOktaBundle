@@ -19,8 +19,10 @@ import io.swagger.api.IdentityProviderApi;
 import io.swagger.model.IdentityProvider;
 import io.swagger.model.IdentityProviderType;
 import javax.ws.rs.core.Response;
+import org.springframework.stereotype.Service;
 
-public class IdentityProviderApiImpl extends AbstractApiImpl implements IdentityProviderApi {
+@Service
+public class IdentityProviderApiImpl extends AbstractApi implements IdentityProviderApi {
 
     @Override
     public Response activateIdentityProvider(final String idpId) {

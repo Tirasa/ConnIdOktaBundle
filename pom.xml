@@ -66,23 +66,9 @@
     <connid.version>1.5.2.1</connid.version>
     <okta.version>23.0.1</okta.version>
 
-    <swagger-codegen.plugin.version>3.0.69</swagger-codegen.plugin.version>
-    <javax.servlet.version>3.1.0</javax.servlet.version>
-    <spring.version>5.3.39</spring.version>
-    <jackson.version>2.17.3</jackson.version>
-    <javax.validation.version>2.0.1.Final</javax.validation.version>
-    <apache.cxf.version>3.6.6</apache.cxf.version>
-    <swagger-annotations.version>2.2.34</swagger-annotations.version>
-
-    <log.directory>${project.build.directory}/log</log.directory>
+    <spring-boot.version>2.7.18</spring-boot.version>
     
-    <cargo.servlet.port>8443</cargo.servlet.port>
-    <cargo.tomcat.ajp.port>9889</cargo.tomcat.ajp.port>
-    <cargo.rmi.port>9805</cargo.rmi.port>
-    <cargo.log>${log.directory}/cargo.log</cargo.log>
-    <cargo.output>${log.directory}/cargo-output.log</cargo.output>
-
-    <tomcat.version>9.0.105</tomcat.version>
+    <cxf.version>3.6.6</cxf.version>
 
     <targetJdk>11</targetJdk>
     <rootpom.basedir>${basedir}</rootpom.basedir>
@@ -126,56 +112,26 @@
         </exclusions>
       </dependency>
 
-      <dependency> 
-        <groupId>javax.servlet</groupId> 
-        <artifactId>javax.servlet-api</artifactId>
-        <version>${javax.servlet.version}</version>
-        <scope>provided</scope>
-      </dependency>
-    
-      <dependency>
-        <groupId>org.springframework</groupId>
-        <artifactId>spring-web</artifactId>
-        <version>${spring.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.springframework</groupId>
-        <artifactId>spring-context</artifactId>
-        <version>${spring.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>com.fasterxml.jackson.core</groupId>
-        <artifactId>jackson-databind</artifactId>
-        <version>${jackson.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.fasterxml.jackson.jaxrs</groupId>
-        <artifactId>jackson-jaxrs-json-provider</artifactId>
-        <version>${jackson.version}</version>
-      </dependency>
-    
-      <dependency>
-        <groupId>javax.validation</groupId>
-        <artifactId>validation-api</artifactId>
-        <version>${javax.validation.version}</version>
-      </dependency>
-    
       <dependency>
         <groupId>org.apache.cxf</groupId>
-        <artifactId>cxf-rt-frontend-jaxrs</artifactId>
-        <version>${apache.cxf.version}</version>
+        <artifactId>cxf-spring-boot-starter-jaxrs</artifactId>
+        <version>${cxf.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.cxf</groupId>
         <artifactId>cxf-rt-rs-service-description</artifactId>
-        <version>${apache.cxf.version}</version>
+        <version>${cxf.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.cxf</groupId>
+        <artifactId>cxf-rt-features-logging</artifactId>
+        <version>${cxf.version}</version>
       </dependency>
 
       <dependency>
         <groupId>io.swagger.core.v3</groupId>
         <artifactId>swagger-annotations</artifactId>
-        <version>${swagger-annotations.version}</version>
+        <version>2.2.34</version>
       </dependency>
     
       <dependency>
@@ -188,7 +144,7 @@
         <groupId>commons-beanutils</groupId>
         <artifactId>commons-beanutils</artifactId>
         <version>1.11.0</version>
-      </dependency>  
+      </dependency>
 
       <!-- TEST -->        
       <dependency>
@@ -219,7 +175,7 @@
         <plugin>
           <groupId>io.swagger.codegen.v3</groupId>
           <artifactId>swagger-codegen-maven-plugin</artifactId>
-          <version>${swagger-codegen.plugin.version}</version>
+          <version>3.0.69</version>
         </plugin>
 
         <plugin>
@@ -246,51 +202,15 @@
         </plugin>
 
         <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-war-plugin</artifactId>
-          <version>3.4.0</version>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-maven-plugin</artifactId>
+          <version>${spring-boot.version}</version>
         </plugin>
         
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
           <version>3.5.3</version>
-          <configuration>
-            <redirectTestOutputToFile>true</redirectTestOutputToFile>
-          </configuration>
-        </plugin>
-        
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-failsafe-plugin</artifactId>
-          <version>3.5.3</version>
-          <executions>
-            <execution>
-              <goals>
-                <goal>integration-test</goal>
-                <goal>verify</goal>
-              </goals>
-            </execution>
-          </executions>
-        </plugin>
-
-        <plugin>
-          <groupId>org.codehaus.cargo</groupId>
-          <artifactId>cargo-maven3-plugin</artifactId>
-          <version>1.10.20</version>
-          <configuration>
-            <container>
-              <containerId>tomcat9x</containerId>
-              <zipUrlInstaller>
-                <url>https://repo1.maven.org/maven2/org/apache/tomcat/tomcat/${tomcat.version}/tomcat-${tomcat.version}.zip</url>
-                <downloadDir>${settings.localRepository}/org/codehaus/cargo/cargo-container-archives</downloadDir>
-                <extractDir>${project.build.directory}/cargo/extract</extractDir>
-              </zipUrlInstaller>
-              <timeout>300000</timeout>
-              <log>${cargo.log}</log>
-              <output>${cargo.output}</output>    
-            </container>
-          </configuration>
         </plugin>
         
         <plugin>
@@ -398,6 +318,7 @@
             </goals>
             <configuration>
               <outputDirectory>${project.build.directory}/classes/META-INF</outputDirectory>
+              <propertiesEncoding>${project.build.sourceEncoding}</propertiesEncoding>
               <resources>
                 <resource>
                   <directory>${rootpom.basedir}</directory>

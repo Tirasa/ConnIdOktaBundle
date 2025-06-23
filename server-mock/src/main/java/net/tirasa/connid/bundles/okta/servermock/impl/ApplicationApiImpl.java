@@ -27,8 +27,10 @@ import java.util.stream.Collectors;
 import javax.ws.rs.core.Response;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.stereotype.Service;
 
-public class ApplicationApiImpl extends AbstractApiImpl implements ApplicationApi {
+@Service
+public class ApplicationApiImpl extends AbstractApi implements ApplicationApi {
 
     @Override
     public Response activateApplication(final String appId) {
