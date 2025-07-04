@@ -68,7 +68,7 @@
 
     <spring-boot.version>2.7.18</spring-boot.version>
     
-    <cxf.version>3.6.6</cxf.version>
+    <cxf.version>4.1.2</cxf.version>
 
     <targetJdk>11</targetJdk>
     <rootpom.basedir>${basedir}</rootpom.basedir>
