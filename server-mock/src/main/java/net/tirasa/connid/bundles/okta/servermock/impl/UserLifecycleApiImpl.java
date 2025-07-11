@@ -20,7 +20,7 @@ import io.swagger.model.User;
 import io.swagger.model.UserStatus;
 import java.util.Date;
 import javax.ws.rs.core.Response;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -29,7 +29,7 @@ public class UserLifecycleApiImpl extends AbstractApi implements UserLifecycleAp
     @Override
     public Response activateUser(final String userId, final Boolean sendEmail) {
         User found = USER_REPOSITORY.stream()
-                .filter(user -> StringUtils.equals(userId, user.getId()))
+                .filter(user -> Strings.CS.equals(userId, user.getId()))
                 .findFirst()
                 .orElse(null);
         if (found != null && found.getStatus() != UserStatus.ACTIVE) {
@@ -47,7 +47,7 @@ public class UserLifecycleApiImpl extends AbstractApi implements UserLifecycleAp
     @Override
     public Response deactivateUser(final String userId, final Boolean sendEmail, final String prefer) {
         return USER_REPOSITORY.stream()
-                .filter(user -> StringUtils.equals(userId, user.getId())
+                .filter(user -> Strings.CS.equals(userId, user.getId())
                 && user.getStatus() != UserStatus.DEPROVISIONED).
                 map(user -> {
                     user.setStatus(UserStatus.DEPROVISIONED);
@@ -62,7 +62,7 @@ public class UserLifecycleApiImpl extends AbstractApi implements UserLifecycleAp
     @Override
     public Response reactivateUser(final String userId, final Boolean sendEmail) {
         return USER_REPOSITORY.stream().
-                filter(user -> StringUtils.equals(userId, user.getId())).
+                filter(user -> Strings.CS.equals(userId, user.getId())).
                 findFirst().
                 map(user -> {
                     if (user.getStatus() == UserStatus.PROVISIONED) {
@@ -85,7 +85,7 @@ public class UserLifecycleApiImpl extends AbstractApi implements UserLifecycleAp
     @Override
     public Response suspendUser(final String userId) {
         User found = USER_REPOSITORY.stream()
-                .filter(user -> StringUtils.equals(userId, user.getId()))
+                .filter(user -> Strings.CS.equals(userId, user.getId()))
                 .findFirst()
                 .orElse(null);
         if (found != null && found.getStatus() == UserStatus.ACTIVE) {
@@ -106,7 +106,7 @@ public class UserLifecycleApiImpl extends AbstractApi implements UserLifecycleAp
     @Override
     public Response unsuspendUser(final String userId) {
         User found = USER_REPOSITORY.stream()
-                .filter(user -> StringUtils.equals(userId, user.getId()))
+                .filter(user -> Strings.CS.equals(userId, user.getId()))
                 .findFirst()
                 .orElse(null);
         if (found != null && found.getStatus() == UserStatus.SUSPENDED) {

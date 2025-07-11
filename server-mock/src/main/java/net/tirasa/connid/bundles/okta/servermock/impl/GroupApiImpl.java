@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 import javax.ws.rs.core.Response;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Service;
 
@@ -43,8 +44,8 @@ public class GroupApiImpl extends AbstractApi implements GroupApi {
             // Okta Groups API returns 501 error when adding a user to default Everyone group
             return Response.status(Response.Status.NOT_IMPLEMENTED).build();
         }
-        if (GROUP_REPOSITORY.stream().anyMatch(group -> StringUtils.equals(groupId, group.getId()))
-                && USER_REPOSITORY.stream().anyMatch(user -> StringUtils.equals(userId, user.getId()))) {
+        if (GROUP_REPOSITORY.stream().anyMatch(group -> Strings.CS.equals(groupId, group.getId()))
+                && USER_REPOSITORY.stream().anyMatch(user -> Strings.CS.equals(userId, user.getId()))) {
             GROUP_USER_REPOSITORY.add(Pair.of(groupId, userId));
             createLogEvent("group.user_membership.add", userId);
             return Response.ok().build();
@@ -73,7 +74,7 @@ public class GroupApiImpl extends AbstractApi implements GroupApi {
 
     @Override
     public Response deleteGroup(final String groupId) {
-        return GROUP_REPOSITORY.removeIf(group -> StringUtils.equals(groupId, group.getId()))
+        return GROUP_REPOSITORY.removeIf(group -> Strings.CS.equals(groupId, group.getId()))
                 ? Response.noContent().build()
                 : Response.status(Response.Status.NOT_FOUND).build();
     }
@@ -81,7 +82,7 @@ public class GroupApiImpl extends AbstractApi implements GroupApi {
     @Override
     public Response getGroup(final String groupId) {
         return GROUP_REPOSITORY.stream().
-                filter(group -> StringUtils.equals(groupId, group.getId())).
+                filter(group -> Strings.CS.equals(groupId, group.getId())).
                 findAny().
                 map(entity -> Response.ok().entity(entity).build()).
                 orElseGet(() -> Response.status(Response.Status.NOT_FOUND).build());
@@ -95,11 +96,11 @@ public class GroupApiImpl extends AbstractApi implements GroupApi {
     @Override
     public Response listGroupUsers(final String groupId, final String after, final Integer limit) {
         List<Pair<String, String>> foundGroupUsers = GROUP_USER_REPOSITORY.stream().
-                filter(pair -> StringUtils.equals(groupId, pair.getLeft())).
+                filter(pair -> Strings.CS.equals(groupId, pair.getLeft())).
                 collect(Collectors.toList());
         List<User> users = new ArrayList<>();
         foundGroupUsers.forEach(pair -> users.addAll(USER_REPOSITORY.stream().
-                filter(user -> StringUtils.equals(user.getId(), pair.getRight())).
+                filter(user -> Strings.CS.equals(user.getId(), pair.getRight())).
                 collect(Collectors.toList())));
         return Response.ok().entity(users.stream().
                 limit(limit == null ? DEFAULT_LIMIT : limit.longValue()).
@@ -136,7 +137,7 @@ public class GroupApiImpl extends AbstractApi implements GroupApi {
 
         if (after != null) {
             Group found = GROUP_REPOSITORY.stream()
-                    .filter(group -> StringUtils.equals(after, group.getId()))
+                    .filter(group -> Strings.CS.equals(after, group.getId()))
                     .findAny()
                     .orElse(null);
             if (found != null) {
@@ -164,8 +165,8 @@ public class GroupApiImpl extends AbstractApi implements GroupApi {
         if (EVERYONE_ID.equals(groupId)) {
             return Response.status(Response.Status.FORBIDDEN).build();
         }
-        return GROUP_USER_REPOSITORY.removeIf(pair -> StringUtils.equals(pair.getLeft(), groupId)
-                && StringUtils.equals(pair.getRight(), userId))
+        return GROUP_USER_REPOSITORY.removeIf(pair -> Strings.CS.equals(pair.getLeft(), groupId)
+                && Strings.CS.equals(pair.getRight(), userId))
                 ? Response.noContent().build()
                 : Response.status(Response.Status.NOT_FOUND).build();
     }
@@ -173,7 +174,7 @@ public class GroupApiImpl extends AbstractApi implements GroupApi {
     @Override
     public Response replaceGroup(final GroupsGroupIdBody body, final String groupId) {
         return GROUP_REPOSITORY.stream().
-                filter(group -> StringUtils.equals(groupId, group.getId())).
+                filter(group -> Strings.CS.equals(groupId, group.getId())).
                 findAny().
                 map(entity -> {
                     entity.setProfile(body.getProfile());
@@ -191,7 +192,7 @@ public class GroupApiImpl extends AbstractApi implements GroupApi {
         return GROUP_REPOSITORY.stream().
                 filter(group -> {
                     try {
-                        return StringUtils.equals(value, BeanUtils.getProperty(group, attribute));
+                        return Strings.CS.equals(value, BeanUtils.getProperty(group, attribute));
                     } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
                         return false;
                     }
