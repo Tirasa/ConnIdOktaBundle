@@ -26,7 +26,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import javax.ws.rs.core.Response;
 import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -61,7 +61,7 @@ public class ApplicationApiImpl extends AbstractApi implements ApplicationApi {
     @Override
     public Response deactivateApplication(final String appId) {
         APPLICATION_REPOSITORY.stream()
-                .filter(app -> StringUtils.equals(appId, app.getId()))
+                .filter(app -> Strings.CS.equals(appId, app.getId()))
                 .findFirst().map(item -> {
                     item.setStatus(ApplicationLifecycleStatus.INACTIVE);
                     item.setLastUpdated(Date.from(Instant.now()));
@@ -74,14 +74,14 @@ public class ApplicationApiImpl extends AbstractApi implements ApplicationApi {
     @Override
     public Response deleteApplication(final String appId) {
         createLogEvent("application.lifecycle.delete", appId);
-        return APPLICATION_REPOSITORY.removeIf(app -> StringUtils.equals(appId, app.getId())) ? Response.
+        return APPLICATION_REPOSITORY.removeIf(app -> Strings.CS.equals(appId, app.getId())) ? Response.
                 noContent().build() : Response.status(Response.Status.NOT_FOUND).build();
     }
 
     @Override
     public Response getApplication(final String appId, final String expand) {
         return APPLICATION_REPOSITORY.stream().
-                filter(app -> StringUtils.equals(appId, app.getId())).
+                filter(app -> Strings.CS.equals(appId, app.getId())).
                 findAny().
                 map(entity -> Response.ok().entity(entity).build()).
                 orElseGet(() -> Response.status(Response.Status.NOT_FOUND).build());
@@ -117,7 +117,7 @@ public class ApplicationApiImpl extends AbstractApi implements ApplicationApi {
 
         if (after != null) {
             Application found = APPLICATION_REPOSITORY.stream()
-                    .filter(group -> StringUtils.equals(after, group.getId()))
+                    .filter(group -> Strings.CS.equals(after, group.getId()))
                     .findAny()
                     .orElse(null);
             if (found != null) {
@@ -142,7 +142,7 @@ public class ApplicationApiImpl extends AbstractApi implements ApplicationApi {
     @Override
     public Response replaceApplication(final Application body, final String appId) {
         Application found = APPLICATION_REPOSITORY.stream()
-                .filter(app -> StringUtils.equals(appId, app.getId()))
+                .filter(app -> Strings.CS.equals(appId, app.getId()))
                 .findAny()
                 .orElse(null);
         if (found != null) {
@@ -164,7 +164,7 @@ public class ApplicationApiImpl extends AbstractApi implements ApplicationApi {
         return APPLICATION_REPOSITORY.stream().
                 filter(app -> {
                     try {
-                        return StringUtils.equals(StringUtils.remove(split[2], "\""),
+                        return Strings.CS.equals(Strings.CS.remove(split[2], "\""),
                                 BeanUtils.getProperty(app, split[0]));
                     } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
                         return false;

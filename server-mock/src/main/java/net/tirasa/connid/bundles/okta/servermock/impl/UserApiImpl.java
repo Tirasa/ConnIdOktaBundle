@@ -36,7 +36,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.ws.rs.core.Response;
 import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Service;
 
@@ -99,7 +99,7 @@ public class UserApiImpl extends AbstractApi implements UserApi {
     @Override
     public Response deleteUser(final String userId, final Boolean sendEmail, final String prefer) {
         User found = USER_REPOSITORY.stream()
-                .filter(user -> StringUtils.equals(userId, user.getId()))
+                .filter(user -> Strings.CS.equals(userId, user.getId()))
                 .findFirst()
                 .orElse(null);
         if (found == null) {
@@ -121,8 +121,8 @@ public class UserApiImpl extends AbstractApi implements UserApi {
     @Override
     public Response getUser(final String userId, final String contentType, final String expand) {
         return USER_REPOSITORY.stream()
-                .filter(user -> StringUtils.equals(userId, user.getId())
-                || StringUtils.equals(userId, user.getProfile().getLogin()))
+                .filter(user -> Strings.CS.equals(userId, user.getId())
+                || Strings.CS.equals(userId, user.getProfile().getLogin()))
                 .findFirst()
                 .map(found -> {
                     UserGetSingleton ugs = new UserGetSingleton();
@@ -192,7 +192,7 @@ public class UserApiImpl extends AbstractApi implements UserApi {
 
         if (after != null) {
             User found = USER_REPOSITORY.stream().
-                    filter(group -> StringUtils.equals(after, group.getId())).
+                    filter(group -> Strings.CS.equals(after, group.getId())).
                     findFirst().
                     orElse(null);
             if (found != null) {
@@ -219,7 +219,7 @@ public class UserApiImpl extends AbstractApi implements UserApi {
     @Override
     public Response updateUser(final UpdateUserRequest req, final String userId, final Boolean strict) {
         User user = USER_REPOSITORY.stream()
-                .filter(u -> StringUtils.equals(userId, u.getId()))
+                .filter(u -> Strings.CS.equals(userId, u.getId()))
                 .findFirst()
                 .orElse(null);
         if (user != null) {
@@ -259,8 +259,8 @@ public class UserApiImpl extends AbstractApi implements UserApi {
         return users.stream().filter(user -> {
             try {
                 return user.getStatus() != UserStatus.DEPROVISIONED
-                        && StringUtils.equals(
-                                StringUtils.remove(split[2], "\""),
+                        && Strings.CS.equals(
+                                Strings.CS.remove(split[2], "\""),
                                 BeanUtils.getProperty(user, split[0]));
             } catch (Exception e) {
                 return false;

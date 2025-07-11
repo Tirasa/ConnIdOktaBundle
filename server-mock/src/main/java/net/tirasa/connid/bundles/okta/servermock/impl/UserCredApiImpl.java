@@ -26,7 +26,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import javax.ws.rs.core.Response;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -49,7 +49,7 @@ public class UserCredApiImpl extends AbstractApi implements UserCredApi {
             final Boolean strict) {
 
         User found = USER_REPOSITORY.stream()
-                .filter(user -> StringUtils.equals(userId, user.getId()))
+                .filter(user -> Strings.CS.equals(userId, user.getId()))
                 .findFirst()
                 .orElse(null);
         if (found != null

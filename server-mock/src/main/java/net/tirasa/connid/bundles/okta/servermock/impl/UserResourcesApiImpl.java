@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.ws.rs.core.Response;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Service;
 
@@ -41,11 +41,11 @@ public class UserResourcesApiImpl extends AbstractApi implements UserResourcesAp
     @Override
     public Response listUserGroups(final String userId) {
         List<Pair<String, String>> foundUserGroups = GROUP_USER_REPOSITORY.stream().
-                filter(pair -> StringUtils.equals(userId, pair.getRight())).
+                filter(pair -> Strings.CS.equals(userId, pair.getRight())).
                 collect(Collectors.toList());
         List<Group> groups = new ArrayList<>();
         foundUserGroups.forEach(pair -> groups.addAll(GROUP_REPOSITORY.stream().
-                filter(group -> StringUtils.equals(group.getId(), pair.getLeft())).
+                filter(group -> Strings.CS.equals(group.getId(), pair.getLeft())).
                 collect(Collectors.toList())));
         return Response.ok().entity(groups).build();
     }
