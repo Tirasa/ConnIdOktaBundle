@@ -64,7 +64,7 @@
 
   <properties>
     <connid.version>1.5.2.1</connid.version>
-    <okta.version>24.0.1</okta.version>
+    <okta.version>25.0.0</okta.version>
 
     <spring-boot.version>2.7.18</spring-boot.version>
     
