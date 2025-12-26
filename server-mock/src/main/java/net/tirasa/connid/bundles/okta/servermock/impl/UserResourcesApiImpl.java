@@ -49,4 +49,9 @@ public class UserResourcesApiImpl extends AbstractApi implements UserResourcesAp
                 collect(Collectors.toList())));
         return Response.ok().entity(groups).build();
     }
+
+    @Override
+    public Response listUserDevices(final String userId) {
+        return Response.ok().entity("magic!").build();
+    }
 }

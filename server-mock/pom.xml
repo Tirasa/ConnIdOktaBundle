@@ -98,6 +98,9 @@
               <goal>generate</goal>
             </goals>
             <configuration>
+              <environmentVariables>
+                <maxYamlCodePoints>99999999</maxYamlCodePoints>                
+              </environmentVariables>
               <inputSpec>${project.basedir}/src/main/resources/api.yaml</inputSpec>
               <language>jaxrs-cxf</language>
               <apiPackage>io.swagger.api</apiPackage>

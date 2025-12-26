@@ -68,7 +68,7 @@ public class GroupApiImpl extends AbstractApi implements GroupApi {
         group.setLastMembershipUpdated(Date.from(Instant.now()));
         group.setLastUpdated(Date.from(Instant.now()));
         group.setProfile(body.getProfile());
-        GROUP_REPOSITORY.add(group);
+            GROUP_REPOSITORY.add(group);
         return Response.status(Response.Status.CREATED).entity(group).build();
     }
 
@@ -121,12 +121,12 @@ public class GroupApiImpl extends AbstractApi implements GroupApi {
 
     @Override
     public Response listGroups(
-            final String q,
+            final String search,
             final String filter,
+            final String q,
             final String after,
             final Integer limit,
             final String expand,
-            final String search,
             final String sortBy,
             final String sortOrder) {
 

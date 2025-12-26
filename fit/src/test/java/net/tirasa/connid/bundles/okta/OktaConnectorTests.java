@@ -32,7 +32,7 @@ import com.okta.sdk.resource.model.Application;
 import com.okta.sdk.resource.model.ApplicationSignOnMode;
 import com.okta.sdk.resource.model.BasicAuthApplication;
 import com.okta.sdk.resource.model.Group;
-import com.okta.sdk.resource.model.UserGetSingleton;
+import com.okta.sdk.resource.model.User;
 import com.okta.sdk.resource.model.UserStatus;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -743,7 +743,7 @@ public class OktaConnectorTests extends AbstractConnectorTests {
         USERS.add(created.getUidValue());
         assertNotNull(created);
 
-        UserGetSingleton user = CONN.getUserApi().getUser(created.getUidValue(), null, null);
+        User user = CONN.getUserApi().getUser(created.getUidValue(), null, null);
         assertEquals(UserStatus.STAGED, user.getStatus());
     }
 

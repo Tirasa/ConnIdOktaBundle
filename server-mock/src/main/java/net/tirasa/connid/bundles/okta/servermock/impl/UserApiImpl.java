@@ -162,13 +162,15 @@ public class UserApiImpl extends AbstractApi implements UserApi {
     @Override
     public Response listUsers(
             final String contentType,
+            final String search,
+            final String filter,
             final String q,
             final String after,
             final Integer limit,
-            final String filter,
-            final String search,
             final String sortBy,
-            final String sortOrder) {
+            final String sortOrder,
+            final String fields,
+            final String expand) {
 
         if (search != null) {
             return Response.ok().
@@ -217,7 +219,12 @@ public class UserApiImpl extends AbstractApi implements UserApi {
     }
 
     @Override
-    public Response updateUser(final UpdateUserRequest req, final String userId, final Boolean strict) {
+    public Response updateUser(
+            final UpdateUserRequest req,
+            final String userId,
+            final String ifMatch,
+            final Boolean strict) {
+
         User user = USER_REPOSITORY.stream()
                 .filter(u -> Strings.CS.equals(userId, u.getId()))
                 .findFirst()
@@ -250,7 +257,12 @@ public class UserApiImpl extends AbstractApi implements UserApi {
     }
 
     @Override
-    public Response replaceUser(final UpdateUserRequest body, final String id, final Boolean strict) {
+    public Response replaceUser(
+            final UpdateUserRequest body,
+            final String id,
+            final String ifMatch,
+            final Boolean strict) {
+
         return Response.ok().entity("magic!").build();
     }
 

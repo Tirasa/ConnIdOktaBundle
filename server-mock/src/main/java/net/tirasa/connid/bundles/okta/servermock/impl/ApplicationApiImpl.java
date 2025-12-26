@@ -104,6 +104,7 @@ public class ApplicationApiImpl extends AbstractApi implements ApplicationApi {
             final String q,
             final String after,
             final Boolean useOptimization,
+            final Boolean alwaysIncludeVpnSettings,
             final Integer limit,
             final String filter,
             final String expand,
