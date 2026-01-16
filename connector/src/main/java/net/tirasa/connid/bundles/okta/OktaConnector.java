@@ -240,6 +240,78 @@ public class OktaConnector implements Connector, PoolableConnector,
         LOG.ok("Check Alive");
     }
 
+    private static void fillUserProfile(
+            final UserBuilder userBuilder,
+            final AttributesAccessor accessor,
+            final ObjectClassInfo objectClassInfo) {
+
+        accessor.listAttributeNames().stream().
+                filter(attrName -> !NOT_FOR_PROFILE.contains(attrName)).
+                forEach(attrName -> objectClassInfo.getAttributeInfo().stream().
+                filter(attr -> attr.getName().equals(attrName)).findFirst().
+                ifPresent(attributeInfo -> {
+
+                    if (OktaAttribute.BASIC_PROFILE_ATTRIBUTES.contains(attributeInfo.getName())) {
+                        switch (attributeInfo.getName()) {
+                            case OktaAttribute.FIRSTNAME:
+                                userBuilder.setFirstName(AttributeUtil.getStringValue(accessor.find(attrName)));
+                                break;
+
+                            case OktaAttribute.LASTNAME:
+                                userBuilder.setLastName(AttributeUtil.getStringValue(accessor.find(attrName)));
+                                break;
+
+                            case OktaAttribute.EMAIL:
+                                userBuilder.setEmail(AttributeUtil.getStringValue(accessor.find(attrName)));
+                                break;
+
+                            case OktaAttribute.LOGIN:
+                                userBuilder.setLogin(AttributeUtil.getStringValue(accessor.find(attrName)));
+                                break;
+
+                            case OktaAttribute.MOBILEPHONE:
+                                userBuilder.setMobilePhone(AttributeUtil.getStringValue(accessor.find(attrName)));
+                                break;
+
+                            case OktaAttribute.SECOND_EMAIL:
+                                userBuilder.setSecondEmail(AttributeUtil.getStringValue(accessor.find(attrName)));
+                                break;
+
+                            default:
+                        }
+                    } else {
+                        if (Boolean.class.isInstance(attributeInfo.getType())) {
+                            userBuilder.setCustomProfileProperty(attrName,
+                                    AttributeUtil.getBooleanValue(accessor.find(attrName)));
+                        } else if (Integer.class.isInstance(attributeInfo.getType())) {
+                            userBuilder.setCustomProfileProperty(attrName,
+                                    AttributeUtil.getIntegerValue(accessor.find(attrName)));
+                        } else if (Long.class.isInstance(attributeInfo.getType())) {
+                            userBuilder.setCustomProfileProperty(attrName,
+                                    AttributeUtil.getLongValue(accessor.find(attrName)));
+                        } else if (Float.class.isInstance(attributeInfo.getType())) {
+                            userBuilder.setCustomProfileProperty(attrName,
+                                    AttributeUtil.getFloatValue(accessor.find(attrName)));
+                        } else if (Double.class.isInstance(attributeInfo.getType())) {
+                            userBuilder.setCustomProfileProperty(attrName,
+                                    AttributeUtil.getDoubleValue(accessor.find(attrName)));
+                        } else if (Date.class.isInstance(attributeInfo.getType())) {
+                            userBuilder.setCustomProfileProperty(attrName,
+                                    AttributeUtil.getDateValue(accessor.find(attrName)));
+                        } else if (Byte[].class.isInstance(attributeInfo.getType())) {
+                            userBuilder.setCustomProfileProperty(attrName,
+                                    AttributeUtil.getByteArrayValue(accessor.find(attrName)));
+                        } else if (String.class.isInstance(attributeInfo.getType())) {
+                            userBuilder.setCustomProfileProperty(attrName,
+                                    AttributeUtil.getStringValue(accessor.find(attrName)));
+                        } else {
+                            userBuilder.setCustomProfileProperty(attrName,
+                                    AttributeUtil.getSingleValue(accessor.find(attrName)));
+                        }
+                    }
+                }));
+    }
+
     @Override
     public Uid create(
             final ObjectClass objectClass,
@@ -315,7 +387,10 @@ public class OktaConnector implements Connector, PoolableConnector,
                     }
                 }
 
-                buildProfile(userBuilder, accessor, objectClass);
+                fillUserProfile(
+                        userBuilder,
+                        accessor,
+                        schema.getSchema().findObjectClassInfo(objectClass.getObjectClassValue()));
 
                 //Assign User to Groups
                 Optional.ofNullable(accessor.findList(OktaAttribute.OKTA_GROUPS)).map(Collection::stream).
@@ -351,6 +426,109 @@ public class OktaConnector implements Connector, PoolableConnector,
         }
     }
 
+    private void changePassword(final String userId, final String oldPassword, final String newPassword) {
+        try {
+            PasswordCredential oldPwd = new PasswordCredential();
+            oldPwd.setValue(oldPassword);
+
+            PasswordCredential newPwd = new PasswordCredential();
+            newPwd.setValue(newPassword);
+
+            ChangePasswordRequest req = new ChangePasswordRequest();
+            req.setOldPassword(oldPwd);
+            req.setNewPassword(newPwd);
+
+            userCredApi.changePassword(userId, req, Boolean.FALSE);
+            LOG.ok("Self change passsword user {0}" + userId);
+        } catch (ApiException e) {
+            LOG.error(e, e.getMessage());
+            if (e.getCause() == null) {
+                OktaUtils.handleGeneralError(e.getMessage(), e);
+            } else {
+                OktaUtils.handleGeneralError(e.getCause().getMessage(), e.getCause());
+            }
+        } catch (Exception e) {
+            LOG.error(e, e.getMessage());
+            OktaUtils.handleGeneralError(e.getMessage(), e);
+        }
+    }
+
+    private void fillUserProfile(
+            final UserProfile userProfile,
+            final Set<Attribute> replaceAttributes,
+            final ObjectClassInfo objectClassInfo) {
+
+        replaceAttributes.stream().
+                filter(attribute -> !NOT_FOR_PROFILE.contains(attribute.getName())).
+                forEach(attr -> objectClassInfo.getAttributeInfo().stream().
+                filter(attrInfo -> attrInfo.getName().equals(attr.getName())).findFirst().
+                ifPresent(attrInfo -> {
+
+                    if (OktaAttribute.BASIC_PROFILE_ATTRIBUTES.contains(attr.getName())) {
+                        String value = CollectionUtil.isEmpty(attr.getValue())
+                                ? null
+                                : AttributeUtil.getStringValue(attr);
+
+                        switch (attrInfo.getName()) {
+                            case OktaAttribute.FIRSTNAME:
+                                userProfile.setFirstName(value);
+                                break;
+
+                            case OktaAttribute.LASTNAME:
+                                userProfile.setLastName(value);
+                                break;
+
+                            case OktaAttribute.EMAIL:
+                                userProfile.setEmail(value);
+                                break;
+
+                            case OktaAttribute.LOGIN:
+                                userProfile.setLogin(value);
+                                break;
+
+                            case OktaAttribute.MOBILEPHONE:
+                                userProfile.setMobilePhone(value);
+                                break;
+
+                            case OktaAttribute.SECOND_EMAIL:
+                                userProfile.setSecondEmail(value);
+                                break;
+
+                            default:
+                        }
+                    } else {
+                        userProfile.getAdditionalProperties().put(
+                                attr.getName(),
+                                CollectionUtil.isEmpty(attr.getValue())
+                                ? null
+                                : AttributeUtil.getSingleValue(attr));
+                    }
+                }));
+    }
+
+    private void updateUserStatus(final User user, final Attribute status) {
+        if (status == null || CollectionUtil.isEmpty(status.getValue())) {
+            LOG.warn("{0} attribute value not correct, can't handle User status update",
+                    OperationalAttributes.ENABLE_NAME);
+        } else {
+            boolean enabled = (boolean) status.getValue().get(0);
+
+            if (user.getStatus() == UserStatus.ACTIVE && !enabled) {
+                userLifecycleApi.suspendUser(user.getId());
+            } else if (user.getStatus() == UserStatus.SUSPENDED && enabled) {
+                userLifecycleApi.unsuspendUser(user.getId());
+            } else if (user.getStatus() == UserStatus.STAGED) {
+                if (enabled) {
+                    userLifecycleApi.activateUser(user.getId(), Boolean.FALSE);
+                } else {
+                    LOG.ok("not suspending user {0} as in STAGED status", user.getId());
+                }
+            } else if (user.getStatus() != UserStatus.DEPROVISIONED && !enabled) {
+                userLifecycleApi.deactivateUser(user.getId(), Boolean.FALSE, null);
+            }
+        }
+    }
+
     @Override
     public Uid update(
             final ObjectClass objectClass,
@@ -375,12 +553,15 @@ public class OktaConnector implements Connector, PoolableConnector,
                 Optional.ofNullable(accessor.find(OperationalAttributes.CURRENT_PASSWORD_NAME)).
                         map(AttributeUtil::getGuardedStringValue).map(SecurityUtil::decrypt).
                         filter(StringUtil::isNotBlank).
-                        ifPresent(oldPassword -> selfPasswordUpdate(user.getId(), oldPassword, newPassword));
+                        ifPresent(oldPassword -> changePassword(user.getId(), oldPassword, newPassword));
             });
 
             // 2. update attributes
             try {
-                updateUserProfile(user.getProfile(), replaceAttributes);
+                fillUserProfile(
+                        user.getProfile(),
+                        replaceAttributes,
+                        schema.getSchema().findObjectClassInfo(objectClass.getObjectClassValue()));
                 UpdateUserRequest req = new UpdateUserRequest();
                 req.setProfile(user.getProfile());
 
@@ -520,6 +701,43 @@ public class OktaConnector implements Connector, PoolableConnector,
         return new SyncToken(maxlastUpdate);
     }
 
+    private static ConnectorObject fromLogEvent(final String id, final long lastUpdate, final ObjectClass objectClass) {
+        ConnectorObjectBuilder builder = new ConnectorObjectBuilder();
+        builder.setObjectClass(objectClass);
+        builder.setUid(id);
+        builder.setName(id);
+        builder.addAttribute(OktaAttribute.buildAttribute(lastUpdate, OktaAttribute.LASTUPDATED, Long.class).build());
+        return builder.build();
+    }
+
+    private static SyncDeltaType syncDeltaType(final String event) {
+        OktaEventType oktaEventType = OktaEventType.getValueByName(event);
+        if (oktaEventType == null) {
+            LOG.error("Okta event not found: {0}", event);
+            OktaUtils.handleGeneralError("Okta event not defined");
+        }
+        return OktaEventType.getValueByName(event).getSyncDeltaType();
+    }
+
+    private static SyncDeltaBuilder buildSyncDelta(final ConnectorObject connectorObject, final LogEvent event) {
+        LOG.info("Build SyncDelta");
+        SyncDeltaBuilder bld = new SyncDeltaBuilder();
+        long published;
+        if (OktaEventType.getMembershipOperationEventType().contains(event.getEventType())) {
+            published = event.getPublished().toInstant().toEpochMilli();
+        } else {
+            Attribute lastUpdate = connectorObject.getAttributeByName(OktaAttribute.LASTUPDATED);
+            published = Long.parseLong(AttributeUtil.getSingleValue(lastUpdate).toString());
+        }
+
+        bld.setToken(new SyncToken(published));
+        bld.setObject(connectorObject);
+        bld.setDeltaType(syncDeltaType(event.getEventType()));
+        LOG.ok("SyncDeltaBuilder is ok");
+
+        return bld;
+    }
+
     @Override
     public void sync(
             final ObjectClass objectClass,
@@ -554,7 +772,7 @@ public class OktaConnector implements Connector, PoolableConnector,
             logEvents.stream().forEach(item -> {
                 ConnectorObject connObj = null;
                 try {
-                    if (isDeleteEvent(item.getEventType())) {
+                    if (OktaEventType.getDeleteEventType().contains(item.getEventType())) {
                         connObj = fromLogEvent(
                                 item.getTarget().get(0).getId(),
                                 item.getPublished().toInstant().toEpochMilli(),
@@ -589,9 +807,9 @@ public class OktaConnector implements Connector, PoolableConnector,
 
     @Override
     public void test() {
-        if (configuration != null && schema != null) {
+        if (configuration != null) {
             try {
-                schema.getSchema();
+                getLastLogEvent(ObjectClass.ACCOUNT);
             } catch (Exception ex) {
                 OktaUtils.handleGeneralError("Test error. Problems with client service", ex);
             }
@@ -734,35 +952,7 @@ public class OktaConnector implements Connector, PoolableConnector,
         }
     }
 
-    private long getLastLogEvent(final ObjectClass objectClass) {
-        String filter = buildFilterByObjectClass(objectClass);
-        if (StringUtil.isBlank(filter)) {
-            OktaUtils.handleGeneralError("Provide envenType for Sync");
-        }
-
-        List<LogEvent> events = systemLogApi.listLogEvents(null, null, null, filter, null, 1, "DESCENDING", Map.of());
-        return CollectionUtil.isEmpty(events) ? 0L : events.get(0).getPublished().toInstant().toEpochMilli();
-    }
-
-    private List<LogEvent> getEvents(final ObjectClass objectClass, final OffsetDateTime since) {
-        String filter = buildFilterByObjectClass(objectClass);
-        if (StringUtil.isBlank(filter)) {
-            LOG.info("Provide envenType for Sync {0}", objectClass);
-            return null;
-        }
-        return systemLogApi.listLogEvents(
-                Optional.ofNullable(since).map(s -> s.format(DateTimeFormatter.ISO_DATE_TIME)).orElse(null),
-                null, null, filter, null, null, "ASCENDING", Map.of());
-    }
-
-    private String buildFilterByObjectClass(final ObjectClass objectClass) {
-        return ObjectClass.ACCOUNT.equals(objectClass)
-                ? buildLogEventFilter(configuration.getUserEvents()) : ObjectClass.GROUP.equals(objectClass)
-                ? buildLogEventFilter(configuration.getGroupEvents()) : APPLICATION.equals(objectClass)
-                ? buildLogEventFilter(configuration.getApplicationEvents()) : null;
-    }
-
-    private String buildLogEventFilter(final String[] eventTypes) {
+    private static String buildLogEventFilter(final String[] eventTypes) {
         boolean isFirst = true;
         StringBuilder builder = new StringBuilder();
         for (String type : eventTypes) {
@@ -778,13 +968,35 @@ public class OktaConnector implements Connector, PoolableConnector,
         return builder.toString();
     }
 
-    private ConnectorObject fromLogEvent(final String id, final long lastUpdate, final ObjectClass objectClass) {
-        ConnectorObjectBuilder builder = new ConnectorObjectBuilder();
-        builder.setObjectClass(objectClass);
-        builder.setUid(id);
-        builder.setName(id);
-        builder.addAttribute(OktaAttribute.buildAttribute(lastUpdate, OktaAttribute.LASTUPDATED, Long.class).build());
-        return builder.build();
+    private String buildFilterByObjectClass(final ObjectClass objectClass) {
+        return ObjectClass.ACCOUNT.equals(objectClass)
+                ? buildLogEventFilter(configuration.getUserEvents())
+                : ObjectClass.GROUP.equals(objectClass)
+                ? buildLogEventFilter(configuration.getGroupEvents())
+                : APPLICATION.equals(objectClass)
+                ? buildLogEventFilter(configuration.getApplicationEvents())
+                : null;
+    }
+
+    private long getLastLogEvent(final ObjectClass objectClass) {
+        String filter = buildFilterByObjectClass(objectClass);
+        if (StringUtil.isBlank(filter)) {
+            OktaUtils.handleGeneralError("ObjectClass not supported for SYNC: " + objectClass.getObjectClassValue());
+        }
+
+        List<LogEvent> events = systemLogApi.listLogEvents(null, null, null, filter, null, 1, "DESCENDING", Map.of());
+        return CollectionUtil.isEmpty(events) ? 0L : events.get(0).getPublished().toInstant().toEpochMilli();
+    }
+
+    private List<LogEvent> getEvents(final ObjectClass objectClass, final OffsetDateTime since) {
+        String filter = buildFilterByObjectClass(objectClass);
+        if (StringUtil.isBlank(filter)) {
+            LOG.info("Provide envenType for Sync {0}", objectClass);
+            return null;
+        }
+        return systemLogApi.listLogEvents(
+                Optional.ofNullable(since).map(s -> s.format(DateTimeFormatter.ISO_DATE_TIME)).orElse(null),
+                null, null, filter, null, null, "ASCENDING", Map.of());
     }
 
     private ConnectorObject fromUser(
@@ -811,8 +1023,8 @@ public class OktaConnector implements Connector, PoolableConnector,
         builder.setObjectClass(APPLICATION);
         builder.setUid(application.getId());
         builder.setName(application.getId());
-        builder.addAttributes(OktaAttribute.buildApplicationAttributes(appApi, application, schema.getSchema(),
-                attributesToGet));
+        builder.addAttributes(OktaAttribute.buildApplicationAttributes(
+                appApi, application, schema.getSchema(), attributesToGet));
         return builder.build();
     }
 
@@ -824,219 +1036,6 @@ public class OktaConnector implements Connector, PoolableConnector,
         builder.addAttributes(OktaAttribute.buildGroupAttributes(
                 groupApi, group, schema.getSchema(), attributesToGet));
         return builder.build();
-    }
-
-    private SyncDeltaBuilder buildSyncDelta(final ConnectorObject connectorObject, final LogEvent event) {
-        LOG.info("Build SyncDelta");
-        SyncDeltaBuilder bld = new SyncDeltaBuilder();
-        long published;
-        if (isMembershipOperationEvent(event.getEventType())) {
-            published = event.getPublished().toInstant().toEpochMilli();
-        } else {
-            Attribute lastUpdate = connectorObject.getAttributeByName(OktaAttribute.LASTUPDATED);
-            published = Long.parseLong(AttributeUtil.getSingleValue(lastUpdate).toString());
-        }
-
-        bld.setToken(new SyncToken(published));
-        bld.setObject(connectorObject);
-        bld.setDeltaType(getSyncDeltaTypeByEvent(event.getEventType()));
-        LOG.ok("SyncDeltaBuilder is ok");
-
-        return bld;
-    }
-
-    private SyncDeltaType getSyncDeltaTypeByEvent(final String event) {
-        OktaEventType oktaEventType = OktaEventType.getValueByName(event);
-        if (oktaEventType == null) {
-            LOG.error("Okta event not found: {0}", event);
-            OktaUtils.handleGeneralError("Okta event not defined");
-        }
-        return OktaEventType.getValueByName(event).getSyncDeltaType();
-    }
-
-    private boolean isDeleteEvent(final String eventType) {
-        return OktaEventType.getDeleteEventType().contains(eventType);
-    }
-
-    private boolean isMembershipOperationEvent(final String eventType) {
-        return OktaEventType.getMembershipOperationEventType().contains(eventType);
-    }
-
-    /**
-     * Complete the profile with all the properties.
-     *
-     */
-    private void buildProfile(
-            final UserBuilder userBuilder,
-            final AttributesAccessor accessor,
-            final ObjectClass objectClass) {
-
-        ObjectClassInfo objectClassInfo = schema.getSchema().findObjectClassInfo(objectClass.getObjectClassValue());
-        accessor.listAttributeNames().stream().
-                filter(attrName -> !NOT_FOR_PROFILE.contains(attrName)).
-                forEach(attrName -> objectClassInfo.getAttributeInfo().stream().
-                filter(attr -> attr.getName().equals(attrName)).findFirst().
-                ifPresent(attributeInfo -> {
-
-                    if (OktaAttribute.BASIC_PROFILE_ATTRIBUTES.contains(attributeInfo.getName())) {
-                        switch (attributeInfo.getName()) {
-                            case OktaAttribute.FIRSTNAME:
-                                userBuilder.setFirstName(AttributeUtil.getStringValue(accessor.find(attrName)));
-                                break;
-
-                            case OktaAttribute.LASTNAME:
-                                userBuilder.setLastName(AttributeUtil.getStringValue(accessor.find(attrName)));
-                                break;
-
-                            case OktaAttribute.EMAIL:
-                                userBuilder.setEmail(AttributeUtil.getStringValue(accessor.find(attrName)));
-                                break;
-
-                            case OktaAttribute.LOGIN:
-                                userBuilder.setLogin(AttributeUtil.getStringValue(accessor.find(attrName)));
-                                break;
-
-                            case OktaAttribute.MOBILEPHONE:
-                                userBuilder.setMobilePhone(AttributeUtil.getStringValue(accessor.find(attrName)));
-                                break;
-
-                            case OktaAttribute.SECOND_EMAIL:
-                                userBuilder.setSecondEmail(AttributeUtil.getStringValue(accessor.find(attrName)));
-                                break;
-
-                            default:
-                        }
-                    } else {
-                        if (Boolean.class.isInstance(attributeInfo.getType())) {
-                            userBuilder.setCustomProfileProperty(attrName,
-                                    AttributeUtil.getBooleanValue(accessor.find(attrName)));
-                        } else if (Integer.class.isInstance(attributeInfo.getType())) {
-                            userBuilder.setCustomProfileProperty(attrName,
-                                    AttributeUtil.getIntegerValue(accessor.find(attrName)));
-                        } else if (Long.class.isInstance(attributeInfo.getType())) {
-                            userBuilder.setCustomProfileProperty(attrName,
-                                    AttributeUtil.getLongValue(accessor.find(attrName)));
-                        } else if (Float.class.isInstance(attributeInfo.getType())) {
-                            userBuilder.setCustomProfileProperty(attrName,
-                                    AttributeUtil.getFloatValue(accessor.find(attrName)));
-                        } else if (Double.class.isInstance(attributeInfo.getType())) {
-                            userBuilder.setCustomProfileProperty(attrName,
-                                    AttributeUtil.getDoubleValue(accessor.find(attrName)));
-                        } else if (Date.class.isInstance(attributeInfo.getType())) {
-                            userBuilder.setCustomProfileProperty(attrName,
-                                    AttributeUtil.getDateValue(accessor.find(attrName)));
-                        } else if (Byte[].class.isInstance(attributeInfo.getType())) {
-                            userBuilder.setCustomProfileProperty(attrName,
-                                    AttributeUtil.getByteArrayValue(accessor.find(attrName)));
-                        } else if (String.class.isInstance(attributeInfo.getType())) {
-                            userBuilder.setCustomProfileProperty(attrName,
-                                    AttributeUtil.getStringValue(accessor.find(attrName)));
-                        } else {
-                            userBuilder.setCustomProfileProperty(attrName,
-                                    AttributeUtil.getSingleValue(accessor.find(attrName)));
-                        }
-                    }
-                }));
-    }
-
-    private void updateUserProfile(final UserProfile userProfile, final Set<Attribute> replaceAttributes) {
-        ObjectClassInfo objectClassInfo = schema.getSchema().findObjectClassInfo(ObjectClass.ACCOUNT_NAME);
-        replaceAttributes.stream().
-                filter(attribute -> !NOT_FOR_PROFILE.contains(attribute.getName())).
-                forEach(attr -> objectClassInfo.getAttributeInfo().stream().
-                filter(attrInfo -> attrInfo.getName().equals(attr.getName())).findFirst().
-                ifPresent(attrInfo -> {
-
-                    if (OktaAttribute.BASIC_PROFILE_ATTRIBUTES.contains(attr.getName())) {
-                        String value = CollectionUtil.isEmpty(attr.getValue())
-                                ? null
-                                : AttributeUtil.getStringValue(attr);
-
-                        switch (attrInfo.getName()) {
-                            case OktaAttribute.FIRSTNAME:
-                                userProfile.setFirstName(value);
-                                break;
-
-                            case OktaAttribute.LASTNAME:
-                                userProfile.setLastName(value);
-                                break;
-
-                            case OktaAttribute.EMAIL:
-                                userProfile.setEmail(value);
-                                break;
-
-                            case OktaAttribute.LOGIN:
-                                userProfile.setLogin(value);
-                                break;
-
-                            case OktaAttribute.MOBILEPHONE:
-                                userProfile.setMobilePhone(value);
-                                break;
-
-                            case OktaAttribute.SECOND_EMAIL:
-                                userProfile.setSecondEmail(value);
-                                break;
-
-                            default:
-                        }
-                    } else {
-                        userProfile.getAdditionalProperties().put(
-                                attr.getName(),
-                                CollectionUtil.isEmpty(attr.getValue())
-                                ? null
-                                : AttributeUtil.getSingleValue(attr));
-                    }
-                }));
-    }
-
-    private void updateUserStatus(final User user, final Attribute status) {
-        if (status == null || CollectionUtil.isEmpty(status.getValue())) {
-            LOG.warn("{0} attribute value not correct, can't handle User status update",
-                    OperationalAttributes.ENABLE_NAME);
-        } else {
-            boolean enabled = (boolean) status.getValue().get(0);
-
-            if (user.getStatus() == UserStatus.ACTIVE && !enabled) {
-                userLifecycleApi.suspendUser(user.getId());
-            } else if (user.getStatus() == UserStatus.SUSPENDED && enabled) {
-                userLifecycleApi.unsuspendUser(user.getId());
-            } else if (user.getStatus() == UserStatus.STAGED) {
-                if (enabled) {
-                    userLifecycleApi.activateUser(user.getId(), Boolean.FALSE);
-                } else {
-                    LOG.ok("not suspending user {0} as in STAGED status", user.getId());
-                }
-            } else if (user.getStatus() != UserStatus.DEPROVISIONED && !enabled) {
-                userLifecycleApi.deactivateUser(user.getId(), Boolean.FALSE, null);
-            }
-        }
-    }
-
-    private void selfPasswordUpdate(final String userId, final String oldPassword, final String newPassword) {
-        try {
-            PasswordCredential oldPwd = new PasswordCredential();
-            oldPwd.setValue(oldPassword);
-
-            PasswordCredential newPwd = new PasswordCredential();
-            newPwd.setValue(newPassword);
-
-            ChangePasswordRequest req = new ChangePasswordRequest();
-            req.setOldPassword(oldPwd);
-            req.setNewPassword(newPwd);
-
-            userCredApi.changePassword(userId, req, Boolean.FALSE);
-            LOG.ok("Self change passsword user {0}" + userId);
-        } catch (ApiException e) {
-            LOG.error(e, e.getMessage());
-            if (e.getCause() == null) {
-                OktaUtils.handleGeneralError(e.getMessage(), e);
-            } else {
-                OktaUtils.handleGeneralError(e.getCause().getMessage(), e.getCause());
-            }
-        } catch (Exception e) {
-            LOG.error(e, e.getMessage());
-            OktaUtils.handleGeneralError(e.getMessage(), e);
-        }
     }
 
     /**
