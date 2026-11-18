@@ -18,8 +18,8 @@ package net.tirasa.connid.bundles.okta.servermock.impl;
 import io.swagger.api.UserLifecycleApi;
 import io.swagger.model.User;
 import io.swagger.model.UserStatus;
+import jakarta.ws.rs.core.Response;
 import java.util.Date;
-import javax.ws.rs.core.Response;
 import org.apache.commons.lang3.Strings;
 import org.springframework.stereotype.Service;
 

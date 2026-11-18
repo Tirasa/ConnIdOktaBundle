@@ -20,6 +20,8 @@ import io.swagger.model.Group;
 import io.swagger.model.LogEvent;
 import io.swagger.model.LogTarget;
 import io.swagger.model.User;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.UriInfo;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -32,8 +34,6 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.UriInfo;
 import org.apache.commons.lang3.tuple.Pair;
 
 public abstract class AbstractApi {

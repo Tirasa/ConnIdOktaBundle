@@ -15,13 +15,13 @@
  */
 package net.tirasa.connid.bundles.okta.servermock;
 
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import java.text.SimpleDateFormat;
 import java.util.TimeZone;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.json.JsonMapper;
 
-public class OktaObjectMapper extends ObjectMapper {
+public class OktaJsonMapper extends JsonMapper {
 
     private static final long serialVersionUID = -8930787585752381161L;
 
@@ -33,11 +33,12 @@ public class OktaObjectMapper extends ObjectMapper {
         return df;
     });
 
-    public OktaObjectMapper() {
-        super();
-
-        setDateFormat(DATE_FORMAT.get());
-        setSerializationInclusion(Include.NON_NULL);
-        configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    public OktaJsonMapper() {
+        super(JsonMapper.builder().findAndAddModules().
+                defaultDateFormat(DATE_FORMAT.get()).
+                changeDefaultPropertyInclusion(incl -> incl.
+                        withValueInclusion(JsonInclude.Include.NON_NULL).
+                        withContentInclusion(JsonInclude.Include.NON_NULL)).
+                configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false));
     }
 }

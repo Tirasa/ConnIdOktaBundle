@@ -15,7 +15,6 @@
  */
 package net.tirasa.connid.bundles.okta.servermock;
 
-import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 import java.util.List;
 import java.util.stream.Collectors;
 import net.tirasa.connid.bundles.okta.servermock.impl.AbstractApi;
@@ -27,6 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import tools.jackson.jakarta.rs.json.JacksonJsonProvider;
 
 @SpringBootApplication
 public class OktaServerMockApplication {
@@ -45,7 +45,7 @@ public class OktaServerMockApplication {
         restContainer.setAddress("/");
         restContainer.setServiceBeans(services.stream().map(Object.class::cast).collect(Collectors.toList()));
         restContainer.setProviders(List.of(
-                new JacksonJsonProvider(new OktaObjectMapper()),
+                new JacksonJsonProvider(new OktaJsonMapper()),
                 new DateParamConverterProvider()));
         restContainer.setFeatures(List.of(new LoggingFeature()));
         return restContainer.create();

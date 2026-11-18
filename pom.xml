@@ -23,12 +23,12 @@
   <parent>
     <groupId>net.tirasa.connid</groupId>
     <artifactId>connid</artifactId>
-    <version>1.5.2.1</version>
+    <version>1.7.0.0</version>
   </parent>
     
   <groupId>net.tirasa.connid.bundles.okta</groupId>
   <artifactId>okta</artifactId>
-  <version>3.0.9-SNAPSHOT</version>        
+  <version>4.0.0-SNAPSHOT</version>        
 
   <name>ConnId Bundles: Okta</name>
   
@@ -63,14 +63,14 @@
   </ciManagement>
 
   <properties>
-    <connid.version>1.5.2.1</connid.version>
+    <connid.version>1.7.0.0</connid.version>
     <okta.version>25.0.6</okta.version>
 
-    <spring-boot.version>2.7.18</spring-boot.version>
+    <spring-boot.version>4.1.2</spring-boot.version>
     
-    <cxf.version>3.6.13</cxf.version>
+    <cxf.version>4.2.4</cxf.version>
 
-    <targetJdk>11</targetJdk>
+    <targetJdk>21</targetJdk>
     <rootpom.basedir>${basedir}</rootpom.basedir>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
@@ -131,7 +131,7 @@
       <dependency>
         <groupId>io.swagger.core.v3</groupId>
         <artifactId>swagger-annotations</artifactId>
-        <version>2.2.55</version>
+        <version>3.0.0</version>
       </dependency>
     
       <dependency>

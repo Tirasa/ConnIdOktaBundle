@@ -15,12 +15,12 @@
  */
 package net.tirasa.connid.bundles.okta.servermock;
 
+import jakarta.ws.rs.ext.ParamConverter;
+import jakarta.ws.rs.ext.ParamConverterProvider;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.text.ParseException;
 import java.util.Date;
-import javax.ws.rs.ext.ParamConverter;
-import javax.ws.rs.ext.ParamConverterProvider;
 
 public class DateParamConverterProvider implements ParamConverterProvider {
 
@@ -29,7 +29,7 @@ public class DateParamConverterProvider implements ParamConverterProvider {
         @Override
         public Date fromString(final String value) {
             try {
-                return OktaObjectMapper.DATE_FORMAT.get().parse(value);
+                return OktaJsonMapper.DATE_FORMAT.get().parse(value);
             } catch (ParseException e) {
                 throw new IllegalArgumentException("Unparsable date: " + value, e);
             }
@@ -37,7 +37,7 @@ public class DateParamConverterProvider implements ParamConverterProvider {
 
         @Override
         public String toString(final Date value) {
-            return OktaObjectMapper.DATE_FORMAT.get().format(value);
+            return OktaJsonMapper.DATE_FORMAT.get().format(value);
         }
     }
 

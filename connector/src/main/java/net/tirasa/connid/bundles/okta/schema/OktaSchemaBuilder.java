@@ -20,7 +20,6 @@ import com.okta.sdk.resource.model.UserSchemaAttribute;
 import com.okta.sdk.resource.model.UserSchemaDefinitions;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
@@ -93,7 +92,7 @@ class OktaSchemaBuilder {
 
         UserSchemaDefinitions defs = schemaApi.getUserSchema("default").getDefinitions();
 
-        List<String> reqBase = Optional.ofNullable(defs.getBase().getRequired()).orElse(Collections.emptyList());
+        List<String> reqBase = Optional.ofNullable(defs.getBase().getRequired()).orElse(List.of());
         map("city", defs.getBase().getProperties().getCity(), reqBase).
                 ifPresent(attributeInfos::add);
         map("costCenter", defs.getBase().getProperties().getCostCenter(), reqBase).
@@ -138,7 +137,7 @@ class OktaSchemaBuilder {
         map("userType", defs.getBase().getProperties().getUserType(), reqBase).ifPresent(attributeInfos::add);
         map("zipCode", defs.getBase().getProperties().getZipCode(), reqBase).ifPresent(attributeInfos::add);
 
-        List<String> reqCustom = Optional.ofNullable(defs.getCustom().getRequired()).orElse(Collections.emptyList());
+        List<String> reqCustom = Optional.ofNullable(defs.getCustom().getRequired()).orElse(List.of());
         defs.getCustom().getProperties().
                 forEach((key, prop) -> map(key, prop, reqCustom).ifPresent(attributeInfos::add));
 

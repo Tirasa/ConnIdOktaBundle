@@ -21,7 +21,7 @@
   <parent>
     <groupId>net.tirasa.connid.bundles.okta</groupId>
     <artifactId>okta</artifactId>
-    <version>3.0.9-SNAPSHOT</version>
+    <version>4.0.0-SNAPSHOT</version>
   </parent>
     
   <groupId>net.tirasa.connid.bundles.okta</groupId>
@@ -55,6 +55,12 @@
     <dependency>
       <groupId>com.okta.sdk</groupId>
       <artifactId>okta-sdk-api</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>jackson-annotations</artifactId>
+        </exclusion>
+      </exclusions>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -71,13 +77,11 @@
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-params</artifactId>
-      <version>5.8.2</version>
       <scope>test</scope>
     </dependency>        
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-engine</artifactId>
-      <version>5.8.2</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

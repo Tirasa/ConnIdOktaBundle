@@ -20,12 +20,11 @@ import io.swagger.model.ChangePasswordRequest;
 import io.swagger.model.User;
 import io.swagger.model.UserCredentials;
 import io.swagger.model.UserStatus;
-import java.util.Collections;
+import jakarta.ws.rs.core.Response;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import javax.ws.rs.core.Response;
 import org.apache.commons.lang3.Strings;
 import org.springframework.stereotype.Service;
 
@@ -38,7 +37,7 @@ public class UserCredApiImpl extends AbstractApi implements UserCredApi {
         error.put("errorSummary", "Update of credentials failed");
         error.put("errorLink", "E0000014");
         error.put("errorId", errorId);
-        error.put("errorCauses", Collections.singletonList(Collections.singletonMap("errorSummary", message)));
+        error.put("errorCauses", List.of(Map.of("errorSummary", message)));
         return error;
     }
 

@@ -18,7 +18,7 @@ package net.tirasa.connid.bundles.okta.servermock.impl;
 import io.swagger.api.IdentityProviderApi;
 import io.swagger.model.IdentityProvider;
 import io.swagger.model.IdentityProviderType;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import org.springframework.stereotype.Service;
 
 @Service

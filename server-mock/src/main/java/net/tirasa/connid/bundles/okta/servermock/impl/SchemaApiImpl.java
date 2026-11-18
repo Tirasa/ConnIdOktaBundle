@@ -31,12 +31,12 @@ import io.swagger.model.UserSchemaBaseProperties;
 import io.swagger.model.UserSchemaPropertiesProfile;
 import io.swagger.model.UserSchemaPropertiesProfileItem;
 import io.swagger.model.UserSchemaPublic;
+import jakarta.ws.rs.core.Response;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import javax.ws.rs.core.Response;
-import net.tirasa.connid.bundles.okta.servermock.OktaObjectMapper;
+import net.tirasa.connid.bundles.okta.servermock.OktaJsonMapper;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -88,7 +88,7 @@ public class SchemaApiImpl extends AbstractApi implements SchemaApi {
         //schema.set$Schema("http://json-schema.org/draft-04/schema#");
         schema.setName("user");
         schema.setTitle("User");
-        schema.setCreated(OktaObjectMapper.DATE_FORMAT.get().format(new Date()));
+        schema.setCreated(OktaJsonMapper.DATE_FORMAT.get().format(new Date()));
         schema.setLastUpdated(schema.getCreated());
         //schema.setType("object");
 

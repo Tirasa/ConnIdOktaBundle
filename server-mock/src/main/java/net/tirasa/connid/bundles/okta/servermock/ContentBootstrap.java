@@ -15,8 +15,6 @@
  */
 package net.tirasa.connid.bundles.okta.servermock;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.swagger.api.GroupApi;
 import io.swagger.model.OktaUserGroupProfile;
 import io.swagger.model.V1GroupsBody;
@@ -29,6 +27,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.json.JsonMapper;
 
 public class ContentBootstrap implements InitializingBean {
 

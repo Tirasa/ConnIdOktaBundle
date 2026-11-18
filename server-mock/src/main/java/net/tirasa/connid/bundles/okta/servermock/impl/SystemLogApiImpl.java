@@ -17,6 +17,7 @@ package net.tirasa.connid.bundles.okta.servermock.impl;
 
 import io.swagger.api.SystemLogApi;
 import io.swagger.model.LogEvent;
+import jakarta.ws.rs.core.Response;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
@@ -27,7 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.ws.rs.core.Response;
 import org.springframework.stereotype.Service;
 
 @Service

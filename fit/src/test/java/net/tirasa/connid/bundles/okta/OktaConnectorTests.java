@@ -36,7 +36,6 @@ import com.okta.sdk.resource.model.User;
 import com.okta.sdk.resource.model.UserStatus;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -286,7 +285,7 @@ public class OktaConnectorTests extends AbstractConnectorTests {
             assertEquals(handler.getObjects().get(0).getUid().getUidValue(), created.getUidValue());
             Attribute entitlements = handler.getObjects().get(0).getAttributeByName(ENTITLEMENTS_ATTR);
             assertNotNull(entitlements);
-            assertEquals(Collections.singletonList("{}"), entitlements.getValue());
+            assertEquals(List.of("{}"), entitlements.getValue());
             LOG.info("Created User with id {0} on Okta", handler.getObjects().get(0).getUid());
 
             // UPDATE USER - change attribute
