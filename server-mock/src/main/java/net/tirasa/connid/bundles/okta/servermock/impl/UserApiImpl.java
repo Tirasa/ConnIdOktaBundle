@@ -145,18 +145,11 @@ public class UserApiImpl extends AbstractApi implements UserApi {
 
     private String nextPage(final long limit, final int after, final List<User> repository) {
         if (limit + after < repository.size()) {
-            return "<" + uriInfo.getBaseUri().toString() + "api/v1/users?after="
-                    + repository.get((int) limit + after).getId()
-                    + "&limit=" + limit + ">; rel=\"next\"";
+            return "<" + uriInfo.getRequestUriBuilder()
+                    .replaceQueryParam("after", repository.get((int) (limit + after)).getId())
+                    .replaceQueryParam("limit", limit).build() + ">; rel=\"next\"";
         }
-
-        StringBuilder queryString = new StringBuilder().append('?');
-        if (!repository.isEmpty()) {
-            queryString.append("after=").append(repository.get(repository.size() - 1).getId()).append('&');
-        }
-        queryString.append("limit=").append(limit).append(">; rel=\"self\"");
-
-        return "<" + uriInfo.getBaseUri().toString() + "api/v1/users?" + queryString.toString();
+        return "<" + uriInfo.getRequestUri() + ">; rel=\"self\"";
     }
 
     @Override
@@ -172,17 +165,13 @@ public class UserApiImpl extends AbstractApi implements UserApi {
             final String fields,
             final String expand) {
 
+        long actualLimit = limit == null || limit < 0 ? DEFAULT_LIMIT : limit.longValue();
+
         if (search != null) {
-            return Response.ok().
-                    entity(searchUsers(USER_REPOSITORY, search)).
-                    header("link", nextPage(limit, 0, USER_REPOSITORY)).
-                    build();
+            return filteredUsers(search, after, actualLimit);
         }
         if (filter != null) {
-            return Response.ok().
-                    entity(searchUsers(USER_REPOSITORY, filter)).
-                    header("link", nextPage(limit, 0, USER_REPOSITORY)).
-                    build();
+            return filteredUsers(filter, after, actualLimit);
         }
 
         Predicate<? super User> predicate = q == null
@@ -201,21 +190,36 @@ public class UserApiImpl extends AbstractApi implements UserApi {
                 int lastIndexOf = USER_REPOSITORY.lastIndexOf(found);
                 return Response.ok().entity(USER_REPOSITORY.stream().
                         skip(lastIndexOf).
-                        limit(limit == null ? DEFAULT_LIMIT : limit.longValue()).
+                        limit(actualLimit).
                         filter(predicate).
                         collect(Collectors.toList())).
-                        header("link", nextPage(limit, lastIndexOf, USER_REPOSITORY)).
+                        header("link", nextPage(actualLimit, lastIndexOf, USER_REPOSITORY)).
                         build();
             }
         }
 
-        long actualLimit = limit == null || limit < 0 ? DEFAULT_LIMIT : limit.longValue();
         return Response.ok().entity(USER_REPOSITORY.stream().
                 limit(actualLimit).
                 filter(predicate).
                 filter(user -> user.getStatus() != UserStatus.DEPROVISIONED).
-                collect(Collectors.toList())).header("link", nextPage(limit, 0, USER_REPOSITORY)).
+                collect(Collectors.toList())).header("link", nextPage(actualLimit, 0, USER_REPOSITORY)).
                 build();
+    }
+
+    private Response filteredUsers(final String filter, final String after, final long limit) {
+        List<User> matches = searchUsers(USER_REPOSITORY, filter);
+        int start = 0;
+        if (after != null) {
+            start = matches.size();
+            for (int i = 0; i < matches.size(); i++) {
+                if (Strings.CS.equals(after, matches.get(i).getId())) {
+                    start = i;
+                    break;
+                }
+            }
+        }
+        return Response.ok().entity(matches.stream().skip(start).limit(limit).collect(Collectors.toList()))
+                .header("link", nextPage(limit, start, matches)).build();
     }
 
     @Override

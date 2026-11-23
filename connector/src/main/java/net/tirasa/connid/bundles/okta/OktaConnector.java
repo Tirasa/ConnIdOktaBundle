@@ -15,6 +15,7 @@
  */
 package net.tirasa.connid.bundles.okta;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.okta.sdk.authc.credentials.TokenClientCredentials;
 import com.okta.sdk.cache.Caches;
 import com.okta.sdk.client.AuthorizationMode;
@@ -31,6 +32,7 @@ import com.okta.sdk.resource.api.UserLifecycleApi;
 import com.okta.sdk.resource.api.UserResourcesApi;
 import com.okta.sdk.resource.client.ApiClient;
 import com.okta.sdk.resource.client.ApiException;
+import com.okta.sdk.resource.client.ApiResponse;
 import com.okta.sdk.resource.group.GroupBuilder;
 import com.okta.sdk.resource.model.AddGroupRequest;
 import com.okta.sdk.resource.model.Application;
@@ -44,17 +46,23 @@ import com.okta.sdk.resource.model.User;
 import com.okta.sdk.resource.model.UserProfile;
 import com.okta.sdk.resource.model.UserStatus;
 import com.okta.sdk.resource.user.UserBuilder;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URL;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import net.tirasa.connid.bundles.okta.schema.OktaSchema;
@@ -113,6 +121,11 @@ public class OktaConnector implements Connector, PoolableConnector,
         CreateOp, UpdateOp, DeleteOp, SchemaOp, SyncOp, TestOp, SearchOp<OktaFilter> {
 
     private static final Log LOG = Log.getLog(OktaConnector.class);
+
+    private static final Pattern LINK_PATTERN = Pattern.compile("<([^>]+)>((?:[^\",]|\"(?:\\\\.|[^\"\\\\])*\")*)");
+
+    private static final Pattern LINK_PARAMETER_PATTERN = Pattern.compile(
+            ";\\s*([^=;\\s]+)\\s*=\\s*(?:\"((?:\\\\.|[^\"\\\\])*)\"|([^;\\s]+))");
 
     public static final String APPLICATION_NAME = ObjectClassUtil.createSpecialName("APPLICATION");
 
@@ -841,6 +854,8 @@ public class OktaConnector implements Connector, PoolableConnector,
             final Function<String, S> getFunction,
             final Function<String, List<T>> pagedSearchFunction,
             final Function<String, List<T>> searchFunction,
+            final String path,
+            final TypeReference<List<T>> responseType,
             final Function<T, ConnectorObject> fromObject,
             final Function<S, ConnectorObject> fromObjectSingletonGet) {
 
@@ -857,35 +872,99 @@ public class OktaConnector implements Connector, PoolableConnector,
             }
         } else {
             String theFilter = Optional.ofNullable(filter).map(OktaFilter::toString).orElse(null);
-            String afterCookie = beforeCookie;
-            List<T> objects = null;
-            try {
-                if (pageSize != null) {
-                    List<T> response = pagedSearchFunction.apply(theFilter);
-                    objects = response;
+            String afterCookie = pageSize == null ? null : beforeCookie;
+            String requestUrl = apiClient.getBaseURL() + path;
+            String nextUrl = null;
+            Set<String> seenUrls = new HashSet<>();
+            boolean continueSearch = true;
+            do {
+                List<T> objects = null;
+                try {
+                    if (pageSize != null) {
+                        List<T> response = pagedSearchFunction.apply(theFilter);
+                        objects = response;
 
-                    if (response.size() >= pageSize) {
-                        afterCookie = PaginationUtil.getAfter(apiClient);
+                        if (response.size() >= pageSize) {
+                            afterCookie = PaginationUtil.getAfter(apiClient);
+                        }
+                    } else {
+                        Map<String, List<String>> headers;
+                        if (nextUrl == null) {
+                            objects = searchFunction.apply(theFilter);
+                            headers = apiClient.getResponseHeaders();
+                        } else {
+                            requestUrl = nextUrl;
+                            ApiResponse<List<T>> response = apiClient.invokeAPIWithHttpInfoFullURL(
+                                    requestUrl, "GET", new HashMap<>(), "application/json", "application/json",
+                                    new String[] { "apiToken", "oauth2" }, responseType);
+                            objects = response.getBody();
+                            headers = response.getHeaders();
+                        }
+                        // Capture the next link before conversion or the handler makes another API request.
+                        nextUrl = nextPageUrl(headers, requestUrl);
+                        if (nextUrl != null && !seenUrls.add(nextUrl)) {
+                            throw new ConnectorException("Okta returned a repeated pagination link");
+                        }
                     }
-                } else {
-                    objects = searchFunction.apply(theFilter);
+                } catch (Exception e) {
+                    OktaUtils.wrapGeneralError(
+                            "While getting " + objectClass.getObjectClassValue() + " with filter: " + filter, e);
                 }
-            } catch (Exception e) {
-                OktaUtils.wrapGeneralError(
-                        "While getting " + objectClass.getObjectClassValue() + " with filter: " + filter, e);
-            }
 
-            for (T object : CollectionUtil.nullAsEmpty(objects)) {
-                if (!handler.handle(fromObject.apply(object))) {
-                    LOG.ok("Stop processing of the result set");
-                    break;
+                for (T object : CollectionUtil.nullAsEmpty(objects)) {
+                    if (!handler.handle(fromObject.apply(object))) {
+                        LOG.ok("Stop processing of the result set");
+                        continueSearch = false;
+                        break;
+                    }
                 }
-            }
+            } while (pageSize == null && nextUrl != null && continueSearch);
 
             if (handler instanceof SearchResultsHandler) {
-                ((SearchResultsHandler) handler).handleResult(new SearchResult(afterCookie, -1));
+                ((SearchResultsHandler) handler).handleResult(
+                        new SearchResult(pageSize == null ? null : afterCookie, -1));
             }
         }
+    }
+
+    private String nextPageUrl(final Map<String, List<String>> headers, final String requestUrl)
+            throws MalformedURLException {
+
+        for (Map.Entry<String, List<String>> header : headers.entrySet()) {
+            if ("link".equalsIgnoreCase(header.getKey())) {
+                for (String value : header.getValue()) {
+                    Matcher link = LINK_PATTERN.matcher(value);
+                    while (link.find()) {
+                        Matcher parameter = LINK_PARAMETER_PATTERN.matcher(link.group(2));
+                        while (parameter.find()) {
+                            String relation = parameter.group(2) == null ? parameter.group(3)
+                                    : parameter.group(2).replaceAll("\\\\(.)", "$1");
+                            if ("rel".equalsIgnoreCase(parameter.group(1))
+                                    && Arrays.stream(relation.split("\\s+")).anyMatch("next"::equalsIgnoreCase)) {
+
+                                URI currentUri = URI.create(requestUrl);
+                                URL current = currentUri.toURL();
+                                String target = link.group(1);
+                                // A query-only reference keeps the current endpoint path.
+                                URL next = currentUri.resolve(target.startsWith("?")
+                                        ? current.getPath() + target : target).toURL();
+                                // Never forward authentication to a different origin supplied by a link.
+                                if (!current.getProtocol().equalsIgnoreCase(next.getProtocol())
+                                        || !current.getHost().equalsIgnoreCase(next.getHost())
+                                        || (current.getPort() < 0 ? current.getDefaultPort() : current.getPort())
+                                        != (next.getPort() < 0 ? next.getDefaultPort() : next.getPort())
+                                        || next.getUserInfo() != null || next.getRef() != null) {
+
+                                    throw new ConnectorException("Okta returned an invalid pagination URL");
+                                }
+                                return next.toExternalForm();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     @SuppressWarnings("unchecked")
@@ -918,6 +997,7 @@ public class OktaConnector implements Connector, PoolableConnector,
                     f -> userApi.listUsers(null, null, f, null,
                             options.getPagedResultsCookie(), options.getPageSize(), null, null, null, null),
                     f -> userApi.listUsers(null, null, f, null, null, null, null, null, null, null),
+                    "/api/v1/users", new TypeReference<List<User>>() { },
                     user -> fromUser(user, attributesToGet),
                     userGetSingleton -> fromUser(userGetSingleton, attributesToGet));
         } else if (APPLICATION.equals(objectClass)) {
@@ -930,7 +1010,8 @@ public class OktaConnector implements Connector, PoolableConnector,
                     id -> appApi.getApplication(id, null),
                     f -> appApi.listApplications(null, options.getPagedResultsCookie(), null, null,
                             options.getPageSize(), f, null, null),
-                    f -> appApi.listApplications(null, null, null, null, null, null, f, null),
+                    f -> appApi.listApplications(null, null, null, null, null, f, null, null),
+                    "/api/v1/apps", new TypeReference<List<Application>>() { },
                     o -> fromApplication(o, attributesToGet),
                     o -> fromApplication(o, attributesToGet));
         } else if (ObjectClass.GROUP.equals(objectClass)) {
@@ -944,6 +1025,7 @@ public class OktaConnector implements Connector, PoolableConnector,
                     f -> groupApi.listGroups(null, f, options.getPagedResultsCookie(), null, options.getPageSize(),
                             null, null, null),
                     f -> groupApi.listGroups(null, f, null, null, null, null, null, null),
+                    "/api/v1/groups", new TypeReference<List<Group>>() { },
                     o -> fromGroup(o, attributesToGet),
                     o -> fromGroup(o, attributesToGet));
         } else {
