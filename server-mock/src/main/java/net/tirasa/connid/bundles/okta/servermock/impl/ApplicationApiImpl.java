@@ -89,14 +89,11 @@ public class ApplicationApiImpl extends AbstractApi implements ApplicationApi {
 
     private String nextPage(final long limit, final int after, final List<Application> repository) {
         if (limit + after < repository.size()) {
-            return "<" + uriInfo.getBaseUri().toString() + "api/v1/apps?after="
-                    + repository.get((int) (limit + after)).getId()
-                    + "&limit=" + limit + ">; rel=\"next\"";
+            return "<" + uriInfo.getRequestUriBuilder()
+                    .replaceQueryParam("after", repository.get((int) (limit + after)).getId())
+                    .replaceQueryParam("limit", limit).build() + ">; rel=\"next\"";
         }
-
-        return "<" + uriInfo.getBaseUri().toString() + "api/v1/apps?after="
-                + repository.get(repository.size() - 1).getId()
-                + "&limit=" + limit + ">; rel=\"self\"";
+        return "<" + uriInfo.getRequestUri() + ">; rel=\"self\"";
     }
 
     @Override
@@ -110,10 +107,22 @@ public class ApplicationApiImpl extends AbstractApi implements ApplicationApi {
             final String expand,
             final Boolean includeNonDeleted) {
 
+        long actualLimit = limit == null || limit < 0 ? DEFAULT_LIMIT : limit.longValue();
+
         if (filter != null) {
             List<Application> applications = searchApplication(filter);
-            return Response.ok().entity(applications).
-                    header("link", nextPage(limit, 0, APPLICATION_REPOSITORY)).build();
+            int start = 0;
+            if (after != null) {
+                start = applications.size();
+                for (int i = 0; i < applications.size(); i++) {
+                    if (Strings.CS.equals(after, applications.get(i).getId())) {
+                        start = i;
+                        break;
+                    }
+                }
+            }
+            return Response.ok().entity(applications.stream().skip(start).limit(actualLimit)
+                    .collect(Collectors.toList())).header("link", nextPage(actualLimit, start, applications)).build();
         }
 
         if (after != null) {
@@ -125,14 +134,13 @@ public class ApplicationApiImpl extends AbstractApi implements ApplicationApi {
                 int lastIndexOf = APPLICATION_REPOSITORY.lastIndexOf(found);
                 return Response.ok().entity(APPLICATION_REPOSITORY.stream().
                         skip(lastIndexOf).
-                        limit(limit).
+                        limit(actualLimit).
                         filter(q == null ? application -> true : application -> application.getLabel().contains(q)).
                         collect(Collectors.toList())).
-                        header("link", nextPage(limit, lastIndexOf, APPLICATION_REPOSITORY)).build();
+                        header("link", nextPage(actualLimit, lastIndexOf, APPLICATION_REPOSITORY)).build();
             }
         }
 
-        long actualLimit = limit == null || limit < 0 ? DEFAULT_LIMIT : limit.longValue();
         return Response.ok().entity(APPLICATION_REPOSITORY.stream().
                 limit(actualLimit).
                 filter(q == null ? application -> true : application -> application.getLabel().contains(q)).

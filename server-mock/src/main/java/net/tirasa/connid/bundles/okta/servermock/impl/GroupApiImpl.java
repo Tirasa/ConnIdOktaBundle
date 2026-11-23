@@ -109,14 +109,11 @@ public class GroupApiImpl extends AbstractApi implements GroupApi {
 
     private String nextPage(final long limit, final int after, final List<Group> repository) {
         if (limit + after < repository.size()) {
-            return "<" + uriInfo.getBaseUri().toString() + "api/v1/groups?after="
-                    + repository.get((int) (limit + after)).getId()
-                    + "&limit=" + limit + ">; rel=\"next\"";
+            return "<" + uriInfo.getRequestUriBuilder()
+                    .replaceQueryParam("after", repository.get((int) (limit + after)).getId())
+                    .replaceQueryParam("limit", limit).build() + ">; rel=\"next\"";
         }
-
-        return "<" + uriInfo.getBaseUri().toString() + "api/v1/groups?after="
-                + repository.get(repository.size() - 1).getId()
-                + "&limit=" + limit + ">; rel=\"self\"";
+        return "<" + uriInfo.getRequestUri() + ">; rel=\"self\"";
     }
 
     @Override
@@ -129,6 +126,8 @@ public class GroupApiImpl extends AbstractApi implements GroupApi {
             final String expand,
             final String sortBy,
             final String sortOrder) {
+
+        long actualLimit = limit == null || limit < 0 ? DEFAULT_LIMIT : limit.longValue();
 
         if (filter != null) {
             List<Group> groups = searchGroup(filter);
@@ -144,14 +143,14 @@ public class GroupApiImpl extends AbstractApi implements GroupApi {
                 int lastIndexOf = GROUP_REPOSITORY.lastIndexOf(found);
                 return Response.ok().entity(GROUP_REPOSITORY.stream().
                         skip(lastIndexOf).
-                        limit(limit == null ? DEFAULT_LIMIT : limit.longValue()).
+                        limit(actualLimit).
                         filter(q == null ? group -> true : group -> group.getProfile().getName().contains(q)).
-                        collect(Collectors.toList())).header("link", nextPage(limit, lastIndexOf, GROUP_REPOSITORY)).
+                        collect(Collectors.toList())).
+                        header("link", nextPage(actualLimit, lastIndexOf, GROUP_REPOSITORY)).
                         build();
             }
         }
 
-        long actualLimit = limit == null || limit < 0 ? DEFAULT_LIMIT : limit.longValue();
         return Response.ok().entity(GROUP_REPOSITORY.stream().
                 limit(actualLimit).
                 filter(q == null ? group -> true : group -> group.getProfile().getName().contains(q)).
