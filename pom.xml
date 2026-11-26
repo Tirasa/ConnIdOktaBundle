@@ -28,7 +28,7 @@
     
   <groupId>net.tirasa.connid.bundles.okta</groupId>
   <artifactId>okta</artifactId>
-  <version>3.0.9</version>        
+  <version>3.0.10-SNAPSHOT</version>        
 
   <name>ConnId Bundles: Okta</name>
   
